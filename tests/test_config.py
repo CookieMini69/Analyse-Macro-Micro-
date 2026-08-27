@@ -10,9 +10,16 @@ def test_default_settings_resolve_paths_from_project_root() -> None:
     assert settings.paths.universe == Path.cwd().resolve() / "config" / "universe.yaml"
     assert settings.paths.sec_cache == Path.cwd().resolve() / "data" / "cache" / "sec"
     assert settings.paths.valuation == Path.cwd().resolve() / "config" / "valuation.yaml"
+    assert settings.paths.macro == Path.cwd().resolve() / "config" / "macro.yaml"
+    assert settings.paths.shock_taxonomy == (
+        Path.cwd().resolve() / "config" / "shock_taxonomy.yaml"
+    )
     assert settings.price.history_period == "max"
     assert settings.fundamentals.history_years == 5
     assert settings.valuation.historical_minimum_points == 3
+    assert settings.macro.enabled is True
+    assert settings.news.lookback_days == 30
+    assert settings.shock.minimum_independent_sources == 2
 
 
 def test_project_env_file_is_loaded_without_overriding_shell(

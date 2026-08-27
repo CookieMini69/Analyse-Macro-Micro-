@@ -7,6 +7,11 @@ paths:
   cache: "data/cache/prices"
   sec_cache: "data/cache/sec"
   valuation: "config/valuation.yaml"
+  macro: "config/macro.yaml"
+  macro_exposures: "config/macro_exposures.yaml"
+  shock_taxonomy: "config/shock_taxonomy.yaml"
+  macro_cache: "data/cache/macro"
+  news_cache: "data/cache/news"
   reports: "reports"
 
 price:
@@ -35,6 +40,29 @@ valuation:
   minimum_score_coverage: 0.50
   reverse_growth_lower_bound: -0.50
   reverse_growth_upper_bound: 0.50
+
+macro:
+  enabled: true
+  provider: "fred"
+  api_key_env: "FRED_API_KEY"
+  cache_ttl_hours: 24
+  timeout_seconds: 30
+  max_retries: 3
+  history_years: 2
+
+news:
+  enabled: true
+  provider: "gdelt"
+  cache_ttl_hours: 6
+  timeout_seconds: 30
+  max_retries: 3
+  lookback_days: 30
+  max_articles: 75
+
+shock:
+  enabled: true
+  minimum_independent_sources: 2
+  minimum_score_coverage: 0.50
 
 screening:
   drawdown_52w_threshold: -0.20

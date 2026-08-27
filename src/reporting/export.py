@@ -76,6 +76,18 @@ EXPORT_COLUMNS = [
     "normalized_value_per_share",
     "reverse_dcf_implied_revenue_growth",
     "valuation_metrics",
+    "shock_category",
+    "shock_nature",
+    "temporary_shock_score",
+    "temporary_shock_observed_score",
+    "temporary_shock_coverage",
+    "shock_status",
+    "shock_data_quality",
+    "shock_as_of",
+    "shock_evidence_count",
+    "shock_independent_source_count",
+    "shock_conclusion",
+    "shock_metrics",
     "decline_severity_score",
     "is_candidate",
     "candidate_reasons",
@@ -114,7 +126,12 @@ def results_to_frame(results: Iterable[OpportunityCandidate]) -> pd.DataFrame:
         row["valuation_metrics"] = json.dumps(
             row["valuation_metrics"], ensure_ascii=False, sort_keys=True
         )
-        row["metric_statuses"] = json.dumps(row["metric_statuses"], ensure_ascii=False, sort_keys=True)
+        row["shock_metrics"] = json.dumps(
+            row["shock_metrics"], ensure_ascii=False, sort_keys=True
+        )
+        row["metric_statuses"] = json.dumps(
+            row["metric_statuses"], ensure_ascii=False, sort_keys=True
+        )
         row["missing_metrics"] = json.dumps(row["missing_metrics"], ensure_ascii=False)
         row["sources"] = json.dumps(row["sources"], ensure_ascii=False)
         rows.append(row)
@@ -148,6 +165,7 @@ def _style_sheet(sheet: Worksheet) -> None:
         "dcf_bull_value_per_share",
         "normalized_value_per_share",
         "valuation_score",
+        "temporary_shock_score",
         "beta",
         "decline_severity_score",
         "rsi",
@@ -159,7 +177,16 @@ def _style_sheet(sheet: Worksheet) -> None:
     for column_cells in sheet.columns:
         header = str(column_cells[0].value or "")
         sample_width = max((len(str(cell.value or "")) for cell in column_cells[:100]), default=0)
-        limit = 60 if header in {"candidate_reasons", "metric_statuses", "valuation_metrics", "sources"} else 28
+        wide_columns = {
+            "candidate_reasons",
+            "fundamental_metrics",
+            "metric_statuses",
+            "shock_conclusion",
+            "shock_metrics",
+            "sources",
+            "valuation_metrics",
+        }
+        limit = 60 if header in wide_columns else 28
         sheet.column_dimensions[get_column_letter(column_cells[0].column)].width = min(
             max(sample_width + 2, len(header) + 2, 10), limit
         )
@@ -196,13 +223,22 @@ def export_scan_results(
             "result_count": len(frame),
             "candidate_count": len(candidates),
             "note": (
-                "Decline severity and valuation scores are analytical indicators, "
-                "not investment recommendations or return probabilities."
+                "Decline severity, valuation, and temporary-shock scores are "
+                "analytical indicators, not investment recommendations or "
+                "return/normalization probabilities."
             ),
             **(run_metadata or {}),
         }
         metadata_frame = pd.DataFrame(
-            [{"key": key, "value": json.dumps(value) if isinstance(value, (dict, list)) else value} for key, value in metadata.items()]
+            [
+                {
+                    "key": key,
+                    "value": (
+                        json.dumps(value) if isinstance(value, (dict, list)) else value
+                    ),
+                }
+                for key, value in metadata.items()
+            ]
         )
         with pd.ExcelWriter(excel_path, engine="openpyxl") as writer:
             candidates.to_excel(writer, sheet_name="Candidates", index=False)

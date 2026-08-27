@@ -1,10 +1,21 @@
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 import numpy as np
 
 from src.config import load_settings
 from src.data.sources import PriceHistoryResult
-from src.models import DataQuality, DataStatus, Security
+from src.models import (
+    DataQuality,
+    DataStatus,
+    MacroObservation,
+    MacroSeriesResult,
+    NewsArticle,
+    NewsSearchResult,
+    Security,
+    ShockCategory,
+    ShockNature,
+)
 from src.pipeline import run_pipeline
 from tests.factories import price_frame
 from tests.test_fundamental_analysis import complete_data
@@ -34,6 +45,79 @@ class FakeFundamentalSource:
         data.security = security
         data.cik = "0000000001"
         return data
+
+
+class FakeMacroSource:
+    def fetch(self, series_key, definition, *, as_of=None, history_years=2):
+        cutoff = as_of
+        retrieved = datetime(2025, 3, 1, 12, tzinfo=UTC)
+        observations = [
+            MacroObservation(
+                series_key=series_key,
+                series_id=definition.series_id,
+                series_title=definition.name,
+                value=value,
+                observation_date=observation_date,
+                realtime_start=date(2025, 3, 1),
+                realtime_end=date(9999, 12, 31),
+                as_of=cutoff,
+                frequency="Daily",
+                unit="Synthetic index",
+                source_url="https://fred.stlouisfed.org/series/SYNTH",
+                retrieved_at=retrieved,
+            )
+            for observation_date, value in (
+                (date(2025, 1, 28), 100.0),
+                (date(2025, 2, 28), 110.0),
+            )
+        ]
+        return MacroSeriesResult(
+            series_key=series_key,
+            series_id=definition.series_id,
+            configured_name=definition.name,
+            as_of=cutoff,
+            status=DataStatus.AVAILABLE,
+            data_quality=DataQuality.MEDIUM,
+            observations=observations,
+            retrieved_at=retrieved,
+            source_url="https://fred.stlouisfed.org/series/SYNTH",
+        )
+
+
+class FakeNewsSource:
+    def fetch(self, security, *, as_of=None, lookback_days=30, max_articles=75):
+        articles = [
+            NewsArticle(
+                title="Synthetic outage resolved after temporary disruption",
+                url="https://one.test/synthetic-1",
+                source_domain="one.test",
+                seen_at=as_of - timedelta(days=2),
+                query='"Synthetic Test Fixture Only"',
+                index_source_url="https://api.gdeltproject.org/synthetic-test-only",
+                retrieved_at=as_of,
+            ),
+            NewsArticle(
+                title="Synthetic operations restarted and restored",
+                url="https://two.test/synthetic-2",
+                source_domain="two.test",
+                seen_at=as_of - timedelta(days=1),
+                query='"Synthetic Test Fixture Only"',
+                index_source_url="https://api.gdeltproject.org/synthetic-test-only",
+                retrieved_at=as_of,
+            ),
+        ]
+        return NewsSearchResult(
+            ticker=security.ticker,
+            company=security.company,
+            query='"Synthetic Test Fixture Only"',
+            window_start=as_of - timedelta(days=lookback_days),
+            as_of=as_of,
+            status=DataStatus.AVAILABLE,
+            data_quality=DataQuality.MEDIUM,
+            articles=articles,
+            retrieved_at=as_of,
+            source_url="https://api.gdeltproject.org/synthetic-test-only",
+        )
 
 
 def write_configuration(tmp_path: Path) -> None:
@@ -183,3 +267,83 @@ securities:
     assert output.results[0].current_price == 60.0
     assert output.results[0].fundamental_status == DataStatus.DATA_UNAVAILABLE
     assert "SEC_USER_AGENT" in output.fundamental_errors["TEST"]
+
+
+def test_pipeline_integrates_macro_news_and_conservative_shock_analysis(
+    tmp_path: Path,
+) -> None:
+    write_configuration(tmp_path)
+    (tmp_path / "universe.yaml").write_text(
+        """
+version: 1
+filters: {}
+securities:
+  - ticker: TEST
+    cik: "1"
+    company: Synthetic Test Fixture Only
+    country: United States
+    sector: Synthetic Sector
+    currency: USD
+""",
+        encoding="utf-8",
+    )
+    (tmp_path / "macro.yaml").write_text(
+        """
+version: 1
+series:
+  synthetic_macro:
+    series_id: SYNTH
+    name: Synthetic Macro Series
+""",
+        encoding="utf-8",
+    )
+    (tmp_path / "exposures.yaml").write_text(
+        """
+version: 1
+sector_exposures: {}
+security_exposures:
+  TEST:
+    - series_key: synthetic_macro
+      coefficient: -1.0
+      rationale: Synthetic integration-test sensitivity only.
+      assumption_date: 2025-01-01
+      source: synthetic integration-test assumption
+""",
+        encoding="utf-8",
+    )
+    (tmp_path / "taxonomy.yaml").write_text(
+        """
+version: 1
+categories:
+  OPERATIONAL: [outage, disruption]
+temporary_terms: [temporary]
+resolution_terms: [resolved, restarted, restored]
+damage_terms: []
+structural_terms: []
+severe_structural_terms: []
+""",
+        encoding="utf-8",
+    )
+    settings = load_settings(tmp_path / "settings.yaml")
+    settings.macro.enabled = True
+    settings.news.enabled = True
+    settings.shock.enabled = True
+    settings.paths.macro = tmp_path / "macro.yaml"
+    settings.paths.macro_exposures = tmp_path / "exposures.yaml"
+    settings.paths.shock_taxonomy = tmp_path / "taxonomy.yaml"
+    output = run_pipeline(
+        settings,
+        price_source=FakePriceSource(),
+        fundamental_source=FakeFundamentalSource(),
+        macro_source=FakeMacroSource(),
+        news_source=FakeNewsSource(),
+        fundamentals_as_of="2025-03-01T23:00:00Z",
+    )
+    result = output.results[0]
+    assert result.shock_category == ShockCategory.OPERATIONAL
+    assert result.shock_nature == ShockNature.PROBABLY_TEMPORARY
+    assert result.temporary_shock_score is not None
+    assert result.shock_independent_source_count == 2
+    assert output.macro_analysis["synthetic_macro"].latest_value == 110.0
+    assert len(output.macro_exported_files) == 2
+    assert len(output.shock_exported_files) == 3

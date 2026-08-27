@@ -1,4 +1,4 @@
-"""Command-line orchestration for prices, fundamentals, and valuation."""
+"""Point-in-time orchestration for prices, fundamentals, valuation, and shocks."""
 
 from __future__ import annotations
 
@@ -8,10 +8,12 @@ import os
 import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from src.analysis.fundamentals import analyze_fundamentals
+from src.analysis.macro import analyze_macro_series
+from src.analysis.shock import analyze_shock
 from src.analysis.valuation import analyze_valuations
 from src.config import AppSettings, load_settings
 from src.data.fundamentals import (
@@ -20,19 +22,45 @@ from src.data.fundamentals import (
     normalize_as_of,
     unavailable_fundamental_data,
 )
+from src.data.macro import FredMacroSource, unavailable_macro_series
+from src.data.news import (
+    GDELT_DOC_URL,
+    GdeltNewsSource,
+    build_news_query,
+    unavailable_news_result,
+)
 from src.data.prices import YahooFinancePriceSource, empty_price_frame
 from src.data.sec_edgar import SecEdgarClient
-from src.data.sources import FundamentalSource, PriceHistoryResult, PriceSource
+from src.data.sources import (
+    FundamentalSource,
+    MacroSource,
+    NewsSource,
+    PriceHistoryResult,
+    PriceSource,
+)
+from src.macro_config import (
+    MacroConfig,
+    MacroExposureConfig,
+    ShockTaxonomyConfig,
+    load_macro_config,
+    load_macro_exposure_config,
+    load_shock_taxonomy,
+)
 from src.models import (
     DataQuality,
     DataStatus,
     FundamentalAnalysisResult,
+    MacroSeriesAnalysis,
+    MacroSeriesResult,
+    NewsSearchResult,
     OpportunityCandidate,
     Security,
+    ShockAnalysisResult,
     ValuationAnalysisResult,
 )
 from src.reporting.export import export_scan_results
 from src.reporting.fundamentals import persist_fundamental_results
+from src.reporting.macro_shock import persist_macro_results, persist_shock_results
 from src.reporting.valuation import persist_valuation_results
 from src.screening.scanner import build_scan_result, rank_results
 from src.screening.universe import auxiliary_benchmarks, load_universe
@@ -52,6 +80,14 @@ class PipelineResult:
     valuation_results: dict[str, ValuationAnalysisResult]
     valuation_exported_files: list[Path]
     valuation_errors: dict[str, str]
+    macro_results: dict[str, MacroSeriesResult]
+    macro_analysis: dict[str, MacroSeriesAnalysis]
+    macro_exported_files: list[Path]
+    macro_errors: dict[str, str]
+    news_results: dict[str, NewsSearchResult]
+    shock_results: dict[str, ShockAnalysisResult]
+    shock_exported_files: list[Path]
+    shock_errors: dict[str, str]
 
 
 def _configure_logging(level: str) -> None:
@@ -188,6 +224,113 @@ def _run_fundamentals(
     return results
 
 
+def _run_macro(
+    settings: AppSettings,
+    *,
+    source: MacroSource | None,
+    as_of: date | datetime | str | None,
+) -> tuple[dict[str, MacroSeriesResult], dict[str, MacroSeriesAnalysis]]:
+    if not settings.macro.enabled:
+        return {}, {}
+    config = (
+        load_macro_config(settings.paths.macro)
+        if settings.paths.macro is not None
+        else MacroConfig()
+    )
+    cutoff = normalize_as_of(as_of)
+    configured_source = source
+    configuration_error: str | None = None
+    if configured_source is None and config.series:
+        api_key = os.getenv(settings.macro.api_key_env, "").strip()
+        if not api_key:
+            configuration_error = (
+                f"{settings.macro.api_key_env} is required for FRED/ALFRED access"
+            )
+        else:
+            try:
+                configured_source = FredMacroSource(
+                    settings.paths.macro_cache
+                    or settings.project_root / "data" / "cache" / "macro",
+                    api_key=api_key,
+                    cache_ttl_hours=settings.macro.cache_ttl_hours,
+                    timeout_seconds=settings.macro.timeout_seconds,
+                    max_retries=settings.macro.max_retries,
+                )
+            except Exception as exc:
+                configuration_error = f"{type(exc).__name__}: {exc}"
+    raw: dict[str, MacroSeriesResult] = {}
+    for key, definition in config.series.items():
+        if not definition.enabled:
+            continue
+        if configured_source is None:
+            result = unavailable_macro_series(
+                key,
+                definition,
+                cutoff,
+                f"https://fred.stlouisfed.org/series/{definition.series_id}",
+                configuration_error or "macro source unavailable",
+            )
+        else:
+            try:
+                result = configured_source.fetch(
+                    key,
+                    definition,
+                    as_of=cutoff,
+                    history_years=settings.macro.history_years,
+                )
+            except Exception as exc:
+                result = unavailable_macro_series(
+                    key,
+                    definition,
+                    cutoff,
+                    f"https://fred.stlouisfed.org/series/{definition.series_id}",
+                    f"{type(exc).__name__}: {exc}",
+                )
+        raw[key] = result
+    analyses = {key: analyze_macro_series(result) for key, result in raw.items()}
+    return raw, analyses
+
+
+def _run_news(
+    securities: list[Security],
+    settings: AppSettings,
+    *,
+    source: NewsSource | None,
+    as_of: date | datetime | str | None,
+) -> dict[str, NewsSearchResult]:
+    if not settings.news.enabled or not securities:
+        return {}
+    provider = source or GdeltNewsSource(
+        settings.paths.news_cache
+        or settings.project_root / "data" / "cache" / "news",
+        cache_ttl_hours=settings.news.cache_ttl_hours,
+        timeout_seconds=settings.news.timeout_seconds,
+        max_retries=settings.news.max_retries,
+    )
+    cutoff = normalize_as_of(as_of)
+    results: dict[str, NewsSearchResult] = {}
+    for security in securities:
+        try:
+            result = provider.fetch(
+                security,
+                as_of=cutoff,
+                lookback_days=settings.news.lookback_days,
+                max_articles=settings.news.max_articles,
+            )
+        except Exception as exc:
+            query = build_news_query(security)
+            result = unavailable_news_result(
+                security,
+                query,
+                cutoff - timedelta(days=settings.news.lookback_days),
+                cutoff,
+                GDELT_DOC_URL,
+                f"{type(exc).__name__}: {exc}",
+            )
+        results[security.ticker.upper()] = result
+    return results
+
+
 def _enrich_with_fundamentals(
     result: OpportunityCandidate,
     fundamental: FundamentalAnalysisResult | None,
@@ -309,15 +452,51 @@ def _enrich_with_valuation(
     return OpportunityCandidate.model_validate({**result.model_dump(), **updates})
 
 
+def _enrich_with_shock(
+    result: OpportunityCandidate,
+    shock: ShockAnalysisResult | None,
+) -> OpportunityCandidate:
+    if shock is None:
+        return result
+    updates = {
+        "shock_category": shock.category,
+        "shock_nature": shock.nature,
+        "temporary_shock_score": shock.temporary_score.score,
+        "temporary_shock_observed_score": shock.temporary_score.observed_score,
+        "temporary_shock_coverage": shock.temporary_score.coverage,
+        "shock_status": shock.status,
+        "shock_data_quality": shock.data_quality,
+        "shock_as_of": shock.as_of,
+        "shock_evidence_count": len(shock.evidence),
+        "shock_independent_source_count": shock.independent_source_count,
+        "shock_conclusion": shock.conclusion,
+        "shock_metrics": {
+            "evidence": [item.model_dump(mode="json") for item in shock.evidence],
+            "macro_associations": [
+                item.model_dump(mode="json") for item in shock.macro_associations
+            ],
+            "score_components": {
+                name: component.model_dump(mode="json")
+                for name, component in shock.temporary_score.components.items()
+            },
+        },
+        "sources": result.sources
+        + [{**source, "role": source.get("role", "shock")} for source in shock.sources],
+    }
+    return OpportunityCandidate.model_validate({**result.model_dump(), **updates})
+
+
 def run_pipeline(
     settings: AppSettings | str | Path = "config/settings.yaml",
     *,
     universe_path: str | Path | None = None,
     price_source: PriceSource | None = None,
     fundamental_source: FundamentalSource | None = None,
+    macro_source: MacroSource | None = None,
+    news_source: NewsSource | None = None,
     fundamentals_as_of: date | datetime | str | None = None,
 ) -> PipelineResult:
-    """Run prices, fundamentals, and valuation without fabricating missing data."""
+    """Run the integrated scanner without fabricating missing external data."""
 
     app_settings = load_settings(settings) if not isinstance(settings, AppSettings) else settings
     _configure_logging(app_settings.logging.level)
@@ -356,6 +535,29 @@ def run_pipeline(
             app_settings.paths.reports,
         )
         if fundamental_list
+        else []
+    )
+
+    LOGGER.info("Updating point-in-time macro vintages...")
+    macro_results, macro_analysis = _run_macro(
+        app_settings,
+        source=macro_source,
+        as_of=fundamentals_as_of,
+    )
+    macro_available = sum(
+        result.status == DataStatus.AVAILABLE for result in macro_results.values()
+    )
+    LOGGER.info(
+        "%d/%d macro series available", macro_available, len(macro_results)
+    )
+    macro_exported = (
+        persist_macro_results(
+            macro_results,
+            macro_analysis,
+            app_settings.paths.processed_data,
+            app_settings.paths.reports,
+        )
+        if macro_results
         else []
     )
 
@@ -451,6 +653,65 @@ def run_pipeline(
     candidate_count = sum(result.is_candidate for result in ranked)
     LOGGER.info("%d large-decline candidates detected", candidate_count)
 
+    news_results: dict[str, NewsSearchResult] = {}
+    shock_results: dict[str, ShockAnalysisResult] = {}
+    shock_exported: list[Path] = []
+    if app_settings.shock.enabled:
+        candidate_tickers = {
+            result.ticker.upper() for result in ranked if result.is_candidate
+        }
+        candidate_securities = [
+            security
+            for security in securities
+            if security.ticker.upper() in candidate_tickers
+        ]
+        LOGGER.info("Retrieving public news metadata for %d candidates...", len(candidate_securities))
+        news_results = _run_news(
+            candidate_securities,
+            app_settings,
+            source=news_source,
+            as_of=fundamentals_as_of,
+        )
+        exposure_config = (
+            load_macro_exposure_config(app_settings.paths.macro_exposures)
+            if app_settings.paths.macro_exposures is not None
+            else MacroExposureConfig()
+        )
+        taxonomy = (
+            load_shock_taxonomy(app_settings.paths.shock_taxonomy)
+            if app_settings.paths.shock_taxonomy is not None
+            else ShockTaxonomyConfig()
+        )
+        for security in candidate_securities:
+            ticker = security.ticker.upper()
+            news = news_results.get(ticker)
+            if news is None:
+                continue
+            shock_results[ticker] = analyze_shock(
+                security,
+                news,
+                macro_analysis,
+                exposure_config.for_security(security.ticker, security.sector),
+                taxonomy,
+                fundamental=fundamental_results.get(ticker),
+                minimum_independent_sources=(
+                    app_settings.shock.minimum_independent_sources
+                ),
+                minimum_score_coverage=app_settings.shock.minimum_score_coverage,
+            )
+        if news_results or shock_results:
+            shock_exported = persist_shock_results(
+                news_results,
+                shock_results,
+                app_settings.paths.processed_data,
+                app_settings.paths.reports,
+            )
+        ranked = [
+            _enrich_with_shock(result, shock_results.get(result.ticker.upper()))
+            for result in ranked
+        ]
+        LOGGER.info("%d candidate shocks analyzed", len(shock_results))
+
     LOGGER.info("Exporting scan results...")
     exported = export_scan_results(
         ranked,
@@ -467,6 +728,10 @@ def run_pipeline(
             "fundamental_available_count": fundamental_available,
             "valuation_result_count": len(valuation_results),
             "valuation_available_count": valuation_available,
+            "macro_series_count": len(macro_results),
+            "macro_available_count": macro_available,
+            "news_result_count": len(news_results),
+            "shock_result_count": len(shock_results),
             "fundamental_as_of": (
                 (
                     fundamental_list[0].as_of
@@ -500,6 +765,16 @@ def run_pipeline(
         for result in valuation_results.values()
         if result.error is not None
     }
+    macro_errors = {
+        key: result.error
+        for key, result in macro_results.items()
+        if result.error is not None
+    }
+    shock_errors = {
+        ticker: result.error
+        for ticker, result in shock_results.items()
+        if result.error is not None
+    }
     return PipelineResult(
         results=ranked,
         exported_files=exported,
@@ -510,6 +785,14 @@ def run_pipeline(
         valuation_results=valuation_results,
         valuation_exported_files=valuation_exported,
         valuation_errors=valuation_errors,
+        macro_results=macro_results,
+        macro_analysis=macro_analysis,
+        macro_exported_files=macro_exported,
+        macro_errors=macro_errors,
+        news_results=news_results,
+        shock_results=shock_results,
+        shock_exported_files=shock_exported,
+        shock_errors=shock_errors,
     )
 
 
@@ -517,7 +800,7 @@ def build_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
             "Scan an explicit equity universe for price declines and "
-            "point-in-time fundamentals and valuation."
+            "point-in-time fundamentals, valuation, macro vintages, and shocks."
         )
     )
     parser.add_argument(
@@ -533,7 +816,7 @@ def build_argument_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--as-of",
         default=None,
-        help="Point-in-time fundamental and valuation cutoff (ISO date or timestamp)",
+        help="Shared point-in-time cutoff for every data stage (ISO date or timestamp)",
     )
     return parser
 

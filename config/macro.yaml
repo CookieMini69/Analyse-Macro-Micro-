@@ -1,0 +1,23 @@
+version: 1
+
+# Stable FRED identifiers only. Values, units, frequency, vintages, and titles
+# are always retrieved from the official API and never stored as assumptions.
+series:
+  fed_funds:
+    series_id: DFF
+    name: Effective Federal Funds Rate
+  us_cpi:
+    series_id: CPIAUCSL
+    name: US Consumer Price Index
+  wti_oil:
+    series_id: DCOILWTICO
+    name: WTI Crude Oil Price
+  us_10y:
+    series_id: DGS10
+    name: 10-Year Treasury Yield
+  vix:
+    series_id: VIXCLS
+    name: CBOE Volatility Index
+  us_unemployment:
+    series_id: UNRATE
+    name: US Unemployment Rate

@@ -1,15 +1,17 @@
 # AI Stock Opportunity Scanner
 
-Version `0.5.0` implements the price/drawdown scanner, a **point-in-time
-fundamental engine for SEC-reporting US issuers**, and the Phase 4 valuation
-engine. It preserves SEC filing availability, calculates current/historical/peer
-multiples, and can run sourced bear/base/bull, normalized, and reverse DCFs.
-Fundamental Quality and Valuation scores are both coverage-adjusted.
+Version `0.6.0` implements the price/drawdown scanner, a **point-in-time
+fundamental engine for SEC-reporting US issuers**, valuation, point-in-time
+FRED/ALFRED macro vintages, public GDELT news metadata, and conservative shock
+detection. It preserves the actual availability cutoff of SEC filings and macro
+vintages, calculates current/historical/peer multiples, and can run sourced
+bear/base/bull, normalized, and reverse DCFs. Fundamental Quality, Valuation,
+and Temporary Shock scores are coverage-adjusted.
 
-It still does **not** conclude that a decline is an investment opportunity.
-News/shock classification, temporal target scenarios, AI analysis, and
-backtesting are reserved for later phases. DCF output remains null until the user
-adds real, dated, reviewable assumptions for a ticker.
+It still does **not** conclude that a decline is an investment opportunity or
+that a shock is temporary. Historical analogues, temporal target scenarios, AI
+analysis, and backtesting are reserved for later phases. DCF and macro-exposure
+output remain null until the user adds real, dated, reviewable assumptions.
 
 ## Core data rule
 
@@ -40,17 +42,20 @@ python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
 ```
 
-No API key is required. Before downloading SEC data, copy `.env.example` to
-`.env` and replace the SEC placeholder with your real organization/name and
-contact email:
+Before downloading SEC or FRED data, copy `.env.example` to `.env`, replace the
+SEC placeholder with your real organization/name and contact email, and add a
+personal FRED API key:
 
 ```dotenv
 SEC_USER_AGENT=Your Real Organization contact@your-domain.example
+FRED_API_KEY=your_32_character_lowercase_key
 ```
 
 The SEC requires automated clients to identify themselves. The application
 refuses an anonymous or unchanged placeholder User-Agent. `.env` is loaded
 without overriding variables already defined in the shell and is ignored by Git.
+FRED requires a free API key; the scanner never writes it to cache, provenance,
+or reports. GDELT and Yahoo require no key.
 
 ## Configure the universe
 
@@ -179,10 +184,16 @@ Outputs are timestamped under `reports/`:
   score coverage;
 - full, cutoff-versioned valuation JSON under `data/processed/valuations/`,
   including formulas, filing accessions, assumptions, and annual DCF cash flows.
+- `macro_analysis_*.csv` plus full, cutoff-versioned FRED series JSON under
+  `data/processed/macro/`;
+- `shock_analysis_*.csv`, candidate news-metadata JSON, and auditable shock JSON
+  under `data/processed/shocks/`.
 
 Normalized daily observations are cached under `data/cache/prices/` and persisted
 under `data/processed/prices/`. Raw SEC API responses are cached under
-`data/cache/sec/`. Runtime data and reports are excluded from Git.
+`data/cache/sec/`; FRED and GDELT responses use separate caches under
+`data/cache/macro/` and `data/cache/news/`. Runtime data and reports are excluded
+from Git.
 
 ## Point-in-time SEC methodology
 
@@ -338,6 +349,74 @@ minimum (50% by default).
 This is a **valuation indicator out of 100**, not a target-price guarantee, a
 probability of profit, or a BUY/WATCH/PASS verdict.
 
+## Point-in-time macro engine
+
+`config/macro.yaml` declares stable FRED series identifiers; titles, frequency,
+units, observations, and real-time periods come from the official API. For each
+run, the engine sends the same cutoff date as both `realtime_start` and
+`realtime_end`. This is the ALFRED vintage that was observable on that date, not
+today's revised history retroactively attached to an old run. Each observation
+retains its observation date, returned real-time start/end, retrieval timestamp,
+source URL, status, and quality.
+
+The default configuration retrieves the effective federal funds rate, US CPI,
+WTI oil, 10-year Treasury yield, VIX, and US unemployment. It exports raw values
+and mechanical absolute/percentage changes over approximately 30, 90, and 365
+calendar days. These changes are context, not a claim that the variable caused a
+stock move. Missing values and series errors remain explicit and never abort the
+rest of the universe.
+
+See the official [FRED observations API](https://fred.stlouisfed.org/docs/api/fred/series_observations.html),
+[real-time-period documentation](https://fred.stlouisfed.org/docs/api/fred/realtime_period.html),
+and [FRED versus ALFRED explanation](https://fred.stlouisfed.org/docs/api/fred/fred_vs_alfred.html).
+
+## Macro-exposure assumptions
+
+`config/macro_exposures.yaml` is intentionally empty. A sector or security
+exposure is applied only when it includes a non-zero coefficient, rationale,
+assumption date, and reviewable source. Security-level entries override a sector
+entry for the same series. Any assumption dated after `--as-of` is rejected.
+
+The coefficient only determines the sign of a configured association. For
+example, a negative coefficient combined with a rising macro series is reported
+as a configured headwind. It is not an estimated beta, sensitivity, causal
+effect, forecast, or proof that macro conditions explain the drawdown.
+
+## News metadata and shock detection
+
+Only securities that pass the decline screen trigger a GDELT query. The scanner
+stores title, public URL, domain, language/country metadata, and GDELT `seendate`;
+it does not scrape or persist article bodies, bypass paywalls, or fabricate a
+publication timestamp. `seendate` is preserved specifically as the time GDELT
+indexed/saw the item and must not be presented as a publisher-certified date.
+The free DOC 2.0 API exposes a rolling recent window, so cutoffs older than 90
+days are marked unavailable instead of silently querying current news. See the
+official [GDELT DOC 2.0 API description](https://blog.gdeltproject.org/gdelt-doc-2-0-api-debuts/).
+
+`config/shock_taxonomy.yaml` maps headline terms to the specification's public
+categories:
+
+```text
+GEOPOLITICAL, MACRO, INTEREST_RATES, INFLATION, COMMODITIES,
+REGULATION, LEGAL, EARNINGS, GUIDANCE, COMPETITION, PRODUCT,
+MANAGEMENT, OPERATIONAL, SUPPLY_CHAIN, CYCLICAL, UNKNOWN
+```
+
+The nature is one of `TEMPORARY`, `PROBABLY_TEMPORARY`, `UNCERTAIN`,
+`STRUCTURAL`, or `SEVERE_STRUCTURAL`, but this deterministic evidence layer
+never emits `TEMPORARY`. Resolution or temporary language must be corroborated
+by at least two independent domains before it can emit
+`PROBABLY_TEMPORARY`. Structural evidence takes precedence; severe terms such
+as bankruptcy or default yield `SEVERE_STRUCTURAL`. Otherwise the result stays
+`UNCERTAIN`.
+
+The Temporary Shock Score combines four audited components: resolution evidence
+(35%), structural-damage evidence (35%), independent-source corroboration (15%),
+and available fundamental resilience (15%). Missing components reduce coverage;
+the score remains null below the configured coverage threshold. It is an
+evidence-coverage-adjusted indicator, **not a probability of normalization**.
+Headline keyword matches are triage signals and require human verification.
+
 ## V1 methodology
 
 For each security the scanner calculates:
@@ -394,12 +473,12 @@ in user-facing scan output.
 ```text
 config/                 validated YAML settings and universe
 data/                   ignored raw/processed/cache/database runtime areas
-src/models.py           provenance, fundamentals, valuation, and candidate models
-src/data/               Yahoo prices plus responsible SEC EDGAR client/cache
+src/models.py           provenance, fundamentals, valuation, macro, and shock models
+src/data/               Yahoo, SEC EDGAR, FRED/ALFRED, and GDELT clients/caches
 src/screening/          universe, returns/drawdowns, momentum, filter/ranking
-src/reporting/          price/fundamental/valuation JSON, CSV, and Excel exports
-src/pipeline.py         integrated prices + fundamentals + valuation CLI
-src/analysis/           fundamental and valuation calculations/scoring
+src/reporting/          auditable price/fundamental/valuation/macro/shock exports
+src/pipeline.py         integrated point-in-time scanner CLI
+src/analysis/           fundamental, valuation, macro, and shock calculations
 src/forecasting/        assumption-driven DCF and reverse DCF
 src/scoring/            reserved opportunity/risk scoring boundary
 src/backtest/           reserved point-in-time backtest boundary
@@ -440,18 +519,34 @@ specified architecture visible without pretending later phases are implemented.
   free Yahoo prices plus SEC facts are not independently corroborated.
 - DCF assumptions are manual and must be maintained by the user. A normalized
   value does not exist unless a sourced normalized scenario is supplied.
-- No FX conversion, shock causality, historical analogues, temporal targets,
-  verdict, dashboard, alerts, or backtest exists yet.
+- FRED vintages require an API key and use the provider's documented real-time
+  dates. Strict production backtests should additionally archive every raw
+  response so later provider corrections remain reproducible.
+- GDELT supplies discovery metadata and `seendate`, not a guaranteed original
+  publication timestamp. Its rolling recent window cannot provide strict old
+  point-in-time news history; those cutoffs are explicitly unavailable.
+- Headline taxonomy is deterministic triage. It cannot establish causality,
+  distinguish every linguistic nuance, assess full-text context, or substitute
+  for a review of primary company disclosures and regulatory filings.
+- Macro exposures are empty by default and user-supplied when enabled. Their
+  signed arithmetic is not an empirically estimated causal model.
+- The Temporary Shock Score currently covers only evidence that can be audited
+  from Phase 3 fundamentals, macro inputs, and public headline metadata. The
+  remaining specification criteria—historical shock duration/analogues,
+  detailed guidance and analyst expectations—stay missing rather than imputed.
+- No FX conversion, historical analogues, temporal targets, critical verdict,
+  dashboard, alerts, or backtest exists yet.
 - A severe decline can be entirely rational. Ranking does not establish
   undervaluation or temporary mispricing.
 
 ## Next recommended phase
 
-Phase 5 should implement official/free macro sources, legally accessible news
-ingestion, and evidence-backed shock detection/classification. It must not infer
-that a shock is temporary merely from a price decline. Before broad production
-use, also add sector-specific fundamental scorecards and archived SEC snapshots
-for strict historical backtesting.
+Phase 6 should implement point-in-time historical analogues: comparable company
+and market shocks, their documented duration, fundamental damage, recovery path,
+and survivorship-aware outcome. Those analogues can extend the Temporary Shock
+Score only when their source and actual availability date are preserved. Before
+broad production use, also add sector-specific fundamental scorecards and daily
+archived SEC/GDELT snapshots for strict historical backtesting.
 
 ## Financial disclaimer
 

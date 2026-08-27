@@ -1,0 +1,24 @@
+version: 1
+
+categories:
+  GEOPOLITICAL: [war, conflict, sanctions, geopolitical, border, invasion]
+  MACRO: [recession, slowdown, unemployment, gdp, macroeconomic]
+  INTEREST_RATES: [interest rate, rates, central bank, fed, ecb, yield]
+  INFLATION: [inflation, consumer prices, input costs]
+  COMMODITIES: [oil, gas, copper, commodity, commodities]
+  REGULATION: [regulator, regulation, regulatory, antitrust, ban]
+  LEGAL: [lawsuit, litigation, court, investigation, subpoena]
+  EARNINGS: [earnings, revenue miss, profit warning, results]
+  GUIDANCE: [guidance, outlook, forecast cut, lowered forecast]
+  COMPETITION: [competition, competitor, market share]
+  PRODUCT: [product, recall, defect, launch delay]
+  MANAGEMENT: [ceo, cfo, resignation, management, board]
+  OPERATIONAL: [outage, disruption, accident, fire, shutdown]
+  SUPPLY_CHAIN: [supply chain, shortage, supplier, logistics]
+  CYCLICAL: [cycle, cyclical, demand downturn, destocking]
+
+temporary_terms: [temporary, transitory, short-term, one-off, delay]
+resolution_terms: [resolved, reopened, restarted, restored, lifted, settlement, normalized]
+damage_terms: [impairment, margin pressure, cash burn, debt increase, guidance cut]
+structural_terms: [fraud, accounting restatement, permanent closure, market share loss]
+severe_structural_terms: [bankruptcy, insolvency, default, delisting, liquidation]

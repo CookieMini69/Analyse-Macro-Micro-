@@ -400,8 +400,225 @@ class ValuationAnalysisResult(BaseModel):
     error: str | None = None
 
 
+class MacroObservation(BaseModel):
+    """One FRED/ALFRED observation valid at an explicit real-time cutoff."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    series_key: str
+    series_id: str
+    series_title: str
+    value: float
+    observation_date: date
+    realtime_start: date
+    realtime_end: date
+    as_of: datetime
+    frequency: str | None = None
+    unit: str | None = None
+    seasonal_adjustment: str | None = None
+    source: str = "Federal Reserve Bank of St. Louis FRED/ALFRED"
+    source_url: str
+    retrieved_at: datetime
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+    status: DataStatus = DataStatus.AVAILABLE
+
+    @model_validator(mode="after")
+    def observation_respects_cutoff(self) -> "MacroObservation":
+        if self.observation_date > self.as_of.date():
+            raise ValueError("macro observation cannot postdate its point-in-time cutoff")
+        return self
+
+
+class MacroSeriesResult(BaseModel):
+    """Point-in-time history for one configured macro series."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    series_key: str
+    series_id: str
+    configured_name: str
+    as_of: datetime
+    status: DataStatus
+    data_quality: DataQuality
+    observations: list[MacroObservation] = Field(default_factory=list)
+    retrieved_at: datetime
+    source_url: str
+    from_cache: bool = False
+    error: str | None = None
+
+
+class MacroSeriesAnalysis(BaseModel):
+    """Latest level and raw changes; no causal interpretation is embedded."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    series_key: str
+    series_id: str
+    title: str
+    as_of: datetime
+    latest_value: float | None = None
+    latest_observation_date: date | None = None
+    unit: str | None = None
+    frequency: str | None = None
+    changes: dict[str, MetricValue] = Field(default_factory=dict)
+    status: DataStatus
+    data_quality: DataQuality
+    source_url: str
+    error: str | None = None
+
+
+class NewsArticle(BaseModel):
+    """Public article metadata indexed by GDELT; no copyrighted body is stored."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    title: str
+    url: str
+    source_domain: str | None = None
+    seen_at: datetime
+    language: str | None = None
+    source_country: str | None = None
+    query: str
+    index_source: str = "GDELT DOC 2.0 API"
+    index_source_url: str
+    retrieved_at: datetime
+    confidence: float = Field(default=0.70, ge=0.0, le=1.0)
+    status: DataStatus = DataStatus.AVAILABLE
+
+
+class NewsSearchResult(BaseModel):
+    """Cutoff-filtered news metadata for one security."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    ticker: str
+    company: str | None = None
+    query: str
+    window_start: datetime
+    as_of: datetime
+    status: DataStatus
+    data_quality: DataQuality
+    articles: list[NewsArticle] = Field(default_factory=list)
+    retrieved_at: datetime
+    source_url: str
+    from_cache: bool = False
+    error: str | None = None
+
+
+class ShockCategory(StrEnum):
+    GEOPOLITICAL = "GEOPOLITICAL"
+    MACRO = "MACRO"
+    INTEREST_RATES = "INTEREST_RATES"
+    INFLATION = "INFLATION"
+    COMMODITIES = "COMMODITIES"
+    REGULATION = "REGULATION"
+    LEGAL = "LEGAL"
+    EARNINGS = "EARNINGS"
+    GUIDANCE = "GUIDANCE"
+    COMPETITION = "COMPETITION"
+    PRODUCT = "PRODUCT"
+    MANAGEMENT = "MANAGEMENT"
+    OPERATIONAL = "OPERATIONAL"
+    SUPPLY_CHAIN = "SUPPLY_CHAIN"
+    CYCLICAL = "CYCLICAL"
+    UNKNOWN = "UNKNOWN"
+
+
+class ShockNature(StrEnum):
+    TEMPORARY = "TEMPORARY"
+    PROBABLY_TEMPORARY = "PROBABLY_TEMPORARY"
+    UNCERTAIN = "UNCERTAIN"
+    STRUCTURAL = "STRUCTURAL"
+    SEVERE_STRUCTURAL = "SEVERE_STRUCTURAL"
+
+
+class ShockEvidence(BaseModel):
+    """A matched headline with the exact terms used by the classifier."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    title: str
+    url: str
+    source_domain: str | None = None
+    seen_at: datetime
+    category: ShockCategory | None = None
+    matched_terms: list[str] = Field(default_factory=list)
+    temporary_terms: list[str] = Field(default_factory=list)
+    resolution_terms: list[str] = Field(default_factory=list)
+    damage_terms: list[str] = Field(default_factory=list)
+    structural_terms: list[str] = Field(default_factory=list)
+    severe_structural_terms: list[str] = Field(default_factory=list)
+
+
+class MacroAssociation(BaseModel):
+    """Arithmetic alignment with a configured exposure; explicitly not causality."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    series_key: str
+    series_id: str
+    coefficient: float
+    latest_value: float | None = None
+    change_horizon: str | None = None
+    observed_change: float | None = None
+    aligned_with_headwind: bool | None = None
+    rationale: str
+    assumption_date: date
+    assumption_source: str
+    interpretation: str = "configured sensitivity association; not proof of causality"
+    status: DataStatus
+    reason: str | None = None
+
+
+class TemporaryShockScoreComponent(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str
+    score: float | None = Field(default=None, ge=0.0, le=100.0)
+    weight: float = Field(ge=0.0, le=1.0)
+    observed: bool
+    evidence: dict[str, Any] = Field(default_factory=dict)
+    reason: str | None = None
+
+
+class TemporaryShockScore(BaseModel):
+    """Coverage-adjusted evidence score; never a normalization probability."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    score: float | None = Field(default=None, ge=0.0, le=100.0)
+    observed_score: float | None = Field(default=None, ge=0.0, le=100.0)
+    coverage: float = Field(ge=0.0, le=1.0)
+    status: DataStatus
+    methodology_version: str = "temporary-shock-v1"
+    components: dict[str, TemporaryShockScoreComponent] = Field(default_factory=dict)
+    reason: str | None = None
+
+
+class ShockAnalysisResult(BaseModel):
+    """Evidence-backed headline classification with conservative shock nature."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    ticker: str
+    company: str | None = None
+    as_of: datetime
+    category: ShockCategory
+    nature: ShockNature
+    status: DataStatus
+    data_quality: DataQuality
+    temporary_score: TemporaryShockScore
+    evidence: list[ShockEvidence] = Field(default_factory=list)
+    macro_associations: list[MacroAssociation] = Field(default_factory=list)
+    independent_source_count: int = Field(default=0, ge=0)
+    conclusion: str
+    retrieved_at: datetime
+    sources: list[dict[str, Any]] = Field(default_factory=list)
+    error: str | None = None
+
+
 class OpportunityCandidate(BaseModel):
-    """Price candidate enriched with point-in-time fundamentals and valuation."""
+    """Price candidate enriched with point-in-time fundamentals, value, and shock."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -465,6 +682,18 @@ class OpportunityCandidate(BaseModel):
     normalized_value_per_share: float | None = None
     reverse_dcf_implied_revenue_growth: float | None = None
     valuation_metrics: dict[str, Any] = Field(default_factory=dict)
+    shock_category: ShockCategory | None = None
+    shock_nature: ShockNature | None = None
+    temporary_shock_score: float | None = None
+    temporary_shock_observed_score: float | None = None
+    temporary_shock_coverage: float | None = None
+    shock_status: DataStatus | None = None
+    shock_data_quality: DataQuality | None = None
+    shock_as_of: datetime | None = None
+    shock_evidence_count: int | None = None
+    shock_independent_source_count: int | None = None
+    shock_conclusion: str | None = None
+    shock_metrics: dict[str, Any] = Field(default_factory=dict)
     decline_severity_score: float = Field(ge=0.0, le=100.0)
     is_candidate: bool
     candidate_reasons: list[str] = Field(default_factory=list)

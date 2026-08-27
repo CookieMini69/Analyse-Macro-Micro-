@@ -19,6 +19,11 @@ class PathsSettings(BaseModel):
     cache: Path
     sec_cache: Path | None = None
     valuation: Path | None = None
+    macro: Path | None = None
+    macro_exposures: Path | None = None
+    shock_taxonomy: Path | None = None
+    macro_cache: Path | None = None
+    news_cache: Path | None = None
     reports: Path
 
 
@@ -90,6 +95,52 @@ class ValuationSettings(BaseModel):
         return self
 
 
+class MacroSettings(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool = False
+    provider: str = "fred"
+    api_key_env: str = "FRED_API_KEY"
+    cache_ttl_hours: int = Field(default=24, ge=0)
+    timeout_seconds: int = Field(default=30, ge=1, le=120)
+    max_retries: int = Field(default=3, ge=0, le=8)
+    history_years: int = Field(default=2, ge=1, le=20)
+
+    @field_validator("provider")
+    @classmethod
+    def macro_provider_is_supported(cls, value: str) -> str:
+        if value.lower() != "fred":
+            raise ValueError("this phase currently supports only the 'fred' macro provider")
+        return value.lower()
+
+
+class NewsSettings(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool = False
+    provider: str = "gdelt"
+    cache_ttl_hours: int = Field(default=6, ge=0)
+    timeout_seconds: int = Field(default=30, ge=1, le=120)
+    max_retries: int = Field(default=3, ge=0, le=8)
+    lookback_days: int = Field(default=30, ge=1, le=90)
+    max_articles: int = Field(default=75, ge=1, le=250)
+
+    @field_validator("provider")
+    @classmethod
+    def news_provider_is_supported(cls, value: str) -> str:
+        if value.lower() != "gdelt":
+            raise ValueError("this phase currently supports only the 'gdelt' news provider")
+        return value.lower()
+
+
+class ShockSettings(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool = False
+    minimum_independent_sources: int = Field(default=2, ge=1, le=10)
+    minimum_score_coverage: float = Field(default=0.50, ge=0.0, le=1.0)
+
+
 class ExportSettings(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -118,6 +169,9 @@ class AppSettings(BaseModel):
     price: PriceSettings = Field(default_factory=PriceSettings)
     fundamentals: FundamentalsSettings = Field(default_factory=FundamentalsSettings)
     valuation: ValuationSettings = Field(default_factory=ValuationSettings)
+    macro: MacroSettings = Field(default_factory=MacroSettings)
+    news: NewsSettings = Field(default_factory=NewsSettings)
+    shock: ShockSettings = Field(default_factory=ShockSettings)
     screening: ScreeningSettings = Field(default_factory=ScreeningSettings)
     export: ExportSettings = Field(default_factory=ExportSettings)
     logging: LoggingSettings = Field(default_factory=LoggingSettings)

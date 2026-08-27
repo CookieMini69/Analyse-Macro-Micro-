@@ -1,0 +1,16 @@
+version: 1
+
+# Exposure hypotheses are deliberately empty. Add only dated, sourced relations.
+# coefficient > 0 means the issuer is configured to benefit when the series rises;
+# coefficient < 0 means the issuer is configured to be harmed when it rises.
+# This arithmetic association is context, never proof of causality.
+#
+# sector_exposures:
+#   Airlines:
+#     - series_key: wti_oil
+#       coefficient: -1.0
+#       rationale: Higher fuel prices may pressure operating costs.
+#       assumption_date: 2026-01-01
+#       source: Replace with a reviewable industry or company source.
+sector_exposures: {}
+security_exposures: {}
