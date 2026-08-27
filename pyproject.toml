@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ai-stock-opportunity-scanner"
+version = "0.5.0"
+description = "Traceable equity drawdown, point-in-time fundamental, and valuation scanner"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [{name = "AI Stock Opportunity Scanner contributors"}]
+dependencies = [
+  "pandas>=2.2,<3.0",
+  "numpy>=1.26,<3.0",
+  "pydantic>=2.7,<3.0",
+  "PyYAML>=6.0,<7.0",
+  "python-dotenv>=1.0,<2.0",
+  "requests>=2.32,<3.0",
+  "yfinance>=0.2.54,<2.0",
+  "openpyxl>=3.1,<4.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.2,<9.0"]
+
+[project.scripts]
+stock-scanner = "src.pipeline:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"

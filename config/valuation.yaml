@@ -1,0 +1,21 @@
+version: 1
+
+# DCF scenarios are intentionally empty by default. Add a block keyed by ticker
+# only after documenting real, reviewable assumptions. Every configured issuer
+# must provide bear/base/bull. The normalized scenario is optional.
+#
+# Schema for each scenario:
+#   projection_years
+#   revenue_growth                       scalar or one value per projection year
+#   operating_margin                     scalar or one value per projection year
+#   tax_rate                             scalar or one value per projection year
+#   depreciation_margin                  scalar or one value per projection year
+#   capex_margin                         scalar or one value per projection year
+#   working_capital_investment_margin    scalar or one value per projection year
+#   wacc
+#   terminal_growth
+#
+# Each security block also requires assumption_date and source. Financial
+# assumptions are never generated from missing data and no defaults are supplied.
+securities: {}
+

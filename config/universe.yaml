@@ -1,0 +1,37 @@
+version: 1
+
+# The V1 repository deliberately ships without a prefilled security list: doing so
+# avoids presenting a small, stale sample as a complete global universe. Add rows
+# here or point csv_path to a maintained point-in-time universe file.
+csv_path: null
+
+filters:
+  minimum_market_cap: null
+  allowed_countries:
+    - United States
+    - Canada
+    - United Kingdom
+    - France
+    - Germany
+    - Switzerland
+    - Netherlands
+    - Belgium
+    - Denmark
+    - Finland
+    - Iceland
+    - Norway
+    - Sweden
+    - Spain
+    - Italy
+    - Australia
+    - Japan
+    - Hong Kong
+    - Singapore
+    - South Africa
+
+# Supported fields:
+# ticker (required), cik, company, country, sector, exchange, currency,
+# benchmark, sector_benchmark, market_cap, market_cap_currency,
+# market_cap_source, market_cap_source_url, market_cap_observation_date,
+# market_cap_retrieved_at, market_cap_confidence.
+securities: []

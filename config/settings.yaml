@@ -1,0 +1,54 @@
+project_root: ".."
+
+paths:
+  universe: "config/universe.yaml"
+  raw_data: "data/raw"
+  processed_data: "data/processed"
+  cache: "data/cache/prices"
+  sec_cache: "data/cache/sec"
+  valuation: "config/valuation.yaml"
+  reports: "reports"
+
+price:
+  provider: "yahoo"
+  history_period: "max"
+  cache_ttl_hours: 18
+  max_workers: 4
+  confidence: 0.80
+
+fundamentals:
+  enabled: true
+  provider: "sec_edgar"
+  user_agent_env: "SEC_USER_AGENT"
+  cache_ttl_hours: 24
+  requests_per_second: 5.0
+  timeout_seconds: 30
+  max_retries: 3
+  history_years: 5
+  as_of: null
+  minimum_score_coverage: 0.50
+
+valuation:
+  enabled: true
+  historical_minimum_points: 3
+  sector_minimum_peers: 3
+  minimum_score_coverage: 0.50
+  reverse_growth_lower_bound: -0.50
+  reverse_growth_upper_bound: 0.50
+
+screening:
+  drawdown_52w_threshold: -0.20
+  drawdown_3m_threshold: -0.15
+  drawdown_6m_threshold: -0.20
+  relative_sector_threshold: -0.10
+  minimum_observations: 60
+  rsi_period: 14
+  annualization_days: 252
+
+export:
+  csv: true
+  excel: true
+  filename_prefix: "stock_opportunity_scan"
+
+logging:
+  level: "INFO"
