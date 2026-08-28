@@ -624,8 +624,83 @@ class ShockAnalysisResult(BaseModel):
     error: str | None = None
 
 
+class HistoricalContextSnapshot(BaseModel):
+    """Metrics reconstructed only from information public by a past cutoff."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    as_of: datetime
+    period_end: date | None = None
+    status: DataStatus
+    metrics: dict[str, float | None] = Field(default_factory=dict)
+    metric_metadata: dict[str, dict[str, Any]] = Field(default_factory=dict)
+    source_accessions: list[str] = Field(default_factory=list)
+    source_urls: list[str] = Field(default_factory=list)
+    reason: str | None = None
+
+
+class HistoricalEpisode(BaseModel):
+    """One peak-to-trough drawdown and its observable recovery path."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    peak_date: date
+    peak_price: float = Field(gt=0.0)
+    trough_date: date
+    trough_price: float = Field(gt=0.0)
+    recovery_date: date | None = None
+    maximum_drawdown: float = Field(ge=-1.0, le=0.0)
+    decline_duration_days: int = Field(ge=0)
+    recovery_duration_days: int | None = Field(default=None, ge=0)
+    total_recovery_days: int | None = Field(default=None, ge=0)
+    subsequent_returns: dict[str, MetricValue] = Field(default_factory=dict)
+    fundamentals: HistoricalContextSnapshot | None = None
+    valuation: HistoricalContextSnapshot | None = None
+
+    @model_validator(mode="after")
+    def validate_episode_dates(self) -> "HistoricalEpisode":
+        if self.trough_date < self.peak_date:
+            raise ValueError("trough_date cannot precede peak_date")
+        if self.recovery_date is not None and self.recovery_date < self.trough_date:
+            raise ValueError("recovery_date cannot precede trough_date")
+        return self
+
+
+class HistoricalAnalogue(BaseModel):
+    """A completed past episode ranked against the current drawdown."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    episode: HistoricalEpisode
+    similarity_score: float = Field(ge=0.0, le=100.0)
+    similarity_coverage: float = Field(ge=0.0, le=1.0)
+    similarity_components: dict[str, MetricValue] = Field(default_factory=dict)
+
+
+class HistoricalAnalogueResult(BaseModel):
+    """Point-in-time historical comparison; similarity is not a probability."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    ticker: str
+    company: str | None = None
+    as_of: datetime
+    status: DataStatus
+    data_quality: DataQuality
+    current_episode: HistoricalEpisode | None = None
+    analogues: list[HistoricalAnalogue] = Field(default_factory=list)
+    detected_completed_episode_count: int = Field(default=0, ge=0)
+    best_similarity_score: float | None = Field(default=None, ge=0.0, le=100.0)
+    methodology_version: str = "historical-analogues-v1"
+    similarity_weights: dict[str, float] = Field(default_factory=dict)
+    source: str
+    source_url: str | None = None
+    retrieved_at: datetime
+    error: str | None = None
+
+
 class OpportunityCandidate(BaseModel):
-    """Price candidate enriched with point-in-time fundamentals, value, and shock."""
+    """Price candidate enriched through the historical-analogue phase."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -708,6 +783,12 @@ class OpportunityCandidate(BaseModel):
     shock_missing_criteria: list[str] = Field(default_factory=list)
     shock_conclusion: str | None = None
     shock_metrics: dict[str, Any] = Field(default_factory=dict)
+    historical_status: DataStatus | None = None
+    historical_data_quality: DataQuality | None = None
+    historical_as_of: datetime | None = None
+    historical_analogue_count: int | None = None
+    best_historical_similarity: float | None = None
+    historical_metrics: dict[str, Any] = Field(default_factory=dict)
     decline_severity_score: float = Field(ge=0.0, le=100.0)
     is_candidate: bool
     candidate_reasons: list[str] = Field(default_factory=list)

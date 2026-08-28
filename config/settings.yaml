@@ -64,6 +64,13 @@ shock:
   minimum_independent_sources: 2
   minimum_score_coverage: 0.50
 
+historical:
+  enabled: true
+  minimum_drawdown: -0.15
+  recovery_tolerance: 0.0
+  maximum_analogues: 5
+  fundamental_minimum_score_coverage: 0.0
+
 screening:
   drawdown_52w_threshold: -0.20
   drawdown_3m_threshold: -0.15

@@ -14,6 +14,7 @@ from pathlib import Path
 import pandas as pd
 
 from src.analysis.fundamentals import analyze_fundamentals
+from src.analysis.historical import analyze_historical_analogues
 from src.analysis.macro import analyze_macro_series
 from src.analysis.shock import analyze_shock
 from src.analysis.valuation import analyze_valuations
@@ -56,6 +57,7 @@ from src.models import (
     DataQuality,
     DataStatus,
     FundamentalAnalysisResult,
+    HistoricalAnalogueResult,
     MacroSeriesAnalysis,
     MacroSeriesResult,
     NewsSearchResult,
@@ -66,6 +68,7 @@ from src.models import (
 )
 from src.reporting.export import export_scan_results
 from src.reporting.fundamentals import persist_fundamental_results
+from src.reporting.historical import persist_historical_results
 from src.reporting.macro_shock import persist_macro_results, persist_shock_results
 from src.reporting.valuation import persist_valuation_results
 from src.screening.scanner import build_scan_result, rank_results
@@ -94,6 +97,9 @@ class PipelineResult:
     shock_results: dict[str, ShockAnalysisResult]
     shock_exported_files: list[Path]
     shock_errors: dict[str, str]
+    historical_results: dict[str, HistoricalAnalogueResult]
+    historical_exported_files: list[Path]
+    historical_errors: dict[str, str]
 
 
 def _configure_logging(level: str) -> None:
@@ -556,6 +562,47 @@ def _enrich_with_shock(
     return OpportunityCandidate.model_validate({**result.model_dump(), **updates})
 
 
+def _enrich_with_historical(
+    result: OpportunityCandidate,
+    historical: HistoricalAnalogueResult | None,
+) -> OpportunityCandidate:
+    if historical is None:
+        return result
+    updates = {
+        "historical_status": historical.status,
+        "historical_data_quality": historical.data_quality,
+        "historical_as_of": historical.as_of,
+        "historical_analogue_count": len(historical.analogues),
+        "best_historical_similarity": historical.best_similarity_score,
+        "historical_metrics": {
+            "methodology_version": historical.methodology_version,
+            "similarity_weights": historical.similarity_weights,
+            "detected_completed_episode_count": (
+                historical.detected_completed_episode_count
+            ),
+            "current_episode": (
+                historical.current_episode.model_dump(mode="json")
+                if historical.current_episode is not None
+                else None
+            ),
+            "analogues": [
+                item.model_dump(mode="json") for item in historical.analogues
+            ],
+            "error": historical.error,
+        },
+        "sources": result.sources
+        + [
+            {
+                "name": historical.source,
+                "url": historical.source_url,
+                "status": historical.status.value,
+                "role": "historical_analogue_prices",
+            }
+        ],
+    }
+    return OpportunityCandidate.model_validate({**result.model_dump(), **updates})
+
+
 def run_pipeline(
     settings: AppSettings | str | Path = "config/settings.yaml",
     *,
@@ -788,6 +835,48 @@ def run_pipeline(
         ]
         LOGGER.info("%d candidate shocks analyzed", len(shock_results))
 
+    historical_results: dict[str, HistoricalAnalogueResult] = {}
+    historical_exported: list[Path] = []
+    if app_settings.historical.enabled:
+        candidate_tickers = {
+            result.ticker.upper() for result in ranked if result.is_candidate
+        }
+        for security in securities:
+            ticker = security.ticker.upper()
+            if ticker not in candidate_tickers or ticker not in price_results:
+                continue
+            historical_results[ticker] = analyze_historical_analogues(
+                security,
+                price_results[ticker],
+                app_settings.historical,
+                as_of=cutoff,
+                fundamental=fundamental_results.get(ticker),
+                valuation=valuation_results.get(ticker),
+            )
+        if historical_results:
+            historical_exported = persist_historical_results(
+                list(historical_results.values()),
+                app_settings.paths.processed_data,
+                app_settings.paths.reports,
+            )
+        ranked = [
+            _enrich_with_historical(
+                result, historical_results.get(result.ticker.upper())
+            )
+            for result in ranked
+        ]
+        historical_available = sum(
+            result.status == DataStatus.AVAILABLE
+            for result in historical_results.values()
+        )
+        LOGGER.info(
+            "%d/%d candidates have completed historical analogues",
+            historical_available,
+            len(historical_results),
+        )
+    else:
+        historical_available = 0
+
     LOGGER.info("Exporting scan results...")
     exported = export_scan_results(
         ranked,
@@ -808,6 +897,8 @@ def run_pipeline(
             "macro_available_count": macro_available,
             "news_result_count": len(news_results),
             "shock_result_count": len(shock_results),
+            "historical_result_count": len(historical_results),
+            "historical_available_count": historical_available,
             "pipeline_as_of": cutoff.isoformat(),
             "fundamental_as_of": (
                 cutoff.isoformat() if app_settings.fundamentals.enabled else None
@@ -842,6 +933,11 @@ def run_pipeline(
         for ticker, result in shock_results.items()
         if result.error is not None
     }
+    historical_errors = {
+        ticker: result.error
+        for ticker, result in historical_results.items()
+        if result.error is not None
+    }
     return PipelineResult(
         results=ranked,
         exported_files=exported,
@@ -860,6 +956,9 @@ def run_pipeline(
         shock_results=shock_results,
         shock_exported_files=shock_exported,
         shock_errors=shock_errors,
+        historical_results=historical_results,
+        historical_exported_files=historical_exported,
+        historical_errors=historical_errors,
     )
 
 
@@ -867,7 +966,7 @@ def build_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
             "Scan an explicit equity universe for price declines and "
-            "point-in-time fundamentals, valuation, macro vintages, and shocks."
+            "point-in-time fundamentals, valuation, shocks, and historical analogues."
         )
     )
     parser.add_argument(

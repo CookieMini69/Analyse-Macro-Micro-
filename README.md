@@ -1,16 +1,17 @@
 # AI Stock Opportunity Scanner
 
-Version `0.6.1` implements the price/drawdown scanner, a **point-in-time
+Version `0.7.0` implements the price/drawdown scanner, a **point-in-time
 fundamental engine for SEC-reporting US issuers**, valuation, point-in-time
 FRED/ALFRED macro vintages, public GDELT news metadata, and conservative shock
-detection. It preserves the actual availability cutoff of SEC filings and macro
+detection, plus same-security historical drawdown analogues. It preserves the
+actual availability cutoff of SEC filings and macro
 vintages, calculates current/historical/peer multiples, and can run sourced
 bear/base/bull, normalized, and reverse DCFs. Fundamental Quality, Valuation,
 and Temporary Shock scores are coverage-adjusted.
 
 It still does **not** conclude that a decline is an investment opportunity or
-that a shock is temporary. Historical analogues, temporal target scenarios, AI
-analysis, and backtesting are reserved for later phases. DCF and macro-exposure
+that a shock is temporary. Temporal target scenarios, AI analysis, and
+backtesting are reserved for later phases. DCF and macro-exposure
 output remain null until the user adds real, dated, reviewable assumptions.
 
 ## Core data rule
@@ -42,12 +43,11 @@ python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
 ```
 
-Before downloading SEC or FRED data, copy `.env.example` to `.env`, replace the
-SEC placeholder with your real organization/name and contact email, and add a
-personal FRED API key:
+The local `.env` is already populated with the project's identifying SEC
+User-Agent. To enable macro data, add your personal FRED API key:
 
 ```dotenv
-SEC_USER_AGENT=Your Real Organization contact@your-domain.example
+SEC_USER_AGENT=AI Stock Opportunity Scanner your.email@example.com
 FRED_API_KEY=your_32_character_lowercase_key
 ```
 
@@ -59,9 +59,10 @@ or reports. GDELT and Yahoo require no key.
 
 ## Configure the universe
 
-`config/universe.yaml` intentionally starts with an empty security list. This
-prevents a small, stale sample from being mistaken for a current global universe.
-You can add explicit entries:
+`config/universe.yaml` ships with a 15-security US pilot universe. Its CIKs,
+issuer names, and exchanges were checked against the official SEC ticker mapping
+on 2026-08-28. It is deliberately labeled as a pilot rather than a complete or
+survivorship-free market universe. You can edit or replace its explicit entries:
 
 ```yaml
 securities:
@@ -179,15 +180,13 @@ After editable installation, the equivalent command is:
 stock-scanner
 ```
 
-The shipped universe is intentionally empty. A run cannot discover investment
-candidates until `config/universe.yaml` contains securities or points to a
-maintained CSV. Missing `SEC_USER_AGENT` or `FRED_API_KEY` does not fabricate
+Missing `SEC_USER_AGENT` or `FRED_API_KEY` does not fabricate
 data or abort unrelated stages: the corresponding results are exported as
 `data_unavailable`.
 
 ## Current interface
 
-Through Phase 5, the supported user interface is the generated Excel workbook,
+Through Phase 6, the supported user interface is the generated Excel workbook,
 not Streamlit. Open the newest workbook after a run with:
 
 ```powershell
@@ -201,7 +200,7 @@ explicit Phase 11 boundary and is not a runnable dashboard yet; launching it
 would falsely imply that the later scoring, backtest, scenario, and UI phases
 already exist.
 
-## Decision flow through Phase 5
+## Decision flow through Phase 6
 
 The current strategy is a sequence of evidence filters, not a BUY/SELL model:
 
@@ -217,9 +216,12 @@ The current strategy is a sequence of evidence filters, not a BUY/SELL model:
 6. Retrieve GDELT metadata only for decline candidates, match the configured
    shock taxonomy, require independent-source corroboration, and attach any
    dated macro-exposure assumptions.
-7. Export every security and its audit trail. Phase 5 ranks decline severity;
+7. Export every security and its audit trail. The pipeline ranks decline severity;
    it does not yet calculate the final Opportunity Score or an investment
    verdict.
+8. For every decline candidate, detect prior completed peak–trough–recovery
+   episodes on the same security, reconstruct SEC fundamentals and valuation
+   multiples that were public at each episode peak, and rank comparable paths.
 
 Outputs are timestamped under `reports/`:
 
@@ -236,6 +238,41 @@ Outputs are timestamped under `reports/`:
   `data/processed/macro/`;
 - `shock_analysis_*.csv`, candidate news-metadata JSON, and auditable shock JSON
   under `data/processed/shocks/`.
+- `historical_analogues_*.csv` with current versus prior drawdown paths, recovery
+  times, subsequent returns, similarity coverage, and point-in-time context;
+  full audit JSON lives under `data/processed/historical/`.
+
+## Historical analogue methodology
+
+Phase 6 scans adjusted daily closes (falling back to close when adjusted close
+is unavailable) for threshold-crossing drawdown cycles. An episode begins at the
+last running peak, records its lowest subsequent close, and is complete only when
+the price regains the prior peak. The default threshold is -15%; both it and the
+recovery tolerance are configurable under `historical`.
+
+Only completed episodes preceding the active drawdown can become analogues. For
+each one, the engine reports maximum drawdown, calendar-day decline duration,
+trough-to-recovery time, total peak-to-recovery time, and 3/6/12/24-month returns
+from the trough. A return is null when the requested horizon extends beyond the
+shared `as_of` cutoff.
+
+At every episode peak, SEC observations are re-filtered on their actual
+`available_at` timestamp and the fundamental engine is rerun from that subset.
+The historical snapshot therefore contains only annual metrics that an analyst
+could have known then. Historical P/E, EV/EBITDA, and P/FCF points are likewise
+eligible only when both filing availability and the associated price date are no
+later than the episode peak. Accessions, formulas, period ends, availability
+timestamps, and source URLs remain in the JSON audit trail.
+
+Similarity is a 0–100 descriptive index, not a return probability. It combines
+maximum drawdown (35%), decline duration (20%), comparable fundamental ratios
+(25%), and positive valuation multiples (20%). Missing fundamental or valuation
+context is not imputed: the score uses the available components and separately
+exports `similarity_coverage`. With price-only evidence, coverage is 55%.
+Analogues are same-security price/fundamental comparisons; the engine does not
+claim that their causal shock matches COVID, 2008, inflation, energy, or a
+geopolitical event. Causal event labeling requires dated primary evidence and is
+not fabricated from a price path.
 
 Normalized daily observations are cached under `data/cache/prices/` and persisted
 under `data/processed/prices/`. Raw SEC API responses are cached under
@@ -468,7 +505,7 @@ Headline keyword matches are triage signals and require human verification.
 The shock result also exposes `specification_criteria_coverage`,
 `criterion_statuses`, and `missing_criteria` for the ten Temporary Shock
 criteria in the master specification. This coverage is deliberately separate
-from the Phase 5 score coverage. Historical duration/precedents, quantified
+from the Phase 5 score coverage. Causal shock duration/precedents, quantified
 revenue/margin/FCF/balance-sheet impacts, and analyst expectations remain
 `data_unavailable` until later point-in-time engines supply real evidence.
 
@@ -529,12 +566,12 @@ in user-facing scan output.
 ```text
 config/                 validated YAML settings and universe
 data/                   ignored raw/processed/cache/database runtime areas
-src/models.py           provenance, fundamentals, valuation, macro, and shock models
+src/models.py           provenance, analysis, shock, and historical models
 src/data/               Yahoo, SEC EDGAR, FRED/ALFRED, and GDELT clients/caches
 src/screening/          universe, returns/drawdowns, momentum, filter/ranking
-src/reporting/          auditable price/fundamental/valuation/macro/shock exports
+src/reporting/          auditable price/fundamental/valuation/macro/shock/analogue exports
 src/pipeline.py         integrated point-in-time scanner CLI
-src/analysis/           fundamental, valuation, macro, and shock calculations
+src/analysis/           fundamental, valuation, macro, shock, and analogue calculations
 src/forecasting/        assumption-driven DCF and reverse DCF
 src/scoring/            reserved opportunity/risk scoring boundary
 src/backtest/           reserved point-in-time backtest boundary
@@ -592,23 +629,25 @@ The detailed checked/partial/deferred audit is maintained in
   from Phase 3 fundamentals, macro inputs, and public headline metadata. The
   remaining specification criteria—historical shock duration/analogues,
   detailed guidance and analyst expectations—stay missing rather than imputed.
-- No FX conversion, historical analogues, temporal targets, critical verdict,
+- No FX conversion, causal event catalogue, temporal targets, critical verdict,
   dashboard, alerts, or backtest exists yet.
+- Phase 6 compares episodes only within the same security. It does not yet search
+  other companies or attach a causal crisis label. Old episodes can have price
+  comparisons while fundamental/valuation context stays null because the live
+  SEC history window defaults to five years.
 - A severe decline can be entirely rational. Ranking does not establish
   undervaluation or temporary mispricing.
 
 ## Next recommended phase
 
-Phase 6 should implement point-in-time historical analogues: comparable company
-and market shocks, their documented duration, fundamental damage, recovery path,
-and survivorship-aware outcome. Those analogues can extend the Temporary Shock
-Score only when their source and actual availability date are preserved. Before
-broad production use, also add sector-specific fundamental scorecards and daily
+Phase 7 should implement dated bear/base/bull operational and valuation scenarios
+without converting historical similarity into a probability. Before broad
+production use, also add sector-specific fundamental scorecards and daily
 archived SEC/GDELT snapshots for strict historical backtesting.
 
 ## Backtesting status and required methodology
 
-Backtesting is Phase 9 and is not implemented in version 0.6.1. No current score
+Backtesting is Phase 9 and is not implemented in version 0.7.0. No current score
 should therefore be treated as statistically validated. The future engine must
 use point-in-time universe membership, unrevised provider snapshots, actual
 filing/news availability, delisted securities, region-appropriate benchmarks,

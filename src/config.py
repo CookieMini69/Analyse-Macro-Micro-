@@ -141,6 +141,20 @@ class ShockSettings(BaseModel):
     minimum_score_coverage: float = Field(default=0.50, ge=0.0, le=1.0)
 
 
+class HistoricalSettings(BaseModel):
+    """Detection rules for point-in-time, same-security drawdown analogues."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool = True
+    minimum_drawdown: float = Field(default=-0.15, ge=-1.0, lt=0.0)
+    recovery_tolerance: float = Field(default=0.0, ge=0.0, le=0.10)
+    maximum_analogues: int = Field(default=5, ge=1, le=25)
+    fundamental_minimum_score_coverage: float = Field(
+        default=0.0, ge=0.0, le=1.0
+    )
+
+
 class ExportSettings(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -172,6 +186,7 @@ class AppSettings(BaseModel):
     macro: MacroSettings = Field(default_factory=MacroSettings)
     news: NewsSettings = Field(default_factory=NewsSettings)
     shock: ShockSettings = Field(default_factory=ShockSettings)
+    historical: HistoricalSettings = Field(default_factory=HistoricalSettings)
     screening: ScreeningSettings = Field(default_factory=ScreeningSettings)
     export: ExportSettings = Field(default_factory=ExportSettings)
     logging: LoggingSettings = Field(default_factory=LoggingSettings)

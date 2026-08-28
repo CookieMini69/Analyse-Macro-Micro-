@@ -95,6 +95,12 @@ EXPORT_COLUMNS = [
     "shock_missing_criteria",
     "shock_conclusion",
     "shock_metrics",
+    "historical_status",
+    "historical_data_quality",
+    "historical_as_of",
+    "historical_analogue_count",
+    "best_historical_similarity",
+    "historical_metrics",
     "decline_severity_score",
     "is_candidate",
     "candidate_reasons",
@@ -141,6 +147,9 @@ def results_to_frame(results: Iterable[OpportunityCandidate]) -> pd.DataFrame:
         row["shock_metrics"] = json.dumps(
             row["shock_metrics"], ensure_ascii=False, sort_keys=True
         )
+        row["historical_metrics"] = json.dumps(
+            row["historical_metrics"], ensure_ascii=False, sort_keys=True
+        )
         row["shock_missing_criteria"] = json.dumps(
             row["shock_missing_criteria"], ensure_ascii=False
         )
@@ -181,6 +190,7 @@ def _style_sheet(sheet: Worksheet) -> None:
         "normalized_value_per_share",
         "valuation_score",
         "temporary_shock_score",
+        "best_historical_similarity",
         "beta",
         "decline_severity_score",
         "rsi",
@@ -198,6 +208,7 @@ def _style_sheet(sheet: Worksheet) -> None:
             "metric_statuses",
             "shock_conclusion",
             "shock_metrics",
+            "historical_metrics",
             "shock_missing_criteria",
             "sources",
             "valuation_metrics",

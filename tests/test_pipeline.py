@@ -176,6 +176,8 @@ def test_offline_pipeline_runs_end_to_end(tmp_path: Path) -> None:
     assert output.results[0].is_candidate is True
     assert len(output.exported_files) == 2
     assert (tmp_path / "processed" / "prices" / "TEST.csv").exists()
+    assert "TEST" in output.historical_results
+    assert len(output.historical_exported_files) == 2
 
 
 def test_provider_exception_is_exported_as_unavailable_row(tmp_path: Path) -> None:

@@ -1,8 +1,13 @@
 version: 1
 
-# The V1 repository deliberately ships without a prefilled security list: doing so
-# avoids presenting a small, stale sample as a complete global universe. Add rows
-# here or point csv_path to a maintained point-in-time universe file.
+# Univers pilote, pas indice exhaustif. Tickers, noms, CIK et places de cotation
+# verifies le 2026-08-28 dans le fichier officiel SEC
+# https://www.sec.gov/files/company_tickers_exchange.json.
+# Les secteurs sont des classifications operationnelles configurees au
+# 2026-08-28, non fournies par ce fichier SEC; conserver des snapshots dates
+# avant tout futur backtest d'appartenance sectorielle.
+# Les capitalisations sont volontairement absentes : elles doivent etre datees et
+# sourcees, et ne sont jamais inventees par le scanner.
 csv_path: null
 
 filters:
@@ -34,4 +39,124 @@ filters:
 # benchmark, sector_benchmark, market_cap, market_cap_currency,
 # market_cap_source, market_cap_source_url, market_cap_observation_date,
 # market_cap_retrieved_at, market_cap_confidence.
-securities: []
+securities:
+  - ticker: AAPL
+    cik: "320193"
+    company: Apple Inc.
+    country: United States
+    sector: Information Technology
+    exchange: Nasdaq
+    currency: USD
+    benchmark: ^GSPC
+  - ticker: MSFT
+    cik: "789019"
+    company: Microsoft Corp.
+    country: United States
+    sector: Information Technology
+    exchange: Nasdaq
+    currency: USD
+    benchmark: ^GSPC
+  - ticker: GOOGL
+    cik: "1652044"
+    company: Alphabet Inc.
+    country: United States
+    sector: Communication Services
+    exchange: Nasdaq
+    currency: USD
+    benchmark: ^GSPC
+  - ticker: AMZN
+    cik: "1018724"
+    company: Amazon.com Inc.
+    country: United States
+    sector: Consumer Discretionary
+    exchange: Nasdaq
+    currency: USD
+    benchmark: ^GSPC
+  - ticker: META
+    cik: "1326801"
+    company: Meta Platforms Inc.
+    country: United States
+    sector: Communication Services
+    exchange: Nasdaq
+    currency: USD
+    benchmark: ^GSPC
+  - ticker: NVDA
+    cik: "1045810"
+    company: NVIDIA Corp.
+    country: United States
+    sector: Information Technology
+    exchange: Nasdaq
+    currency: USD
+    benchmark: ^GSPC
+  - ticker: JPM
+    cik: "19617"
+    company: JPMorgan Chase & Co.
+    country: United States
+    sector: Financials
+    exchange: NYSE
+    currency: USD
+    benchmark: ^GSPC
+  - ticker: JNJ
+    cik: "200406"
+    company: Johnson & Johnson
+    country: United States
+    sector: Health Care
+    exchange: NYSE
+    currency: USD
+    benchmark: ^GSPC
+  - ticker: WMT
+    cik: "104169"
+    company: Walmart Inc.
+    country: United States
+    sector: Consumer Staples
+    exchange: Nasdaq
+    currency: USD
+    benchmark: ^GSPC
+  - ticker: CAT
+    cik: "18230"
+    company: Caterpillar Inc.
+    country: United States
+    sector: Industrials
+    exchange: NYSE
+    currency: USD
+    benchmark: ^GSPC
+  - ticker: NEE
+    cik: "753308"
+    company: NextEra Energy Inc.
+    country: United States
+    sector: Utilities
+    exchange: NYSE
+    currency: USD
+    benchmark: ^GSPC
+  - ticker: BA
+    cik: "12927"
+    company: Boeing Co.
+    country: United States
+    sector: Industrials
+    exchange: NYSE
+    currency: USD
+    benchmark: ^GSPC
+  - ticker: DIS
+    cik: "1744489"
+    company: Walt Disney Co.
+    country: United States
+    sector: Communication Services
+    exchange: NYSE
+    currency: USD
+    benchmark: ^GSPC
+  - ticker: CVX
+    cik: "93410"
+    company: Chevron Corp.
+    country: United States
+    sector: Energy
+    exchange: NYSE
+    currency: USD
+    benchmark: ^GSPC
+  - ticker: KO
+    cik: "21344"
+    company: Coca-Cola Co.
+    country: United States
+    sector: Consumer Staples
+    exchange: NYSE
+    currency: USD
+    benchmark: ^GSPC
