@@ -2,6 +2,7 @@ from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 
 from src.config import load_settings
 from src.data.sources import PriceHistoryResult
@@ -185,6 +186,42 @@ def test_provider_exception_is_exported_as_unavailable_row(tmp_path: Path) -> No
     assert output.results[0].current_price is None
     assert output.results[0].is_candidate is False
     assert "TEST" in output.download_errors
+
+
+def test_historical_cutoff_filters_price_scan_and_persisted_history(
+    tmp_path: Path,
+) -> None:
+    write_configuration(tmp_path)
+    settings = load_settings(tmp_path / "settings.yaml")
+    cutoff = datetime(2024, 6, 28, 12, 0, tzinfo=UTC)
+    settings.fundamentals.as_of = cutoff
+
+    output = run_pipeline(settings, price_source=FakePriceSource())
+
+    result = output.results[0]
+    assert result.observation_date is not None
+    assert result.observation_date < cutoff.date()
+    assert result.current_price == 100.0
+    assert result.is_candidate is False
+    persisted = pd.read_csv(tmp_path / "processed" / "prices" / "TEST.csv")
+    assert pd.to_datetime(persisted["observation_date"]).dt.date.max() < cutoff.date()
+
+
+def test_cutoff_before_price_history_is_explicitly_unavailable(tmp_path: Path) -> None:
+    write_configuration(tmp_path)
+    settings = load_settings(tmp_path / "settings.yaml")
+
+    output = run_pipeline(
+        settings,
+        price_source=FakePriceSource(),
+        fundamentals_as_of="2020-01-01",
+    )
+
+    result = output.results[0]
+    assert result.current_price is None
+    assert result.is_candidate is False
+    assert "point-in-time cutoff" in output.download_errors["TEST"]
+    assert not (tmp_path / "processed" / "prices" / "TEST.csv").exists()
 
 
 def test_pipeline_enriches_scan_with_point_in_time_fundamentals(tmp_path: Path) -> None:

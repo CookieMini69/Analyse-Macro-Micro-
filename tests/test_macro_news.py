@@ -6,7 +6,7 @@ from src.analysis.macro import analyze_macro_series
 from src.data.macro import FredMacroError, FredMacroSource
 from src.data.news import GdeltNewsSource
 from src.macro_config import MacroSeriesDefinition
-from src.models import DataStatus, Security
+from src.models import DataStatus, MacroObservation, Security
 
 
 class FakeResponse:
@@ -63,6 +63,18 @@ def test_fred_uses_real_time_cutoff_and_never_persists_api_key(tmp_path) -> None
                 "realtime_start": "2025-03-01",
                 "realtime_end": "9999-12-31",
             },
+            {
+                "date": "2024-12-31",
+                "value": "888",
+                "realtime_start": "2025-03-02",
+                "realtime_end": "9999-12-31",
+            },
+            {
+                "date": "2024-12-30",
+                "value": "777",
+                "realtime_start": "2024-01-01",
+                "realtime_end": "2025-02-28",
+            },
         ]
     }
     session = FakeSession([metadata, observations])
@@ -105,6 +117,22 @@ def test_fred_uses_real_time_cutoff_and_never_persists_api_key(tmp_path) -> None
 def test_fred_rejects_placeholder_or_malformed_keys(tmp_path) -> None:
     with pytest.raises(FredMacroError):
         FredMacroSource(tmp_path, api_key="demo")
+
+
+def test_macro_model_rejects_a_vintage_unavailable_at_cutoff() -> None:
+    with pytest.raises(ValueError, match="availability period"):
+        MacroObservation(
+            series_key="synthetic",
+            series_id="SYNTH",
+            series_title="Synthetic",
+            value=1.0,
+            observation_date=datetime(2024, 1, 1).date(),
+            realtime_start=datetime(2025, 3, 2).date(),
+            realtime_end=datetime(9999, 12, 31).date(),
+            as_of=datetime(2025, 3, 1, tzinfo=UTC),
+            source_url="https://fred.stlouisfed.org/series/SYNTH",
+            retrieved_at=datetime(2025, 3, 1, tzinfo=UTC),
+        )
 
 
 def test_gdelt_keeps_only_cutoff_filtered_public_metadata(tmp_path) -> None:

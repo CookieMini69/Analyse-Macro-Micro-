@@ -1,6 +1,6 @@
 # AI Stock Opportunity Scanner
 
-Version `0.6.0` implements the price/drawdown scanner, a **point-in-time
+Version `0.6.1` implements the price/drawdown scanner, a **point-in-time
 fundamental engine for SEC-reporting US issuers**, valuation, point-in-time
 FRED/ALFRED macro vintages, public GDELT news metadata, and conservative shock
 detection. It preserves the actual availability cutoff of SEC filings and macro
@@ -164,14 +164,62 @@ python -m src.pipeline --config config/settings.yaml --universe path\to\universe
 Historical point-in-time cutoff:
 
 ```powershell
-python -m src.pipeline --as-of 2023-03-15T21:00:00Z
+python -m src.pipeline --as-of 2023-03-15
 ```
+
+The cutoff is shared by prices, SEC facts, valuation, FRED/ALFRED vintages, and
+news metadata. A date means end-of-day UTC. For an explicit intraday timestamp,
+the daily price scanner conservatively stops at the preceding calendar date,
+because Yahoo daily bars do not provide a reliable public-availability time.
+This avoids using a same-day close that may not yet have existed.
 
 After editable installation, the equivalent command is:
 
 ```powershell
 stock-scanner
 ```
+
+The shipped universe is intentionally empty. A run cannot discover investment
+candidates until `config/universe.yaml` contains securities or points to a
+maintained CSV. Missing `SEC_USER_AGENT` or `FRED_API_KEY` does not fabricate
+data or abort unrelated stages: the corresponding results are exported as
+`data_unavailable`.
+
+## Current interface
+
+Through Phase 5, the supported user interface is the generated Excel workbook,
+not Streamlit. Open the newest workbook after a run with:
+
+```powershell
+$report = Get-ChildItem reports\*.xlsx | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+Invoke-Item $report.FullName
+```
+
+The workbook contains `Candidates`, `All Results`, and `Run Metadata`. Detailed
+audit trails are the JSON/CSV files described below. `dashboard/app.py` is an
+explicit Phase 11 boundary and is not a runnable dashboard yet; launching it
+would falsely imply that the later scoring, backtest, scenario, and UI phases
+already exist.
+
+## Decision flow through Phase 5
+
+The current strategy is a sequence of evidence filters, not a BUY/SELL model:
+
+1. Load an explicit, dated universe and establish one shared `as_of` cutoff.
+2. Retrieve SEC facts and FRED/ALFRED vintages that were available at that time.
+3. Download price histories, remove every daily bar ineligible at the cutoff,
+   and calculate drawdowns, returns, momentum, volatility, beta, and relative
+   performance.
+4. Mark a security as a decline candidate only when a configured drawdown or
+   sector-relative threshold is crossed with enough observations.
+5. Calculate point-in-time quality and valuation indicators. Missing inputs
+   reduce coverage instead of being estimated.
+6. Retrieve GDELT metadata only for decline candidates, match the configured
+   shock taxonomy, require independent-source corroboration, and attach any
+   dated macro-exposure assumptions.
+7. Export every security and its audit trail. Phase 5 ranks decline severity;
+   it does not yet calculate the final Opportunity Score or an investment
+   verdict.
 
 Outputs are timestamped under `reports/`:
 
@@ -417,22 +465,30 @@ the score remains null below the configured coverage threshold. It is an
 evidence-coverage-adjusted indicator, **not a probability of normalization**.
 Headline keyword matches are triage signals and require human verification.
 
+The shock result also exposes `specification_criteria_coverage`,
+`criterion_statuses`, and `missing_criteria` for the ten Temporary Shock
+criteria in the master specification. This coverage is deliberately separate
+from the Phase 5 score coverage. Historical duration/precedents, quantified
+revenue/margin/FCF/balance-sheet impacts, and analyst expectations remain
+`data_unavailable` until later point-in-time engines supply real evidence.
+
 ## V1 methodology
 
 For each security the scanner calculates:
 
 - drawdown from the maximum in the downloaded history (`history_period: max` by
   default) and from the trailing 252-session high;
-- total return over approximately 1, 3, 6, and 12 months (21/63/126/252 trading
-  sessions) plus YTD return;
+- drawdown from the highest price inside approximately 1, 3, 6, and 12 months
+  (21/63/126/252 trading sessions) plus the current-year high;
+- separately named endpoint total returns over 1, 3, 6, and 12 months plus YTD;
 - distance from 50- and 200-session simple moving averages;
 - Wilder RSI, annualized daily volatility, and 252-session beta;
 - 12-month relative total return versus the configured broad and sector
   benchmarks.
 
-The exported fields keep the requested `drawdown_1m` naming, but these horizon
-fields are endpoint total returns, not path-dependent peak-to-trough drawdowns.
-This distinction is documented to prevent misleading interpretation.
+`drawdown_*` always means current price divided by the relevant period high,
+minus one. `return_*` always means endpoint total price return. The two are kept
+separate so a recovery followed by a new decline cannot be mislabeled.
 
 A row is a V1 candidate if it has at least `minimum_observations` and crosses any
 configured threshold for 52-week, 3-month, 6-month, or sector-relative decline.
@@ -489,6 +545,8 @@ tests/                  offline unit and integration tests
 
 Reserved modules contain no hidden placeholder calculations. This keeps the
 specified architecture visible without pretending later phases are implemented.
+The detailed checked/partial/deferred audit is maintained in
+`docs/PHASE_5_COMPLIANCE.md`.
 
 ## Known V1 limitations
 
@@ -547,6 +605,16 @@ and survivorship-aware outcome. Those analogues can extend the Temporary Shock
 Score only when their source and actual availability date are preserved. Before
 broad production use, also add sector-specific fundamental scorecards and daily
 archived SEC/GDELT snapshots for strict historical backtesting.
+
+## Backtesting status and required methodology
+
+Backtesting is Phase 9 and is not implemented in version 0.6.1. No current score
+should therefore be treated as statistically validated. The future engine must
+use point-in-time universe membership, unrevised provider snapshots, actual
+filing/news availability, delisted securities, region-appropriate benchmarks,
+and transaction assumptions. It must measure the return/risk statistics and
+score buckets specified in the master specification without look-ahead,
+survivorship, or revision leakage.
 
 ## Financial disclaimer
 

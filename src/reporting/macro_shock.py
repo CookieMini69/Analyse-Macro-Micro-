@@ -100,6 +100,12 @@ def persist_shock_results(
                     result.temporary_score.observed_score
                 ),
                 "score_coverage": result.temporary_score.coverage,
+                "specification_criteria_coverage": (
+                    result.specification_criteria_coverage
+                ),
+                "missing_criteria": json.dumps(
+                    result.missing_criteria, ensure_ascii=False
+                ),
                 "evidence_count": len(result.evidence),
                 "independent_source_count": result.independent_source_count,
                 "macro_associations": json.dumps(

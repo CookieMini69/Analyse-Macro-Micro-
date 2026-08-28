@@ -33,6 +33,19 @@ TEMPORARY_SCORE_WEIGHTS = {
     "fundamental_resilience": 0.15,
 }
 
+SPECIFICATION_CRITERIA = (
+    "historical_shock_duration",
+    "resolution_possibility",
+    "company_exposure",
+    "revenue_impact",
+    "margin_impact",
+    "fcf_impact",
+    "balance_sheet_impact",
+    "management_guidance",
+    "analyst_expectations",
+    "historical_precedents",
+)
+
 
 def analyze_shock(
     security: Security,
@@ -63,6 +76,12 @@ def analyze_shock(
     associations = _macro_associations(
         exposures, macro, as_of=news.as_of
     )
+    criterion_statuses = _criterion_statuses(evidence, associations)
+    missing_criteria = [
+        name
+        for name, status in criterion_statuses.items()
+        if status != DataStatus.AVAILABLE
+    ]
     score = score_temporary_shock(
         evidence,
         fundamental=fundamental,
@@ -89,12 +108,56 @@ def analyze_shock(
         temporary_score=score,
         evidence=evidence,
         macro_associations=associations,
+        specification_criteria_coverage=round(
+            (len(SPECIFICATION_CRITERIA) - len(missing_criteria))
+            / len(SPECIFICATION_CRITERIA),
+            4,
+        ),
+        criterion_statuses=criterion_statuses,
+        missing_criteria=missing_criteria,
         independent_source_count=len(independent_sources),
         conclusion=_conclusion(category, nature, evidence, news),
         retrieved_at=max(news.retrieved_at, datetime.now(UTC)),
         sources=_shock_sources(news, evidence, associations),
         error=news.error,
     )
+
+
+def _criterion_statuses(
+    evidence: list[ShockEvidence], associations: list[MacroAssociation]
+) -> dict[str, DataStatus]:
+    """Expose which master-specification criteria are genuinely evidenced.
+
+    A headline category is not enough to claim quantified financial impact.
+    Historical duration and precedents deliberately remain unavailable until
+    the Phase 6 analogue engine exists.
+    """
+
+    resolution_observed = _has_terms(
+        evidence, "temporary_terms"
+    ) or _has_terms(evidence, "resolution_terms")
+    exposure_observed = any(
+        item.status == DataStatus.AVAILABLE for item in associations
+    )
+    guidance_observed = any(
+        item.category == ShockCategory.GUIDANCE for item in evidence
+    )
+
+    def available_if(observed: bool) -> DataStatus:
+        return DataStatus.AVAILABLE if observed else DataStatus.DATA_UNAVAILABLE
+
+    return {
+        "historical_shock_duration": DataStatus.DATA_UNAVAILABLE,
+        "resolution_possibility": available_if(resolution_observed),
+        "company_exposure": available_if(exposure_observed),
+        "revenue_impact": DataStatus.DATA_UNAVAILABLE,
+        "margin_impact": DataStatus.DATA_UNAVAILABLE,
+        "fcf_impact": DataStatus.DATA_UNAVAILABLE,
+        "balance_sheet_impact": DataStatus.DATA_UNAVAILABLE,
+        "management_guidance": available_if(guidance_observed),
+        "analyst_expectations": DataStatus.DATA_UNAVAILABLE,
+        "historical_precedents": DataStatus.DATA_UNAVAILABLE,
+    }
 
 
 def score_temporary_shock(

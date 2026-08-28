@@ -171,7 +171,11 @@ class FredMacroSource:
                 value = float(row["value"])
             except (KeyError, TypeError, ValueError):
                 continue
-            if observation_date > cutoff.date():
+            if (
+                observation_date > cutoff.date()
+                or realtime_start > cutoff.date()
+                or realtime_end < cutoff.date()
+            ):
                 continue
             observations.append(
                 MacroObservation(

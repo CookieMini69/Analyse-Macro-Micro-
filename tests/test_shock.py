@@ -103,6 +103,10 @@ def test_corroborated_resolution_is_only_probable_not_certain() -> None:
     assert result.nature != ShockNature.TEMPORARY
     assert result.independent_source_count == 2
     assert result.temporary_score.status == DataStatus.AVAILABLE
+    assert result.specification_criteria_coverage == 0.2
+    assert result.criterion_statuses["resolution_possibility"] == DataStatus.AVAILABLE
+    assert result.criterion_statuses["company_exposure"] == DataStatus.AVAILABLE
+    assert "historical_precedents" in result.missing_criteria
     assert result.macro_associations[0].aligned_with_headwind is True
     assert "not proof of causality" in result.macro_associations[0].interpretation
 
@@ -136,6 +140,7 @@ def test_no_matching_evidence_keeps_unknown_and_score_null() -> None:
     assert result.nature == ShockNature.UNCERTAIN
     assert result.temporary_score.score is None
     assert result.data_quality == DataQuality.LOW
+    assert result.specification_criteria_coverage == 0.0
 
 
 def test_future_exposure_assumption_is_rejected() -> None:

@@ -48,12 +48,29 @@ def trailing_return(prices: pd.Series, sessions: int) -> MetricValue:
     return _ratio_change(float(prices.iloc[-1]), float(prices.iloc[-(sessions + 1)]))
 
 
+def trailing_drawdown(prices: pd.Series, sessions: int) -> MetricValue:
+    """Return current price versus the maximum inside a trailing window."""
+
+    if len(prices) < sessions:
+        return _unavailable(f"requires at least {sessions} price observations")
+    window_high = float(prices.tail(sessions).max())
+    return _ratio_change(float(prices.iloc[-1]), window_high)
+
+
 def ytd_return(prices: pd.Series) -> MetricValue:
     current_date = prices.index[-1]
     prior = prices[prices.index.year < current_date.year]
     if prior.empty:
         return _unavailable("no prior year-end observation")
     return _ratio_change(float(prices.iloc[-1]), float(prior.iloc[-1]))
+
+
+def ytd_drawdown(prices: pd.Series) -> MetricValue:
+    current_date = prices.index[-1]
+    current_year = prices[prices.index.year == current_date.year]
+    if current_year.empty:
+        return _unavailable("no observation in the current calendar year")
+    return _ratio_change(float(prices.iloc[-1]), float(current_year.max()))
 
 
 def distance_to_moving_average(prices: pd.Series, window: int) -> MetricValue:
@@ -97,6 +114,11 @@ def calculate_price_metrics(
             "drawdown_6m",
             "drawdown_ytd",
             "drawdown_1y",
+            "return_1m",
+            "return_3m",
+            "return_6m",
+            "return_ytd",
+            "return_1y",
             "distance_ma50",
             "distance_ma200",
             "rsi",
@@ -128,11 +150,16 @@ def calculate_price_metrics(
             if high_52w is not None
             else _unavailable("requires at least 252 price observations")
         ),
-        "drawdown_1m": trailing_return(prices, 21),
-        "drawdown_3m": trailing_return(prices, 63),
-        "drawdown_6m": trailing_return(prices, 126),
-        "drawdown_ytd": ytd_return(prices),
-        "drawdown_1y": trailing_return(prices, 252),
+        "drawdown_1m": trailing_drawdown(prices, 21),
+        "drawdown_3m": trailing_drawdown(prices, 63),
+        "drawdown_6m": trailing_drawdown(prices, 126),
+        "drawdown_ytd": ytd_drawdown(prices),
+        "drawdown_1y": trailing_drawdown(prices, 252),
+        "return_1m": trailing_return(prices, 21),
+        "return_3m": trailing_return(prices, 63),
+        "return_6m": trailing_return(prices, 126),
+        "return_ytd": ytd_return(prices),
+        "return_1y": trailing_return(prices, 252),
         "distance_ma50": distance_to_moving_average(prices, 50),
         "distance_ma200": distance_to_moving_average(prices, 200),
         "rsi": MetricValue.available(rsi_value) if rsi_value is not None else _unavailable("insufficient observations for RSI"),

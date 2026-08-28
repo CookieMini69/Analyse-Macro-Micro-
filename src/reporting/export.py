@@ -34,6 +34,11 @@ EXPORT_COLUMNS = [
     "drawdown_6m",
     "drawdown_ytd",
     "drawdown_1y",
+    "return_1m",
+    "return_3m",
+    "return_6m",
+    "return_ytd",
+    "return_1y",
     "distance_ma50",
     "distance_ma200",
     "rsi",
@@ -86,6 +91,8 @@ EXPORT_COLUMNS = [
     "shock_as_of",
     "shock_evidence_count",
     "shock_independent_source_count",
+    "shock_specification_criteria_coverage",
+    "shock_missing_criteria",
     "shock_conclusion",
     "shock_metrics",
     "decline_severity_score",
@@ -106,6 +113,11 @@ PERCENT_COLUMNS = {
     "drawdown_6m",
     "drawdown_ytd",
     "drawdown_1y",
+    "return_1m",
+    "return_3m",
+    "return_6m",
+    "return_ytd",
+    "return_1y",
     "distance_ma50",
     "distance_ma200",
     "volatility",
@@ -128,6 +140,9 @@ def results_to_frame(results: Iterable[OpportunityCandidate]) -> pd.DataFrame:
         )
         row["shock_metrics"] = json.dumps(
             row["shock_metrics"], ensure_ascii=False, sort_keys=True
+        )
+        row["shock_missing_criteria"] = json.dumps(
+            row["shock_missing_criteria"], ensure_ascii=False
         )
         row["metric_statuses"] = json.dumps(
             row["metric_statuses"], ensure_ascii=False, sort_keys=True
@@ -183,6 +198,7 @@ def _style_sheet(sheet: Worksheet) -> None:
             "metric_statuses",
             "shock_conclusion",
             "shock_metrics",
+            "shock_missing_criteria",
             "sources",
             "valuation_metrics",
         }

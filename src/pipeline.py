@@ -8,8 +8,10 @@ import os
 import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from pathlib import Path
+
+import pandas as pd
 
 from src.analysis.fundamentals import analyze_fundamentals
 from src.analysis.macro import analyze_macro_series
@@ -29,7 +31,11 @@ from src.data.news import (
     build_news_query,
     unavailable_news_result,
 )
-from src.data.prices import YahooFinancePriceSource, empty_price_frame
+from src.data.prices import (
+    YahooFinancePriceSource,
+    assess_price_quality,
+    empty_price_frame,
+)
 from src.data.sec_edgar import SecEdgarClient
 from src.data.sources import (
     FundamentalSource,
@@ -144,6 +150,62 @@ def _persist_normalized_prices(
             continue
         safe_name = re.sub(r"[^A-Za-z0-9._-]+", "_", result.security.ticker)
         result.frame.to_csv(output_dir / f"{safe_name}.csv", index=False)
+
+
+def _filter_prices_as_of(
+    results: dict[str, PriceHistoryResult], cutoff: datetime
+) -> dict[str, PriceHistoryResult]:
+    """Remove observations after the shared cutoff before any calculation.
+
+    Providers may return their full current history even for a historical run.
+    Filtering centrally ensures the drawdown scanner, benchmarks, valuation, and
+    persisted normalized frames all see the same point-in-time price history.
+    """
+
+    eligible_date = cutoff.date()
+    if cutoff.time() < time(23, 59, 59):
+        eligible_date -= timedelta(days=1)
+    filtered: dict[str, PriceHistoryResult] = {}
+    for ticker, result in results.items():
+        if result.frame.empty:
+            filtered[ticker] = result
+            continue
+        dates = pd.to_datetime(result.frame["observation_date"], errors="coerce")
+        eligible = dates.notna() & (dates.dt.date <= eligible_date)
+        frame = result.frame.loc[eligible].copy().reset_index(drop=True)
+        if frame.empty:
+            reason = (
+                "data_unavailable: no price observation exists on or before "
+                f"the point-in-time cutoff {cutoff.isoformat()}"
+            )
+            filtered[ticker] = PriceHistoryResult(
+                security=result.security,
+                frame=empty_price_frame(),
+                status=DataStatus.DATA_UNAVAILABLE,
+                data_quality=DataQuality.UNAVAILABLE,
+                source=result.source,
+                source_url=result.source_url,
+                error=reason if result.error is None else f"{result.error}; {reason}",
+                from_cache=result.from_cache,
+                warnings=[*result.warnings, reason],
+            )
+            continue
+        filtered[ticker] = PriceHistoryResult(
+            security=result.security,
+            frame=frame,
+            status=result.status,
+            data_quality=(
+                assess_price_quality(frame)
+                if result.status == DataStatus.AVAILABLE
+                else result.data_quality
+            ),
+            source=result.source,
+            source_url=result.source_url,
+            error=result.error,
+            from_cache=result.from_cache,
+            warnings=list(result.warnings),
+        )
+    return filtered
 
 
 def _run_fundamentals(
@@ -469,12 +531,20 @@ def _enrich_with_shock(
         "shock_as_of": shock.as_of,
         "shock_evidence_count": len(shock.evidence),
         "shock_independent_source_count": shock.independent_source_count,
+        "shock_specification_criteria_coverage": (
+            shock.specification_criteria_coverage
+        ),
+        "shock_missing_criteria": shock.missing_criteria,
         "shock_conclusion": shock.conclusion,
         "shock_metrics": {
             "evidence": [item.model_dump(mode="json") for item in shock.evidence],
             "macro_associations": [
                 item.model_dump(mode="json") for item in shock.macro_associations
             ],
+            "criterion_statuses": {
+                name: status.value
+                for name, status in shock.criterion_statuses.items()
+            },
             "score_components": {
                 name: component.model_dump(mode="json")
                 for name, component in shock.temporary_score.components.items()
@@ -500,6 +570,11 @@ def run_pipeline(
 
     app_settings = load_settings(settings) if not isinstance(settings, AppSettings) else settings
     _configure_logging(app_settings.logging.level)
+    cutoff = normalize_as_of(
+        fundamentals_as_of
+        if fundamentals_as_of is not None
+        else app_settings.fundamentals.as_of
+    )
 
     configured_universe = Path(universe_path).resolve() if universe_path else app_settings.paths.universe
     LOGGER.info("Loading universe from %s...", configured_universe)
@@ -515,7 +590,7 @@ def run_pipeline(
         securities,
         app_settings,
         source=fundamental_source,
-        as_of=fundamentals_as_of,
+        as_of=cutoff,
     )
     fundamental_results = {
         result.ticker.upper(): result for result in fundamental_list
@@ -542,7 +617,7 @@ def run_pipeline(
     macro_results, macro_analysis = _run_macro(
         app_settings,
         source=macro_source,
-        as_of=fundamentals_as_of,
+        as_of=cutoff,
     )
     macro_available = sum(
         result.status == DataStatus.AVAILABLE for result in macro_results.values()
@@ -570,12 +645,13 @@ def run_pipeline(
     )
 
     LOGGER.info("Downloading prices for %d primary and %d benchmark tickers...", len(securities), len(auxiliary))
-    price_results = _download_prices(
+    downloaded_price_results = _download_prices(
         all_downloads,
         provider,
         period=app_settings.price.history_period,
         max_workers=app_settings.price.max_workers,
     )
+    price_results = _filter_prices_as_of(downloaded_price_results, cutoff)
     updated = sum(1 for result in price_results.values() if not result.frame.empty)
     LOGGER.info("%d/%d price histories available", updated, len(all_downloads))
     _persist_normalized_prices(price_results, app_settings.paths.processed_data / "prices")
@@ -670,7 +746,7 @@ def run_pipeline(
             candidate_securities,
             app_settings,
             source=news_source,
-            as_of=fundamentals_as_of,
+            as_of=cutoff,
         )
         exposure_config = (
             load_macro_exposure_config(app_settings.paths.macro_exposures)
@@ -732,18 +808,9 @@ def run_pipeline(
             "macro_available_count": macro_available,
             "news_result_count": len(news_results),
             "shock_result_count": len(shock_results),
+            "pipeline_as_of": cutoff.isoformat(),
             "fundamental_as_of": (
-                (
-                    fundamental_list[0].as_of
-                    if fundamental_list
-                    else normalize_as_of(
-                        fundamentals_as_of
-                        if fundamentals_as_of is not None
-                        else app_settings.fundamentals.as_of
-                    )
-                ).isoformat()
-                if app_settings.fundamentals.enabled
-                else None
+                cutoff.isoformat() if app_settings.fundamentals.enabled else None
             ),
         },
     )

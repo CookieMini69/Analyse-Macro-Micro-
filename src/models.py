@@ -426,6 +426,10 @@ class MacroObservation(BaseModel):
     def observation_respects_cutoff(self) -> "MacroObservation":
         if self.observation_date > self.as_of.date():
             raise ValueError("macro observation cannot postdate its point-in-time cutoff")
+        if not self.realtime_start <= self.as_of.date() <= self.realtime_end:
+            raise ValueError(
+                "macro real-time availability period must contain the cutoff"
+            )
         return self
 
 
@@ -610,6 +614,9 @@ class ShockAnalysisResult(BaseModel):
     temporary_score: TemporaryShockScore
     evidence: list[ShockEvidence] = Field(default_factory=list)
     macro_associations: list[MacroAssociation] = Field(default_factory=list)
+    specification_criteria_coverage: float = Field(ge=0.0, le=1.0)
+    criterion_statuses: dict[str, DataStatus] = Field(default_factory=dict)
+    missing_criteria: list[str] = Field(default_factory=list)
     independent_source_count: int = Field(default=0, ge=0)
     conclusion: str
     retrieved_at: datetime
@@ -640,6 +647,11 @@ class OpportunityCandidate(BaseModel):
     drawdown_6m: float | None = None
     drawdown_ytd: float | None = None
     drawdown_1y: float | None = None
+    return_1m: float | None = None
+    return_3m: float | None = None
+    return_6m: float | None = None
+    return_ytd: float | None = None
+    return_1y: float | None = None
     distance_ma50: float | None = None
     distance_ma200: float | None = None
     rsi: float | None = None
@@ -692,6 +704,8 @@ class OpportunityCandidate(BaseModel):
     shock_as_of: datetime | None = None
     shock_evidence_count: int | None = None
     shock_independent_source_count: int | None = None
+    shock_specification_criteria_coverage: float | None = None
+    shock_missing_criteria: list[str] = Field(default_factory=list)
     shock_conclusion: str | None = None
     shock_metrics: dict[str, Any] = Field(default_factory=dict)
     decline_severity_score: float = Field(ge=0.0, le=100.0)
