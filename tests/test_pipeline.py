@@ -178,6 +178,8 @@ def test_offline_pipeline_runs_end_to_end(tmp_path: Path) -> None:
     assert (tmp_path / "processed" / "prices" / "TEST.csv").exists()
     assert "TEST" in output.historical_results
     assert len(output.historical_exported_files) == 2
+    assert "TEST" in output.scenario_results
+    assert len(output.scenario_exported_files) == 2
 
 
 def test_provider_exception_is_exported_as_unavailable_row(tmp_path: Path) -> None:
@@ -283,6 +285,9 @@ securities:
     assert scan.valuation_coverage == 0.4
     assert scan.valuation_score is None
     assert len(output.valuation_exported_files) == 2
+    assert scan.scenario_status == DataStatus.AVAILABLE
+    assert scan.base_target is not None
+    assert len(output.scenario_exported_files) == 2
 
 
 def test_missing_sec_identity_is_explicit_and_does_not_abort_prices(

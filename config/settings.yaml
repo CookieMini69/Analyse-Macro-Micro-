@@ -71,6 +71,13 @@ historical:
   maximum_analogues: 5
   fundamental_minimum_score_coverage: 0.0
 
+scenario:
+  enabled: true
+  horizons_months: [3, 6, 12, 18, 24]
+  target_horizon_months: 12
+  minimum_history_points: 2
+  minimum_target_models: 1
+
 screening:
   drawdown_52w_threshold: -0.20
   drawdown_3m_threshold: -0.15

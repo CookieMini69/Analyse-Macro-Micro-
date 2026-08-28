@@ -699,6 +699,127 @@ class HistoricalAnalogueResult(BaseModel):
     error: str | None = None
 
 
+class ScenarioAssumption(BaseModel):
+    """One scenario input with its derivation and point-in-time provenance."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str
+    value: float | None = None
+    status: DataStatus
+    unit: str | None = None
+    derivation: str
+    observation_count: int = Field(default=0, ge=0)
+    period_start: date | None = None
+    period_end: date | None = None
+    source_accessions: list[str] = Field(default_factory=list)
+    source_urls: list[str] = Field(default_factory=list)
+    reason: str | None = None
+
+    @model_validator(mode="after")
+    def validate_assumption_status(self) -> "ScenarioAssumption":
+        if self.value is None and self.status == DataStatus.AVAILABLE:
+            raise ValueError("an available scenario assumption requires a value")
+        if self.value is not None and self.status != DataStatus.AVAILABLE:
+            raise ValueError("a populated scenario assumption must be available")
+        return self
+
+
+class ScenarioHorizonProjection(BaseModel):
+    """Fundamental and model-derived target projection at one horizon."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    months: int = Field(ge=1)
+    revenue: MetricValue
+    operating_margin: MetricValue
+    eps: MetricValue
+    free_cash_flow: MetricValue
+    model_values: dict[str, MetricValue] = Field(default_factory=dict)
+    target_price: MetricValue
+
+
+class ScenarioCaseResult(BaseModel):
+    """Bear, base, or bull path derived from observed historical regimes."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    scenario: str
+    status: DataStatus
+    statistic: str
+    assumptions: dict[str, ScenarioAssumption] = Field(default_factory=dict)
+    assumption_coverage: float = Field(ge=0.0, le=1.0)
+    horizons: list[ScenarioHorizonProjection] = Field(default_factory=list)
+    target_price: MetricValue
+    reason: str | None = None
+
+
+class FundamentalInvalidationLevel(BaseModel):
+    """A non-technical thesis invalidation threshold from observed fundamentals."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    metric: str
+    operator: str
+    threshold: float
+    unit: str
+    rationale: str
+    observation_count: int = Field(ge=1)
+    source_accessions: list[str] = Field(default_factory=list)
+
+
+class ScenarioTargetSummary(BaseModel):
+    """Model-derived fair values and staged base-case targets."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    fair_value: MetricValue
+    normalized_fair_value: MetricValue
+    bear_target: MetricValue
+    base_target: MetricValue
+    bull_target: MetricValue
+    tp1: MetricValue
+    tp2: MetricValue
+    tp3: MetricValue
+    target_horizon_months: int = Field(ge=1)
+    methodology: str
+
+
+class RiskRewardResult(BaseModel):
+    """Upside/downside arithmetic from model-derived targets."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    current_price: float | None = Field(default=None, gt=0.0)
+    upside_base: MetricValue
+    upside_bull: MetricValue
+    downside_bear: MetricValue
+    risk_reward: MetricValue
+
+
+class ScenarioAnalysisResult(BaseModel):
+    """Complete point-in-time Phase 7 scenario and target result."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    ticker: str
+    company: str | None = None
+    as_of: datetime
+    status: DataStatus
+    data_quality: DataQuality
+    cases: dict[str, ScenarioCaseResult] = Field(default_factory=dict)
+    targets: ScenarioTargetSummary
+    risk_reward: RiskRewardResult
+    invalidation_levels: list[FundamentalInvalidationLevel] = Field(
+        default_factory=list
+    )
+    missing_invalidation_dimensions: list[str] = Field(default_factory=list)
+    methodology_version: str = "scenario-engine-v1"
+    sources: list[dict[str, Any]] = Field(default_factory=list)
+    retrieved_at: datetime
+    error: str | None = None
+
+
 class OpportunityCandidate(BaseModel):
     """Price candidate enriched through the historical-analogue phase."""
 
@@ -789,6 +910,23 @@ class OpportunityCandidate(BaseModel):
     historical_analogue_count: int | None = None
     best_historical_similarity: float | None = None
     historical_metrics: dict[str, Any] = Field(default_factory=dict)
+    scenario_status: DataStatus | None = None
+    scenario_data_quality: DataQuality | None = None
+    scenario_as_of: datetime | None = None
+    fair_value: float | None = None
+    normalized_fair_value_scenario: float | None = None
+    bear_target: float | None = None
+    base_target: float | None = None
+    bull_target: float | None = None
+    tp1: float | None = None
+    tp2: float | None = None
+    tp3: float | None = None
+    upside_base: float | None = None
+    upside_bull: float | None = None
+    downside_bear: float | None = None
+    risk_reward: float | None = None
+    fundamental_invalidation: list[dict[str, Any]] = Field(default_factory=list)
+    scenario_metrics: dict[str, Any] = Field(default_factory=dict)
     decline_severity_score: float = Field(ge=0.0, le=100.0)
     is_candidate: bool
     candidate_reasons: list[str] = Field(default_factory=list)

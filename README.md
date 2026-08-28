@@ -1,17 +1,18 @@
 # AI Stock Opportunity Scanner
 
-Version `0.7.0` implements the price/drawdown scanner, a **point-in-time
+Version `0.8.0` implements the price/drawdown scanner, a **point-in-time
 fundamental engine for SEC-reporting US issuers**, valuation, point-in-time
 FRED/ALFRED macro vintages, public GDELT news metadata, and conservative shock
-detection, plus same-security historical drawdown analogues. It preserves the
+detection, same-security historical drawdown analogues, and evidence-derived
+bear/base/bull temporal scenarios and targets. It preserves the
 actual availability cutoff of SEC filings and macro
 vintages, calculates current/historical/peer multiples, and can run sourced
 bear/base/bull, normalized, and reverse DCFs. Fundamental Quality, Valuation,
 and Temporary Shock scores are coverage-adjusted.
 
 It still does **not** conclude that a decline is an investment opportunity or
-that a shock is temporary. Temporal target scenarios, AI analysis, and
-backtesting are reserved for later phases. DCF and macro-exposure
+that a shock is temporary. Final scoring, AI analysis, and backtesting are
+reserved for later phases. DCF and macro-exposure
 output remain null until the user adds real, dated, reviewable assumptions.
 
 ## Core data rule
@@ -28,9 +29,12 @@ per-field state appears in `metric_statuses` as `data_unavailable`. The scanner
 prefers adjusted close and explicitly records `price_basis=close` when adjusted
 close is unavailable.
 
-The same rule applies to forecasts. The application ships with no DCF growth,
-margin, tax, capex, working-capital, WACC, or terminal-growth defaults. Every
-scenario must be explicitly configured with an assumption date and source.
+The same rule applies to forecasts. Temporal scenarios derive revenue growth,
+margins, and multiples from point-in-time historical observations; they do not
+apply discretionary `-10%` or `+20%` adjustments. The application ships with no
+DCF growth, tax, capex, working-capital, WACC, or terminal-growth defaults.
+Every DCF scenario must be explicitly configured with an assumption date and
+source.
 
 ## Installation
 
@@ -186,7 +190,7 @@ data or abort unrelated stages: the corresponding results are exported as
 
 ## Current interface
 
-Through Phase 6, the supported user interface is the generated Excel workbook,
+Through Phase 7, the supported user interface is the generated Excel workbook,
 not Streamlit. Open the newest workbook after a run with:
 
 ```powershell
@@ -197,10 +201,10 @@ Invoke-Item $report.FullName
 The workbook contains `Candidates`, `All Results`, and `Run Metadata`. Detailed
 audit trails are the JSON/CSV files described below. `dashboard/app.py` is an
 explicit Phase 11 boundary and is not a runnable dashboard yet; launching it
-would falsely imply that the later scoring, backtest, scenario, and UI phases
+would falsely imply that the later scoring, backtest, AI, and UI phases
 already exist.
 
-## Decision flow through Phase 6
+## Decision flow through Phase 7
 
 The current strategy is a sequence of evidence filters, not a BUY/SELL model:
 
@@ -222,6 +226,9 @@ The current strategy is a sequence of evidence filters, not a BUY/SELL model:
 8. For every decline candidate, detect prior completed peak–trough–recovery
    episodes on the same security, reconstruct SEC fundamentals and valuation
    multiples that were public at each episode peak, and rank comparable paths.
+9. Derive lower-quartile/median/upper-quartile operating and valuation regimes,
+   project them over 3/6/12/18/24 months, and calculate only model-supported
+   targets, fundamental invalidations, and risk/reward.
 
 Outputs are timestamped under `reports/`:
 
@@ -241,6 +248,9 @@ Outputs are timestamped under `reports/`:
 - `historical_analogues_*.csv` with current versus prior drawdown paths, recovery
   times, subsequent returns, similarity coverage, and point-in-time context;
   full audit JSON lives under `data/processed/historical/`.
+- `scenario_analysis_*.csv` with 15 rows per analyzed candidate (three cases by
+  five horizons), model-specific values, targets, coverage, invalidations, and
+  risk/reward; full audit JSON lives under `data/processed/scenarios/`.
 
 ## Historical analogue methodology
 
@@ -273,6 +283,45 @@ Analogues are same-security price/fundamental comparisons; the engine does not
 claim that their causal shock matches COVID, 2008, inflation, energy, or a
 geopolitical event. Causal event labeling requires dated primary evidence and is
 not fabricated from a price path.
+
+## Phase 7 scenario and target methodology
+
+For each decline candidate, the engine reconstructs annual SEC revenue growth,
+operating/net/EBITDA/FCF margins, leverage, and point-in-time historical P/E,
+EV/EBITDA, and P/FCF observations available by the shared cutoff. Bear, base,
+and bull use the observed lower quartile, median, and upper quartile. For
+leverage, the adverse direction is reversed. A minimum of two observations is
+required by default; missing inputs remain null.
+
+At 3, 6, 12, 18, and 24 months, revenue is compounded with the selected annual
+growth regime. EPS, FCF, and EBITDA follow from the corresponding observed margin
+and the latest SEC share count. Target values are independently calculated by:
+
+- projected positive EPS × historical P/E;
+- projected positive FCF/share × historical P/FCF;
+- projected positive EBITDA × historical EV/EBITDA, converted from enterprise
+  to equity value with reported debt, cash, and shares.
+
+The target is the median of the available model values and requires the
+configurable minimum number of methods. No fixed price uplift is added. Bear,
+base, and bull targets use the configured 12-month horizon by default. TP1,
+TP2, and TP3 are the 6/12/24-month base targets. `Fair Value` uses a sourced base
+DCF when available and otherwise the base temporal target. `Normalized Fair
+Value` uses a sourced normalized DCF and otherwise the 24-month base target.
+
+WACC and terminal growth are preserved only when a dated, sourced DCF
+configuration exists by `as_of`; the temporal multiple models do not manufacture
+them. Assumption coverage is exported across growth, margins, EPS, FCF,
+multiples, WACC, and terminal growth.
+
+Fundamental invalidation levels are derived from the bear operating regime for
+revenue growth, operating margin, FCF margin, and leverage. Guidance, order-book,
+and structural market-share invalidations remain explicitly unavailable without
+a point-in-time source. These are thesis conditions, not technical stop-losses.
+
+Risk/reward is `base upside / abs(bear downside)` and remains null unless base
+upside is positive and bear downside is negative. Targets and risk/reward are
+model outputs, not forecasts validated by backtesting and not investment advice.
 
 Normalized daily observations are cached under `data/cache/prices/` and persisted
 under `data/processed/prices/`. Raw SEC API responses are cached under
@@ -582,8 +631,8 @@ tests/                  offline unit and integration tests
 
 Reserved modules contain no hidden placeholder calculations. This keeps the
 specified architecture visible without pretending later phases are implemented.
-The detailed checked/partial/deferred audit is maintained in
-`docs/PHASE_5_COMPLIANCE.md`.
+The current checked/partial/deferred audit is maintained in
+`docs/PHASE_7_COMPLIANCE.md`.
 
 ## Known V1 limitations
 
@@ -629,25 +678,33 @@ The detailed checked/partial/deferred audit is maintained in
   from Phase 3 fundamentals, macro inputs, and public headline metadata. The
   remaining specification criteria—historical shock duration/analogues,
   detailed guidance and analyst expectations—stay missing rather than imputed.
-- No FX conversion, causal event catalogue, temporal targets, critical verdict,
+- No FX conversion, causal event catalogue, critical verdict,
   dashboard, alerts, or backtest exists yet.
 - Phase 6 compares episodes only within the same security. It does not yet search
   other companies or attach a causal crisis label. Old episodes can have price
   comparisons while fundamental/valuation context stays null because the live
   SEC history window defaults to five years.
+- Phase 7 regimes are historical quartiles, not analyst consensus and not
+  statistically calibrated outcome probabilities. Annual SEC facts can miss
+  recent quarterly inflections; model targets can be widely dispersed when the
+  historical multiple distribution is wide.
+- WACC and terminal growth stay null without a dated DCF configuration. The
+  fallback normalized fair value is explicitly the 24-month base target, not a
+  separately sourced shock-free DCF.
 - A severe decline can be entirely rational. Ranking does not establish
   undervaluation or temporary mispricing.
 
 ## Next recommended phase
 
-Phase 7 should implement dated bear/base/bull operational and valuation scenarios
-without converting historical similarity into a probability. Before broad
-production use, also add sector-specific fundamental scorecards and daily
-archived SEC/GDELT snapshots for strict historical backtesting.
+Phase 8 should combine the existing audited sub-scores into Normalization,
+Catalyst, Risk, and final Opportunity Scores while keeping every score separate
+from probability. Before broad production use, also add sector-specific
+fundamental scorecards and daily archived SEC/GDELT snapshots for strict
+historical backtesting.
 
 ## Backtesting status and required methodology
 
-Backtesting is Phase 9 and is not implemented in version 0.7.0. No current score
+Backtesting is Phase 9 and is not implemented in version 0.8.0. No current score
 should therefore be treated as statistically validated. The future engine must
 use point-in-time universe membership, unrevised provider snapshots, actual
 filing/news availability, delisted securities, region-appropriate benchmarks,

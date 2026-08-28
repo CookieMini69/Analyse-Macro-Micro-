@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ai-stock-opportunity-scanner"
-version = "0.7.0"
-description = "Traceable equity drawdown, point-in-time analysis, and historical analogue scanner"
+version = "0.8.0"
+description = "Traceable point-in-time equity scanner with historical analogues and scenarios"
 readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "MIT"}

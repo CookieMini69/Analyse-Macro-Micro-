@@ -45,6 +45,7 @@ from src.data.sources import (
     PriceHistoryResult,
     PriceSource,
 )
+from src.forecasting.scenarios import analyze_scenarios
 from src.macro_config import (
     MacroConfig,
     MacroExposureConfig,
@@ -62,6 +63,7 @@ from src.models import (
     MacroSeriesResult,
     NewsSearchResult,
     OpportunityCandidate,
+    ScenarioAnalysisResult,
     Security,
     ShockAnalysisResult,
     ValuationAnalysisResult,
@@ -70,6 +72,7 @@ from src.reporting.export import export_scan_results
 from src.reporting.fundamentals import persist_fundamental_results
 from src.reporting.historical import persist_historical_results
 from src.reporting.macro_shock import persist_macro_results, persist_shock_results
+from src.reporting.scenarios import persist_scenario_results
 from src.reporting.valuation import persist_valuation_results
 from src.screening.scanner import build_scan_result, rank_results
 from src.screening.universe import auxiliary_benchmarks, load_universe
@@ -100,6 +103,9 @@ class PipelineResult:
     historical_results: dict[str, HistoricalAnalogueResult]
     historical_exported_files: list[Path]
     historical_errors: dict[str, str]
+    scenario_results: dict[str, ScenarioAnalysisResult]
+    scenario_exported_files: list[Path]
+    scenario_errors: dict[str, str]
 
 
 def _configure_logging(level: str) -> None:
@@ -603,6 +609,59 @@ def _enrich_with_historical(
     return OpportunityCandidate.model_validate({**result.model_dump(), **updates})
 
 
+def _enrich_with_scenario(
+    result: OpportunityCandidate,
+    scenario: ScenarioAnalysisResult | None,
+) -> OpportunityCandidate:
+    if scenario is None:
+        return result
+
+    def metric_value(metric) -> float | None:
+        return metric.value if metric is not None else None
+
+    updates = {
+        "scenario_status": scenario.status,
+        "scenario_data_quality": scenario.data_quality,
+        "scenario_as_of": scenario.as_of,
+        "fair_value": metric_value(scenario.targets.fair_value),
+        "normalized_fair_value_scenario": metric_value(
+            scenario.targets.normalized_fair_value
+        ),
+        "bear_target": metric_value(scenario.targets.bear_target),
+        "base_target": metric_value(scenario.targets.base_target),
+        "bull_target": metric_value(scenario.targets.bull_target),
+        "tp1": metric_value(scenario.targets.tp1),
+        "tp2": metric_value(scenario.targets.tp2),
+        "tp3": metric_value(scenario.targets.tp3),
+        "upside_base": metric_value(scenario.risk_reward.upside_base),
+        "upside_bull": metric_value(scenario.risk_reward.upside_bull),
+        "downside_bear": metric_value(scenario.risk_reward.downside_bear),
+        "risk_reward": metric_value(scenario.risk_reward.risk_reward),
+        "fundamental_invalidation": [
+            item.model_dump(mode="json") for item in scenario.invalidation_levels
+        ],
+        "scenario_metrics": {
+            "methodology_version": scenario.methodology_version,
+            "cases": {
+                name: case.model_dump(mode="json")
+                for name, case in scenario.cases.items()
+            },
+            "targets": scenario.targets.model_dump(mode="json"),
+            "risk_reward": scenario.risk_reward.model_dump(mode="json"),
+            "missing_invalidation_dimensions": (
+                scenario.missing_invalidation_dimensions
+            ),
+            "error": scenario.error,
+        },
+        "sources": result.sources
+        + [
+            {**source, "role": source.get("role", "scenario")}
+            for source in scenario.sources
+        ],
+    }
+    return OpportunityCandidate.model_validate({**result.model_dump(), **updates})
+
+
 def run_pipeline(
     settings: AppSettings | str | Path = "config/settings.yaml",
     *,
@@ -877,6 +936,49 @@ def run_pipeline(
     else:
         historical_available = 0
 
+    scenario_results: dict[str, ScenarioAnalysisResult] = {}
+    scenario_exported: list[Path] = []
+    if app_settings.scenario.enabled:
+        candidate_rows = {
+            result.ticker.upper(): result for result in ranked if result.is_candidate
+        }
+        for security in securities:
+            ticker = security.ticker.upper()
+            row = candidate_rows.get(ticker)
+            if row is None:
+                continue
+            scenario_results[ticker] = analyze_scenarios(
+                security,
+                fundamental_results.get(ticker),
+                valuation_results.get(ticker),
+                row.current_price,
+                app_settings.scenario,
+                as_of=cutoff,
+            )
+        if scenario_results:
+            scenario_exported = persist_scenario_results(
+                list(scenario_results.values()),
+                app_settings.paths.processed_data,
+                app_settings.paths.reports,
+            )
+        ranked = [
+            _enrich_with_scenario(
+                result, scenario_results.get(result.ticker.upper())
+            )
+            for result in ranked
+        ]
+        scenario_available = sum(
+            result.status == DataStatus.AVAILABLE
+            for result in scenario_results.values()
+        )
+        LOGGER.info(
+            "%d/%d candidates have model-derived scenarios",
+            scenario_available,
+            len(scenario_results),
+        )
+    else:
+        scenario_available = 0
+
     LOGGER.info("Exporting scan results...")
     exported = export_scan_results(
         ranked,
@@ -899,6 +1001,8 @@ def run_pipeline(
             "shock_result_count": len(shock_results),
             "historical_result_count": len(historical_results),
             "historical_available_count": historical_available,
+            "scenario_result_count": len(scenario_results),
+            "scenario_available_count": scenario_available,
             "pipeline_as_of": cutoff.isoformat(),
             "fundamental_as_of": (
                 cutoff.isoformat() if app_settings.fundamentals.enabled else None
@@ -938,6 +1042,11 @@ def run_pipeline(
         for ticker, result in historical_results.items()
         if result.error is not None
     }
+    scenario_errors = {
+        ticker: result.error
+        for ticker, result in scenario_results.items()
+        if result.error is not None
+    }
     return PipelineResult(
         results=ranked,
         exported_files=exported,
@@ -959,6 +1068,9 @@ def run_pipeline(
         historical_results=historical_results,
         historical_exported_files=historical_exported,
         historical_errors=historical_errors,
+        scenario_results=scenario_results,
+        scenario_exported_files=scenario_exported,
+        scenario_errors=scenario_errors,
     )
 
 
@@ -966,7 +1078,7 @@ def build_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
             "Scan an explicit equity universe for price declines and "
-            "point-in-time fundamentals, valuation, shocks, and historical analogues."
+            "point-in-time fundamentals, valuation, analogues, and scenarios."
         )
     )
     parser.add_argument(

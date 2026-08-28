@@ -155,6 +155,31 @@ class HistoricalSettings(BaseModel):
     )
 
 
+class ScenarioSettings(BaseModel):
+    """Rules for evidence-derived temporal scenario projections."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool = True
+    horizons_months: list[int] = Field(
+        default_factory=lambda: [3, 6, 12, 18, 24], min_length=1
+    )
+    target_horizon_months: int = Field(default=12, ge=1, le=120)
+    minimum_history_points: int = Field(default=2, ge=1, le=20)
+    minimum_target_models: int = Field(default=1, ge=1, le=3)
+
+    @model_validator(mode="after")
+    def validate_horizons(self) -> "ScenarioSettings":
+        if any(month < 1 or month > 120 for month in self.horizons_months):
+            raise ValueError("scenario horizons must fall within 1..120 months")
+        if len(set(self.horizons_months)) != len(self.horizons_months):
+            raise ValueError("scenario horizons must be unique")
+        if self.target_horizon_months not in self.horizons_months:
+            raise ValueError("target_horizon_months must be one configured horizon")
+        self.horizons_months.sort()
+        return self
+
+
 class ExportSettings(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -187,6 +212,7 @@ class AppSettings(BaseModel):
     news: NewsSettings = Field(default_factory=NewsSettings)
     shock: ShockSettings = Field(default_factory=ShockSettings)
     historical: HistoricalSettings = Field(default_factory=HistoricalSettings)
+    scenario: ScenarioSettings = Field(default_factory=ScenarioSettings)
     screening: ScreeningSettings = Field(default_factory=ScreeningSettings)
     export: ExportSettings = Field(default_factory=ExportSettings)
     logging: LoggingSettings = Field(default_factory=LoggingSettings)

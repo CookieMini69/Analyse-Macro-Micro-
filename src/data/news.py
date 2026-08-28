@@ -36,7 +36,7 @@ class GdeltNewsSource:
     ) -> None:
         self.client = CachedJsonClient(
             cache_dir,
-            user_agent="AI Stock Opportunity Scanner/0.6",
+            user_agent="AI Stock Opportunity Scanner/0.8",
             cache_ttl_hours=cache_ttl_hours,
             timeout_seconds=timeout_seconds,
             max_retries=max_retries,

@@ -101,6 +101,23 @@ EXPORT_COLUMNS = [
     "historical_analogue_count",
     "best_historical_similarity",
     "historical_metrics",
+    "scenario_status",
+    "scenario_data_quality",
+    "scenario_as_of",
+    "fair_value",
+    "normalized_fair_value_scenario",
+    "bear_target",
+    "base_target",
+    "bull_target",
+    "tp1",
+    "tp2",
+    "tp3",
+    "upside_base",
+    "upside_bull",
+    "downside_bear",
+    "risk_reward",
+    "fundamental_invalidation",
+    "scenario_metrics",
     "decline_severity_score",
     "is_candidate",
     "candidate_reasons",
@@ -130,6 +147,9 @@ PERCENT_COLUMNS = {
     "relative_benchmark_performance",
     "relative_sector_performance",
     "reverse_dcf_implied_revenue_growth",
+    "upside_base",
+    "upside_bull",
+    "downside_bear",
 }
 
 
@@ -149,6 +169,12 @@ def results_to_frame(results: Iterable[OpportunityCandidate]) -> pd.DataFrame:
         )
         row["historical_metrics"] = json.dumps(
             row["historical_metrics"], ensure_ascii=False, sort_keys=True
+        )
+        row["fundamental_invalidation"] = json.dumps(
+            row["fundamental_invalidation"], ensure_ascii=False
+        )
+        row["scenario_metrics"] = json.dumps(
+            row["scenario_metrics"], ensure_ascii=False, sort_keys=True
         )
         row["shock_missing_criteria"] = json.dumps(
             row["shock_missing_criteria"], ensure_ascii=False
@@ -188,6 +214,15 @@ def _style_sheet(sheet: Worksheet) -> None:
         "dcf_base_value_per_share",
         "dcf_bull_value_per_share",
         "normalized_value_per_share",
+        "fair_value",
+        "normalized_fair_value_scenario",
+        "bear_target",
+        "base_target",
+        "bull_target",
+        "tp1",
+        "tp2",
+        "tp3",
+        "risk_reward",
         "valuation_score",
         "temporary_shock_score",
         "best_historical_similarity",
@@ -209,6 +244,8 @@ def _style_sheet(sheet: Worksheet) -> None:
             "shock_conclusion",
             "shock_metrics",
             "historical_metrics",
+            "fundamental_invalidation",
+            "scenario_metrics",
             "shock_missing_criteria",
             "sources",
             "valuation_metrics",
