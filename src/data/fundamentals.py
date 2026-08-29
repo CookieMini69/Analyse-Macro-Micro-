@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, time
 from typing import Any, Literal
@@ -34,32 +35,51 @@ CONCEPT_SPECS: tuple[ConceptSpec, ...] = (
             ("us-gaap", "RevenueFromContractWithCustomerExcludingAssessedTax"),
             ("us-gaap", "SalesRevenueNet"),
             ("us-gaap", "Revenues"),
+            ("ifrs-full", "Revenue"),
         ),
         ("USD",),
     ),
-    ConceptSpec("gross_profit", "duration", (("us-gaap", "GrossProfit"),), ("USD",)),
+    ConceptSpec(
+        "gross_profit",
+        "duration",
+        (("us-gaap", "GrossProfit"), ("ifrs-full", "GrossProfit")),
+        ("USD",),
+    ),
     ConceptSpec(
         "operating_income",
         "duration",
-        (("us-gaap", "OperatingIncomeLoss"),),
+        (
+            ("us-gaap", "OperatingIncomeLoss"),
+            ("ifrs-full", "ProfitLossFromOperatingActivities"),
+        ),
         ("USD",),
     ),
     ConceptSpec(
         "net_income",
         "duration",
-        (("us-gaap", "NetIncomeLoss"), ("us-gaap", "ProfitLoss")),
+        (
+            ("us-gaap", "NetIncomeLoss"),
+            ("us-gaap", "ProfitLoss"),
+            ("ifrs-full", "ProfitLoss"),
+        ),
         ("USD",),
     ),
     ConceptSpec(
         "eps_diluted",
         "duration",
-        (("us-gaap", "EarningsPerShareDiluted"),),
+        (
+            ("us-gaap", "EarningsPerShareDiluted"),
+            ("ifrs-full", "DilutedEarningsLossPerShare"),
+        ),
         ("USD/shares",),
     ),
     ConceptSpec(
         "operating_cash_flow",
         "duration",
-        (("us-gaap", "NetCashProvidedByUsedInOperatingActivities"),),
+        (
+            ("us-gaap", "NetCashProvidedByUsedInOperatingActivities"),
+            ("ifrs-full", "CashFlowsFromUsedInOperatingActivities"),
+        ),
         ("USD",),
     ),
     ConceptSpec(
@@ -68,6 +88,7 @@ CONCEPT_SPECS: tuple[ConceptSpec, ...] = (
         (
             ("us-gaap", "PaymentsToAcquirePropertyPlantAndEquipment"),
             ("us-gaap", "PaymentsForAdditionsToPropertyPlantAndEquipment"),
+            ("ifrs-full", "PurchaseOfPropertyPlantAndEquipment"),
         ),
         ("USD",),
     ),
@@ -78,6 +99,8 @@ CONCEPT_SPECS: tuple[ConceptSpec, ...] = (
             ("us-gaap", "DepreciationDepletionAndAmortization"),
             ("us-gaap", "DepreciationDepletionAndAmortizationPropertyPlantAndEquipment"),
             ("us-gaap", "Depreciation"),
+            ("ifrs-full", "DepreciationAndAmortisationExpense"),
+            ("ifrs-full", "DepreciationExpense"),
         ),
         ("USD",),
     ),
@@ -87,6 +110,7 @@ CONCEPT_SPECS: tuple[ConceptSpec, ...] = (
         (
             ("us-gaap", "InterestExpenseNonOperating"),
             ("us-gaap", "InterestAndDebtExpense"),
+            ("ifrs-full", "FinanceCosts"),
         ),
         ("USD",),
     ),
@@ -102,19 +126,28 @@ CONCEPT_SPECS: tuple[ConceptSpec, ...] = (
                 "us-gaap",
                 "IncomeLossFromContinuingOperationsBeforeIncomeTaxesMinorityInterestAndIncomeLossFromEquityMethodInvestments",
             ),
+            ("ifrs-full", "ProfitLossBeforeTax"),
         ),
         ("USD",),
     ),
     ConceptSpec(
         "income_tax_expense",
         "duration",
-        (("us-gaap", "IncomeTaxExpenseBenefit"),),
+        (
+            ("us-gaap", "IncomeTaxExpenseBenefit"),
+            ("ifrs-full", "IncomeTaxExpenseContinuingOperations"),
+            ("ifrs-full", "IncomeTaxExpense"),
+        ),
         ("USD",),
     ),
     ConceptSpec(
         "diluted_shares",
         "duration",
-        (("us-gaap", "WeightedAverageNumberOfDilutedSharesOutstanding"),),
+        (
+            ("us-gaap", "WeightedAverageNumberOfDilutedSharesOutstanding"),
+            ("ifrs-full", "DilutedWeightedAverageShares"),
+            ("ifrs-full", "AdjustedWeightedAverageShares"),
+        ),
         ("shares",),
     ),
     ConceptSpec(
@@ -123,6 +156,7 @@ CONCEPT_SPECS: tuple[ConceptSpec, ...] = (
         (
             ("us-gaap", "PaymentsOfDividends"),
             ("us-gaap", "PaymentsOfDividendsCommonStock"),
+            ("ifrs-full", "DividendsPaid"),
         ),
         ("USD",),
     ),
@@ -135,6 +169,7 @@ CONCEPT_SPECS: tuple[ConceptSpec, ...] = (
                 "us-gaap",
                 "CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents",
             ),
+            ("ifrs-full", "CashAndCashEquivalents"),
         ),
         ("USD",),
     ),
@@ -147,14 +182,24 @@ CONCEPT_SPECS: tuple[ConceptSpec, ...] = (
                 "us-gaap",
                 "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest",
             ),
+            ("ifrs-full", "Equity"),
+            ("ifrs-full", "EquityAttributableToOwnersOfParent"),
         ),
         ("USD",),
     ),
-    ConceptSpec("current_assets", "instant", (("us-gaap", "AssetsCurrent"),), ("USD",)),
+    ConceptSpec(
+        "current_assets",
+        "instant",
+        (("us-gaap", "AssetsCurrent"), ("ifrs-full", "CurrentAssets")),
+        ("USD",),
+    ),
     ConceptSpec(
         "current_liabilities",
         "instant",
-        (("us-gaap", "LiabilitiesCurrent"),),
+        (
+            ("us-gaap", "LiabilitiesCurrent"),
+            ("ifrs-full", "CurrentLiabilities"),
+        ),
         ("USD",),
     ),
     ConceptSpec(
@@ -163,6 +208,7 @@ CONCEPT_SPECS: tuple[ConceptSpec, ...] = (
         (
             ("us-gaap", "LongTermDebtAndFinanceLeaseObligations"),
             ("us-gaap", "LongTermDebt"),
+            ("ifrs-full", "Borrowings"),
         ),
         ("USD",),
     ),
@@ -172,6 +218,7 @@ CONCEPT_SPECS: tuple[ConceptSpec, ...] = (
         (
             ("us-gaap", "LongTermDebtAndFinanceLeaseObligationsCurrent"),
             ("us-gaap", "LongTermDebtCurrent"),
+            ("ifrs-full", "CurrentBorrowings"),
         ),
         ("USD",),
     ),
@@ -181,13 +228,17 @@ CONCEPT_SPECS: tuple[ConceptSpec, ...] = (
         (
             ("us-gaap", "LongTermDebtAndFinanceLeaseObligationsNoncurrent"),
             ("us-gaap", "LongTermDebtNoncurrent"),
+            ("ifrs-full", "NoncurrentBorrowings"),
         ),
         ("USD",),
     ),
     ConceptSpec(
         "short_term_borrowings",
         "instant",
-        (("us-gaap", "ShortTermBorrowings"),),
+        (
+            ("us-gaap", "ShortTermBorrowings"),
+            ("ifrs-full", "ShorttermBorrowings"),
+        ),
         ("USD",),
     ),
     ConceptSpec(
@@ -198,7 +249,7 @@ CONCEPT_SPECS: tuple[ConceptSpec, ...] = (
     ),
 )
 
-ANNUAL_FORMS = {"10-K", "10-K/A"}
+ANNUAL_FORMS = {"10-K", "10-K/A", "20-F", "20-F/A", "40-F", "40-F/A"}
 US_COUNTRIES = {"united states", "usa", "us", "u.s.", "u.s.a."}
 
 
@@ -241,7 +292,13 @@ def is_sec_eligible(security: Security) -> bool:
 
 
 class SecEdgarFundamentalSource:
-    """Retrieve annual standard-taxonomy facts available at a chosen cutoff."""
+    """Retrieve annual SEC-reporting facts available at a chosen cutoff.
+
+    This includes domestic 10-K filers and foreign private issuers filing 20-F
+    or 40-F. The current concept map remains deliberately limited to standard
+    taxonomies and preferred USD units; unsupported IFRS/local-currency facts
+    are returned as unavailable instead of being silently converted.
+    """
 
     def __init__(self, client: SecEdgarClient, *, history_years: int = 5) -> None:
         self.client = client
@@ -256,7 +313,7 @@ class SecEdgarFundamentalSource:
                 security,
                 cutoff,
                 DataStatus.NOT_APPLICABLE,
-                "SEC EDGAR provider currently covers US reporting issuers only",
+                "SEC EDGAR provider requires a US reporting issuer or explicit CIK",
             )
 
         resolved_name = security.company
@@ -352,7 +409,7 @@ def extract_annual_observations(
         for priority, (taxonomy, concept) in enumerate(spec.concepts):
             concept_payload = facts.get(taxonomy, {}).get(concept, {})
             units = concept_payload.get("units", {})
-            unit = next((candidate for candidate in spec.preferred_units if candidate in units), None)
+            unit = _select_unit(spec, units)
             if unit is None:
                 continue
             for raw in units.get(unit, []):
@@ -509,6 +566,29 @@ def _optional_int(value: Any) -> int | None:
         return int(value) if value is not None else None
     except (TypeError, ValueError):
         return None
+
+
+def _select_unit(spec: ConceptSpec, units: dict[str, Any]) -> str | None:
+    preferred = next(
+        (candidate for candidate in spec.preferred_units if candidate in units), None
+    )
+    if preferred is not None:
+        return preferred
+    if "shares" in spec.preferred_units:
+        return "shares" if "shares" in units else None
+    if any("/shares" in item for item in spec.preferred_units):
+        return next(
+            (
+                unit
+                for unit in units
+                if re.fullmatch(r"[A-Z]{3}/shares", str(unit))
+            ),
+            None,
+        )
+    return next(
+        (unit for unit in units if re.fullmatch(r"[A-Z]{3}", str(unit))),
+        None,
+    )
 
 
 def unavailable_fundamental_data(

@@ -16,7 +16,21 @@ class MacroSeriesDefinition(BaseModel):
 
     series_id: str = Field(min_length=1)
     name: str = Field(min_length=1)
+    provider: str = "fred"
+    parameters: dict[str, str] = Field(default_factory=dict)
     enabled: bool = True
+
+    @field_validator("provider")
+    @classmethod
+    def provider_is_supported(cls, value: str) -> str:
+        normalized = value.casefold()
+        supported = {"fred", "ecb", "cboe_put_call", "cftc_cot"}
+        if normalized not in supported:
+            raise ValueError(
+                "macro series provider must be one of: "
+                + ", ".join(sorted(supported))
+            )
+        return normalized
 
 
 class MacroConfig(BaseModel):

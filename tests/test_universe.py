@@ -51,3 +51,12 @@ def test_auxiliary_benchmarks_are_unique() -> None:
         Security(ticker="BBB", benchmark="WORLD", sector_benchmark="INDUSTRY"),
     ]
     assert {item.ticker for item in auxiliary_benchmarks(securities)} == {"WORLD", "INDUSTRY"}
+
+
+def test_default_universe_has_global_sec_reporting_coverage() -> None:
+    universe = load_universe(Path("config/universe.yaml"))
+    countries = {security.country for security in universe}
+    assert len(universe) >= 40
+    assert {"United States", "France", "Japan", "Brazil", "South Africa"} <= countries
+    assert all(security.cik for security in universe)
+    assert all(security.currency == "USD" for security in universe)

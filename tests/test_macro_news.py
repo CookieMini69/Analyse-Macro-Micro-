@@ -1,3 +1,4 @@
+import json
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -5,13 +6,15 @@ import pytest
 from src.analysis.macro import analyze_macro_series
 from src.data.macro import FredMacroError, FredMacroSource
 from src.data.news import GdeltNewsSource
+from src.data.public_macro import CboePutCallSource, CftcCotSource, EcbMacroSource
 from src.macro_config import MacroSeriesDefinition
 from src.models import DataStatus, MacroObservation, Security
 
 
 class FakeResponse:
-    def __init__(self, payload: dict) -> None:
+    def __init__(self, payload: dict | None = None, *, text: str | None = None) -> None:
         self.payload = payload
+        self.text = text if text is not None else ""
 
     def raise_for_status(self) -> None:
         return None
@@ -21,14 +24,15 @@ class FakeResponse:
 
 
 class FakeSession:
-    def __init__(self, responses: list[dict]) -> None:
+    def __init__(self, responses: list[dict | str]) -> None:
         self.responses = list(responses)
         self.headers: dict[str, str] = {}
         self.calls: list[tuple[str, dict]] = []
 
     def get(self, url: str, *, params: dict, timeout: int) -> FakeResponse:
         self.calls.append((url, params))
-        return FakeResponse(self.responses.pop(0))
+        response = self.responses.pop(0)
+        return FakeResponse(response if isinstance(response, dict) else None, text=response if isinstance(response, str) else None)
 
 
 def test_fred_uses_real_time_cutoff_and_never_persists_api_key(tmp_path) -> None:
@@ -133,6 +137,70 @@ def test_macro_model_rejects_a_vintage_unavailable_at_cutoff() -> None:
             source_url="https://fred.stlouisfed.org/series/SYNTH",
             retrieved_at=datetime(2025, 3, 1, tzinfo=UTC),
         )
+
+
+def test_ecb_keeps_only_revision_valid_at_cutoff(tmp_path) -> None:
+    csv_payload = """KEY,FREQ,TIME_PERIOD,OBS_VALUE,TITLE,UNIT,VALID_FROM,VALID_TO
+X,D,2025-01-01,2.5,ECB test rate,PCPA,2025-01-01T01:00:00+01:00,2025-02-01T01:00:00+01:00
+X,D,2025-01-01,2.0,ECB test rate,PCPA,2025-02-01T01:00:00+01:00,
+X,D,2025-02-02,9.9,Future value,PCPA,2025-02-02T01:00:00+01:00,
+"""
+    source = EcbMacroSource(tmp_path, max_retries=0, session=FakeSession([csv_payload]))
+    definition = MacroSeriesDefinition(
+        provider="ecb", series_id="X", name="ECB test rate"
+    )
+    result = source.fetch("ecb_test", definition, as_of="2025-01-15")
+    assert result.status == DataStatus.AVAILABLE
+    assert [item.value for item in result.observations] == [2.5]
+    assert result.observations[0].source == "European Central Bank Data Portal"
+
+
+def test_cboe_put_call_preserves_selected_market_date(tmp_path) -> None:
+    html = (
+        '<script>{"selectedDate":"2025-01-03"}</script>'
+        '<td>TOTAL PUT/CALL RATIO</td><td class="x">1.23</td>'
+    )
+    source = CboePutCallSource(tmp_path, max_retries=0, session=FakeSession([html]))
+    definition = MacroSeriesDefinition(
+        provider="cboe_put_call",
+        series_id="TOTAL_PUT_CALL_RATIO",
+        name="Cboe Total Put/Call Ratio",
+        parameters={"ratio_name": "TOTAL PUT/CALL RATIO"},
+    )
+    result = source.fetch("put_call", definition, as_of="2025-01-05")
+    assert result.status == DataStatus.AVAILABLE
+    assert result.observations[0].observation_date.isoformat() == "2025-01-03"
+    assert result.observations[0].value == 1.23
+
+
+def test_cftc_cot_applies_conservative_publication_lag(tmp_path) -> None:
+    rows = json.dumps(
+        [
+            {
+                "report_date_as_yyyy_mm_dd": "2025-01-07T00:00:00.000",
+                "lev_money_positions_long": "300",
+                "lev_money_positions_short": "100",
+                "open_interest_all": "1000",
+            },
+            {
+                "report_date_as_yyyy_mm_dd": "2025-01-14T00:00:00.000",
+                "lev_money_positions_long": "900",
+                "lev_money_positions_short": "0",
+                "open_interest_all": "1000",
+            },
+        ]
+    )
+    source = CftcCotSource(tmp_path, max_retries=0, session=FakeSession([rows]))
+    definition = MacroSeriesDefinition(
+        provider="cftc_cot",
+        series_id="gpe5-46if",
+        name="CFTC test",
+        parameters={"market_name": "S&P 500 Consolidated", "publication_lag_days": "7"},
+    )
+    result = source.fetch("cftc_test", definition, as_of="2025-01-15")
+    assert result.status == DataStatus.AVAILABLE
+    assert [item.value for item in result.observations] == [20.0]
+    assert result.observations[0].realtime_start.isoformat() == "2025-01-14"
 
 
 def test_gdelt_keeps_only_cutoff_filtered_public_metadata(tmp_path) -> None:

@@ -2,9 +2,32 @@
 
 Date de décision : 2026-08-29
 
-## Décision pour le backtest américain 2018–2025
+## Décision actuelle : mode gratuit, sans abonnement
 
-La source retenue est **Sharadar Direct — Bundle, historique 10 ans**.
+Le scanner live et l'archivage progressif fonctionnent sans abonnement payant.
+Le socle gratuit est désormais : SEC EDGAR (10-K/20-F/40-F), FRED/ALFRED, BCE,
+Cboe, CFTC, Yahoo, GDELT et ECB/Frankfurter FX. Les réponses datées sont mises
+en cache et chaque exécution live peut produire une archive immuable avec hash.
+
+Ce mode ne prétend toutefois pas recréer aujourd'hui un véritable univers
+2018–2025 sans biais de survivance : aucune source gratuite identifiée ne réunit
+à elle seule les radiations, changements d'identifiants, compositions historiques
+mondiales et fondamentaux as-reported. Le moteur strict conserve donc
+`data_unavailable` tant que ces archives ne sont pas réellement présentes. Il
+construira gratuitement son propre historique prospectif à partir des scans.
+
+Les séries contextuelles historiques gratuites disponibles immédiatement sont :
+
+- VIX via FRED/ALFRED, donc avec vintage connu au cutoff ;
+- taux BCE via SDMX et `VALID_FROM`/`VALID_TO` ;
+- put/call Cboe depuis la page quotidienne datée (historique visible depuis 2019) ;
+- positions CFTC COT, avec délai prudent de sept jours après la date de position ;
+- fondamentaux SEC filtrés par heure d'acceptation/date de dépôt.
+
+## Option payante conservée mais non requise
+
+L'adaptateur **Sharadar Direct — Bundle, historique 10 ans** reste disponible si
+le choix change un jour, mais il n'est ni activé ni requis actuellement.
 
 Lien d'abonnement : <https://sharadar.com/subscribe>
 
@@ -117,16 +140,10 @@ Le modèle équilibre qualité et coût pour une analyse bull/bear structurée. 
 clé API ne doit pas être confondue avec l'abonnement ChatGPT et doit être
 alimentée séparément avant activation.
 
-## Ce qui doit être fourni par l'utilisateur
+## Accès utilisateur requis actuellement
 
-Pour débloquer immédiatement le backtest américain :
+**Aucun nouvel accès n'est requis** pour le mode gratuit actuel. La clé FRED et
+le SEC User-Agent déjà configurés suffisent ; BCE, Cboe et CFTC sont sans clé.
 
-1. souscrire le Bundle Sharadar 10 ans (ou Full History) ;
-2. transmettre la clé `SHARADAR_API_KEY` par le canal local sécurisé prévu ;
-3. confirmer que l'usage est personnel et conforme à la licence choisie.
-
-Pour la couverture complète demandée, il faut ensuite les droits contractuels
-et modalités de livraison LSEG pour Worldscope/Financials PIT, I/B/E/S PIT +
-Guidance et MarketPsych/Machine Readable News, ainsi qu'une `OPENAI_API_KEY`.
-L'intégration LSEG sera adaptée au mode réellement accordé (API, fichiers ou
-SFTP) ; inventer un schéma avant le contrat rendrait le connecteur fragile.
+Sharadar, LSEG et une clé OpenAI restent des extensions facultatives. Elles ne
+seront demandées que si l'utilisateur décide explicitement d'activer ces briques.

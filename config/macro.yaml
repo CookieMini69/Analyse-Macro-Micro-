@@ -18,6 +18,27 @@ series:
   vix:
     series_id: VIXCLS
     name: CBOE Volatility Index
+  ecb_deposit_rate:
+    provider: ecb
+    series_id: FM.D.U2.EUR.4F.KR.DFR.LEV
+    name: ECB Deposit Facility Rate
+  cboe_total_put_call:
+    provider: cboe_put_call
+    series_id: TOTAL_PUT_CALL_RATIO
+    name: Cboe Total Put/Call Ratio
+    parameters:
+      ratio_name: TOTAL PUT/CALL RATIO
+  cftc_sp500_leveraged_money:
+    provider: cftc_cot
+    series_id: gpe5-46if
+    name: CFTC S&P 500 Leveraged Money Net Position
+    parameters:
+      market_name: S&P 500 Consolidated - CHICAGO MERCANTILE EXCHANGE
+      long_field: lev_money_positions_long
+      short_field: lev_money_positions_short
+      open_interest_field: open_interest_all
+      metric: net_pct_open_interest
+      publication_lag_days: "7"
   us_unemployment:
     series_id: UNRATE
     name: US Unemployment Rate

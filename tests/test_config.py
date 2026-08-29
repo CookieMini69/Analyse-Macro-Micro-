@@ -15,8 +15,9 @@ def test_default_settings_resolve_paths_from_project_root() -> None:
         Path.cwd().resolve() / "config" / "shock_taxonomy.yaml"
     )
     assert settings.paths.backtest_archive == (
-        Path.cwd().resolve() / "data" / "raw" / "backtest"
+        Path.cwd().resolve() / "data" / "raw" / "backtest_global_v1_0_2"
     )
+    assert settings.macro.provider == "mixed_official"
     assert settings.price.history_period == "max"
     assert settings.fundamentals.history_years == 5
     assert settings.valuation.historical_minimum_points == 3

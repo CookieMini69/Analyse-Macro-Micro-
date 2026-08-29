@@ -1,7 +1,9 @@
 version: 1
 
-# Univers pilote, pas indice exhaustif. Tickers, noms, CIK et places de cotation
-# verifies le 2026-08-28 dans le fichier officiel SEC
+# Univers mondial liquide et configurable, pas indice exhaustif. Les titres
+# etrangers sont des ADR/actions cotes aux Etats-Unis : prix en USD, CIK SEC et
+# formulaires 20-F/40-F exploitables sans fournisseur fondamental payant.
+# Tickers, noms, CIK et places de cotation verifies le 2026-08-29 dans le fichier officiel SEC
 # https://www.sec.gov/files/company_tickers_exchange.json.
 # Les secteurs sont des classifications operationnelles configurees au
 # 2026-08-28, non fournies par ce fichier SEC; conserver des snapshots dates
@@ -33,6 +35,12 @@ filters:
     - Hong Kong
     - Singapore
     - South Africa
+    - Israel
+    - Taiwan
+    - China
+    - India
+    - Brazil
+    - Argentina
 
 # Supported fields:
 # ticker (required), cik, company, country, sector, exchange, currency,
@@ -160,3 +168,235 @@ securities:
     exchange: NYSE
     currency: USD
     benchmark: ^GSPC
+  - ticker: ASML
+    cik: "937966"
+    company: ASML Holding N.V.
+    country: Netherlands
+    sector: Information Technology
+    exchange: Nasdaq
+    currency: USD
+    benchmark: EWN
+  - ticker: NVO
+    cik: "353278"
+    company: Novo Nordisk A/S
+    country: Denmark
+    sector: Health Care
+    exchange: NYSE
+    currency: USD
+    benchmark: EDEN
+  - ticker: SAP
+    cik: "1000184"
+    company: SAP SE
+    country: Germany
+    sector: Information Technology
+    exchange: NYSE
+    currency: USD
+    benchmark: EWG
+  - ticker: AZN
+    cik: "901832"
+    company: AstraZeneca PLC
+    country: United Kingdom
+    sector: Health Care
+    exchange: Nasdaq
+    currency: USD
+    benchmark: EWU
+  - ticker: SHEL
+    cik: "1306965"
+    company: Shell plc
+    country: United Kingdom
+    sector: Energy
+    exchange: NYSE
+    currency: USD
+    benchmark: EWU
+  - ticker: TTE
+    cik: "879764"
+    company: TotalEnergies SE
+    country: France
+    sector: Energy
+    exchange: NYSE
+    currency: USD
+    benchmark: EWQ
+  - ticker: SNY
+    cik: "1121404"
+    company: Sanofi
+    country: France
+    sector: Health Care
+    exchange: Nasdaq
+    currency: USD
+    benchmark: EWQ
+  - ticker: NVS
+    cik: "1114448"
+    company: Novartis AG
+    country: Switzerland
+    sector: Health Care
+    exchange: NYSE
+    currency: USD
+    benchmark: EWL
+  - ticker: UBS
+    cik: "1610520"
+    company: UBS Group AG
+    country: Switzerland
+    sector: Financials
+    exchange: NYSE
+    currency: USD
+    benchmark: EWL
+  - ticker: RIO
+    cik: "863064"
+    company: Rio Tinto PLC
+    country: United Kingdom
+    sector: Materials
+    exchange: NYSE
+    currency: USD
+    benchmark: EWU
+  - ticker: TSM
+    cik: "1046179"
+    company: Taiwan Semiconductor Manufacturing Co. Ltd.
+    country: Taiwan
+    sector: Information Technology
+    exchange: NYSE
+    currency: USD
+    benchmark: EWT
+  - ticker: TM
+    cik: "1094517"
+    company: Toyota Motor Corp.
+    country: Japan
+    sector: Consumer Discretionary
+    exchange: NYSE
+    currency: USD
+    benchmark: EWJ
+  - ticker: SONY
+    cik: "313838"
+    company: Sony Group Corp.
+    country: Japan
+    sector: Consumer Discretionary
+    exchange: NYSE
+    currency: USD
+    benchmark: EWJ
+  - ticker: MUFG
+    cik: "67088"
+    company: Mitsubishi UFJ Financial Group Inc.
+    country: Japan
+    sector: Financials
+    exchange: NYSE
+    currency: USD
+    benchmark: EWJ
+  - ticker: BABA
+    cik: "1577552"
+    company: Alibaba Group Holding Ltd.
+    country: China
+    sector: Consumer Discretionary
+    exchange: NYSE
+    currency: USD
+    benchmark: MCHI
+  - ticker: INFY
+    cik: "1067491"
+    company: Infosys Ltd.
+    country: India
+    sector: Information Technology
+    exchange: NYSE
+    currency: USD
+    benchmark: INDA
+  - ticker: HDB
+    cik: "1144967"
+    company: HDFC Bank Ltd.
+    country: India
+    sector: Financials
+    exchange: NYSE
+    currency: USD
+    benchmark: INDA
+  - ticker: SE
+    cik: "1703399"
+    company: Sea Ltd.
+    country: Singapore
+    sector: Communication Services
+    exchange: NYSE
+    currency: USD
+    benchmark: EWS
+  - ticker: GRAB
+    cik: "1855612"
+    company: Grab Holdings Ltd.
+    country: Singapore
+    sector: Industrials
+    exchange: Nasdaq
+    currency: USD
+    benchmark: EWS
+  - ticker: SHOP
+    cik: "1594805"
+    company: Shopify Inc.
+    country: Canada
+    sector: Information Technology
+    exchange: Nasdaq
+    currency: USD
+    benchmark: EWC
+  - ticker: RY
+    cik: "1000275"
+    company: Royal Bank of Canada
+    country: Canada
+    sector: Financials
+    exchange: NYSE
+    currency: USD
+    benchmark: EWC
+  - ticker: MELI
+    cik: "1099590"
+    company: MercadoLibre Inc.
+    country: Argentina
+    sector: Consumer Discretionary
+    exchange: Nasdaq
+    currency: USD
+    benchmark: ARGT
+  - ticker: VALE
+    cik: "917851"
+    company: Vale S.A.
+    country: Brazil
+    sector: Materials
+    exchange: NYSE
+    currency: USD
+    benchmark: EWZ
+  - ticker: PBR
+    cik: "1119639"
+    company: Petrobras
+    country: Brazil
+    sector: Energy
+    exchange: NYSE
+    currency: USD
+    benchmark: EWZ
+  - ticker: ITUB
+    cik: "1132597"
+    company: Itau Unibanco Holding S.A.
+    country: Brazil
+    sector: Financials
+    exchange: NYSE
+    currency: USD
+    benchmark: EWZ
+  - ticker: NU
+    cik: "1691493"
+    company: Nu Holdings Ltd.
+    country: Brazil
+    sector: Financials
+    exchange: NYSE
+    currency: USD
+    benchmark: EWZ
+  - ticker: BHP
+    cik: "811809"
+    company: BHP Group Ltd.
+    country: Australia
+    sector: Materials
+    exchange: NYSE
+    currency: USD
+    benchmark: EWA
+  - ticker: GFI
+    cik: "1172724"
+    company: Gold Fields Ltd.
+    country: South Africa
+    sector: Materials
+    exchange: NYSE
+    currency: USD
+    benchmark: EZA
+  - ticker: TEVA
+    cik: "818686"
+    company: Teva Pharmaceutical Industries Ltd.
+    country: Israel
+    sector: Health Care
+    exchange: NYSE
+    currency: USD
+    benchmark: EIS

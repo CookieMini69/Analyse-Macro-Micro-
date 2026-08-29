@@ -94,10 +94,30 @@ def analyze_valuation(
         valuation_price_date,
         fundamental.as_of.date(),
     )
+    fundamental_currencies = {
+        observation.currency.upper()
+        for observations in fundamental.annual_observations.values()
+        for observation in observations
+        if observation.currency
+        and observation.unit != "shares"
+    }
     if valuation_price is not None and not currency:
-        currency_error = "price currency is unavailable; SEC USD facts cannot be aligned"
-    elif currency and currency.upper() != "USD":
-        currency_error = f"price currency {currency!r} is not aligned with SEC USD facts"
+        currency_error = "price currency is unavailable; financial facts cannot be aligned"
+    elif len(fundamental_currencies) > 1:
+        currency_error = (
+            "fundamental facts contain multiple currencies: "
+            + ", ".join(sorted(fundamental_currencies))
+        )
+    elif (
+        currency
+        and fundamental_currencies
+        and currency.upper() not in fundamental_currencies
+    ):
+        fact_currency = next(iter(fundamental_currencies))
+        currency_error = (
+            f"price currency {currency!r} is not aligned with "
+            f"fundamental fact currency {fact_currency!r}"
+        )
     else:
         currency_error = None
     multiples = _build_multiples(

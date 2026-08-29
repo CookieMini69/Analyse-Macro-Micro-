@@ -110,9 +110,10 @@ class MacroSettings(BaseModel):
     @field_validator("provider")
     @classmethod
     def macro_provider_is_supported(cls, value: str) -> str:
-        if value.lower() != "fred":
-            raise ValueError("this phase currently supports only the 'fred' macro provider")
-        return value.lower()
+        normalized = value.lower()
+        if normalized not in {"fred", "mixed_official"}:
+            raise ValueError("macro provider must be 'fred' or 'mixed_official'")
+        return normalized
 
 
 class FxSettings(BaseModel):

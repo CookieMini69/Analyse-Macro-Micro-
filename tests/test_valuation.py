@@ -164,6 +164,41 @@ def test_current_valuation_skips_incomplete_latest_market_bar() -> None:
     assert result.status == DataStatus.AVAILABLE
 
 
+def test_valuation_rejects_unconverted_local_currency_fundamentals() -> None:
+    security, prices = priced_security(price=20.0)
+    fundamental = fundamental_for(security)
+    local_observations = {
+        name: [
+            observation.model_copy(
+                update={
+                    "unit": (
+                        "DKK/shares"
+                        if observation.unit == "USD/shares"
+                        else "DKK" if observation.unit == "USD" else observation.unit
+                    ),
+                    "currency": (
+                        "DKK" if observation.unit in {"USD", "USD/shares"} else observation.currency
+                    ),
+                }
+            )
+            for observation in observations
+        ]
+        for name, observations in fundamental.annual_observations.items()
+    }
+    fundamental = fundamental.model_copy(
+        update={"annual_observations": local_observations}
+    )
+    result = analyze_valuation(
+        security, fundamental, prices, None, ValuationSettings()
+    )
+    assert result.status == DataStatus.DATA_UNAVAILABLE
+    assert "fundamental fact currency 'DKK'" in result.error
+    assert all(
+        multiple.current.status == DataStatus.DATA_UNAVAILABLE
+        for multiple in result.multiples.values()
+    )
+
+
 def test_historical_multiple_never_uses_a_post_cutoff_close() -> None:
     security, prices = priced_security(price=20.0)
     fundamental = fundamental_for(security)

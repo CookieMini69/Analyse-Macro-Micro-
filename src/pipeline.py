@@ -28,6 +28,7 @@ from src.data.fundamentals import (
 )
 from src.data.fx import FrankfurterFxSource, convert_currency
 from src.data.macro import FredMacroSource, unavailable_macro_series
+from src.data.public_macro import CboePutCallSource, CftcCotSource, EcbMacroSource
 from src.data.news import (
     GDELT_DOC_URL,
     GdeltNewsSource,
@@ -52,6 +53,7 @@ from src.forecasting.scenarios import analyze_scenarios
 from src.macro_config import (
     MacroConfig,
     MacroExposureConfig,
+    MacroSeriesDefinition,
     ShockTaxonomyConfig,
     load_macro_config,
     load_macro_exposure_config,
@@ -285,7 +287,7 @@ def _run_fundamentals(
                 security,
                 cutoff,
                 DataStatus.NOT_APPLICABLE,
-                "SEC EDGAR provider currently covers US reporting issuers only",
+                "SEC EDGAR provider requires a US reporting issuer or explicit CIK",
             )
         elif configured_source is None:
             data = unavailable_fundamental_data(
@@ -328,37 +330,71 @@ def _run_macro(
         else MacroConfig()
     )
     cutoff = normalize_as_of(as_of)
-    configured_source = source
-    configuration_error: str | None = None
-    if configured_source is None and config.series:
-        api_key = os.getenv(settings.macro.api_key_env, "").strip()
-        if not api_key:
-            configuration_error = (
-                f"{settings.macro.api_key_env} is required for FRED/ALFRED access"
-            )
-        else:
-            try:
-                configured_source = FredMacroSource(
-                    settings.paths.macro_cache
-                    or settings.project_root / "data" / "cache" / "macro",
+    cache_dir = settings.paths.macro_cache or (
+        settings.project_root / "data" / "cache" / "macro"
+    )
+    providers: dict[str, MacroSource] = {}
+    provider_errors: dict[str, str] = {}
+
+    def configured_provider(name: str) -> MacroSource | None:
+        if source is not None:
+            return source
+        if name in providers:
+            return providers[name]
+        try:
+            if name == "fred":
+                api_key = os.getenv(settings.macro.api_key_env, "").strip()
+                if not api_key:
+                    raise RuntimeError(
+                        f"{settings.macro.api_key_env} is required for FRED/ALFRED access"
+                    )
+                result: MacroSource = FredMacroSource(
+                    cache_dir / "fred",
                     api_key=api_key,
                     cache_ttl_hours=settings.macro.cache_ttl_hours,
                     timeout_seconds=settings.macro.timeout_seconds,
                     max_retries=settings.macro.max_retries,
                 )
-            except Exception as exc:
-                configuration_error = f"{type(exc).__name__}: {exc}"
+            elif name == "ecb":
+                result = EcbMacroSource(
+                    cache_dir / "ecb",
+                    cache_ttl_hours=settings.macro.cache_ttl_hours,
+                    timeout_seconds=settings.macro.timeout_seconds,
+                    max_retries=settings.macro.max_retries,
+                )
+            elif name == "cboe_put_call":
+                result = CboePutCallSource(
+                    cache_dir / "cboe",
+                    cache_ttl_hours=settings.macro.cache_ttl_hours,
+                    timeout_seconds=settings.macro.timeout_seconds,
+                    max_retries=settings.macro.max_retries,
+                )
+            elif name == "cftc_cot":
+                result = CftcCotSource(
+                    cache_dir / "cftc",
+                    cache_ttl_hours=settings.macro.cache_ttl_hours,
+                    timeout_seconds=settings.macro.timeout_seconds,
+                    max_retries=settings.macro.max_retries,
+                )
+            else:  # guarded by MacroSeriesDefinition validation
+                raise RuntimeError(f"unsupported macro provider {name!r}")
+            providers[name] = result
+            return result
+        except Exception as exc:
+            provider_errors[name] = f"{type(exc).__name__}: {exc}"
+            return None
     raw: dict[str, MacroSeriesResult] = {}
     for key, definition in config.series.items():
         if not definition.enabled:
             continue
+        configured_source = configured_provider(definition.provider)
         if configured_source is None:
             result = unavailable_macro_series(
                 key,
                 definition,
                 cutoff,
-                f"https://fred.stlouisfed.org/series/{definition.series_id}",
-                configuration_error or "macro source unavailable",
+                _macro_source_url(definition),
+                provider_errors.get(definition.provider, "macro source unavailable"),
             )
         else:
             try:
@@ -373,12 +409,23 @@ def _run_macro(
                     key,
                     definition,
                     cutoff,
-                    f"https://fred.stlouisfed.org/series/{definition.series_id}",
+                    _macro_source_url(definition),
                     f"{type(exc).__name__}: {exc}",
                 )
         raw[key] = result
     analyses = {key: analyze_macro_series(result) for key, result in raw.items()}
     return raw, analyses
+
+
+def _macro_source_url(definition: MacroSeriesDefinition) -> str:
+    if definition.provider == "ecb":
+        api_path = definition.series_id.replace(".", "/", 1)
+        return f"https://data-api.ecb.europa.eu/service/data/{api_path}"
+    if definition.provider == "cboe_put_call":
+        return "https://www.cboe.com/markets/us/options/market-statistics/daily/"
+    if definition.provider == "cftc_cot":
+        return f"https://publicreporting.cftc.gov/resource/{definition.series_id}"
+    return f"https://fred.stlouisfed.org/series/{definition.series_id}"
 
 
 def _run_news(

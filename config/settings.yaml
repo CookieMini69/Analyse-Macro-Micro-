@@ -12,7 +12,9 @@ paths:
   shock_taxonomy: "config/shock_taxonomy.yaml"
   macro_cache: "data/cache/macro"
   news_cache: "data/cache/news"
-  backtest_archive: "data/raw/backtest"
+  # New immutable lineage for the 44-security global-universe methodology.
+  # The prior 15-security archive remains untouched in data/raw/backtest.
+  backtest_archive: "data/raw/backtest_global_v1_0_2"
   reports: "reports"
 
 price:
@@ -44,7 +46,7 @@ valuation:
 
 macro:
   enabled: true
-  provider: "fred"
+  provider: "mixed_official"
   api_key_env: "FRED_API_KEY"
   cache_ttl_hours: 24
   timeout_seconds: 30
@@ -111,8 +113,8 @@ backtest:
   annual_risk_free_rate: 0.0
   minimum_trades: 5
 
-# Licensed, survivorship-free source used for a genuine 2018-2025 reconstruction.
-# The key is read only from SHARADAR_API_KEY and is never written to a manifest.
+# Optional paid adapter kept disabled by the normal pipeline. It is not required
+# for live scans; the free official-source strategy is documented separately.
 historical_data:
   provider: sharadar
   api_key_env: SHARADAR_API_KEY

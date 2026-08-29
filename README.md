@@ -1,8 +1,9 @@
 # AI Stock Opportunity Scanner
 
-Version `1.0.1` implements the price/drawdown scanner, a **point-in-time
-fundamental engine for SEC-reporting US issuers**, valuation, point-in-time
-FRED/ALFRED macro vintages, public GDELT news metadata, and conservative shock
+Version `1.0.2` implements the price/drawdown scanner, a **point-in-time
+fundamental engine for domestic and foreign SEC-reporting issuers**, valuation,
+point-in-time FRED/ALFRED and ECB macro vintages, official Cboe put/call and CFTC
+positioning context, public GDELT news metadata, and conservative shock
 detection, same-security historical drawdown analogues, and evidence-derived
 bear/base/bull temporal scenarios and targets, plus coverage-aware Phase 8
 sub-scores and a Temporary Mispricing Opportunity Score. It preserves the
@@ -66,14 +67,17 @@ The SEC requires automated clients to identify themselves. The application
 refuses an anonymous or unchanged placeholder User-Agent. `.env` is loaded
 without overriding variables already defined in the shell and is ignored by Git.
 FRED requires a free API key; the scanner never writes it to cache, provenance,
-or reports. GDELT, Yahoo, and ECB/Frankfurter FX require no key.
+or reports. ECB, Cboe, CFTC, GDELT, Yahoo, and ECB/Frankfurter FX require no key.
 
 ## Configure the universe
 
-`config/universe.yaml` ships with a 15-security US pilot universe. Its CIKs,
-issuer names, and exchanges were checked against the official SEC ticker mapping
-on 2026-08-28. It is deliberately labeled as a pilot rather than a complete or
-survivorship-free market universe. You can edit or replace its explicit entries:
+`config/universe.yaml` ships with 44 liquid US-listed securities from 18 issuer
+countries. It includes ADRs/foreign shares from Europe, Asia, Canada, Latin
+America, Australia, South Africa, and Israel. CIKs, issuer names, and exchanges
+were checked against the official SEC ticker mapping on 2026-08-29. Country ETF
+benchmarks are denominated in USD to make relative returns comparable with the
+USD-listed security. This is a broad live research universe, not a complete or
+survivorship-free historical index. You can edit or replace its entries:
 
 ```yaml
 securities:
@@ -612,24 +616,27 @@ probability of profit, or a BUY/WATCH/PASS verdict.
 
 ## Point-in-time macro engine
 
-`config/macro.yaml` declares stable FRED series identifiers; titles, frequency,
-units, observations, and real-time periods come from the official API. For each
-run, the engine sends the same cutoff date as both `realtime_start` and
-`realtime_end`. This is the ALFRED vintage that was observable on that date, not
-today's revised history retroactively attached to an old run. Each observation
-retains its observation date, returned real-time start/end, retrieval timestamp,
-source URL, status, and quality.
+`config/macro.yaml` declares the provider per series. FRED/ALFRED observations
+use the same cutoff date for `realtime_start` and `realtime_end`. ECB SDMX rows
+are filtered with `VALID_FROM`/`VALID_TO`. Cboe daily options statistics preserve
+the selected trading date, and CFTC COT rows use a conservative seven-day delay
+after the Tuesday position date because the public dataset does not expose a
+reliable publication timestamp. Each observation retains its observation date,
+availability period, retrieval timestamp, source URL, status, and quality.
 
 The default configuration retrieves the effective federal funds rate, US CPI,
-WTI oil, 10-year Treasury yield, VIX, and US unemployment. It exports raw values
-and mechanical absolute/percentage changes over approximately 30, 90, and 365
-calendar days. These changes are context, not a claim that the variable caused a
-stock move. Missing values and series errors remain explicit and never abort the
-rest of the universe.
+WTI oil, 10-year Treasury yield, VIX, US unemployment, the ECB deposit-facility
+rate, Cboe total put/call ratio, and CFTC S&P 500 leveraged-money net positioning.
+It exports raw values and mechanical changes. These series are risk/regime
+context, not a claim that they caused a stock move. Missing values never abort
+the rest of the universe.
 
 See the official [FRED observations API](https://fred.stlouisfed.org/docs/api/fred/series_observations.html),
 [real-time-period documentation](https://fred.stlouisfed.org/docs/api/fred/realtime_period.html),
 and [FRED versus ALFRED explanation](https://fred.stlouisfed.org/docs/api/fred/fred_vs_alfred.html).
+Additional primary sources are the [ECB Data Portal API](https://data.ecb.europa.eu/help/api/data),
+[Cboe daily market statistics](https://www.cboe.com/markets/us/options/market-statistics/daily/),
+and [CFTC Commitments of Traders](https://publicreporting.cftc.gov/stories/s/r4w3-av2u).
 
 ## Macro-exposure assumptions
 
@@ -763,8 +770,8 @@ The current checked/partial/deferred audits are maintained in
 
 ## Known V1 limitations
 
-- There is no automatic, survivorship-bias-free global constituent discovery;
-  users must provide a maintained YAML/CSV universe.
+- The shipped global universe is a current, curated set of US-listed ADRs/shares,
+  not native listings and not a survivorship-free historical membership archive.
 - Yahoo data can be delayed, adjusted, incomplete, unavailable, or subject to
   provider changes. V1 does not corroborate it with an exchange feed.
 - Market cap is not fetched. Valuation may derive it from the point-in-time close
@@ -774,9 +781,11 @@ The current checked/partial/deferred audits are maintained in
 - “ATH” means the maximum within the requested/downloaded history. With the
   default `max` period this attempts full provider history, but completeness still
   depends on the source.
-- SEC normalization currently covers annual standard `us-gaap` facts in 10-K
-  filings. Custom company extensions, IFRS/20-F/40-F, discrete quarters, and TTM
-  calculations are not yet supported.
+- SEC normalization covers standard `us-gaap` and mapped `ifrs-full` annual facts
+  in 10-K, 20-F, and 40-F filings. Unsupported company extensions, discrete
+  quarters, and TTM calculations remain unavailable. Local-currency IFRS facts
+  can feed dimensionless fundamental ratios, but valuation is rejected when the
+  fact currency is not aligned with the USD-listed security price.
 - Company Facts is a current aggregate API. Filtering by accession/acceptance
   prevents ordinary future-filing leakage, but a production historical backtest
   should additionally archive daily SEC snapshots or use dated bulk datasets to
