@@ -541,10 +541,13 @@ def _current_market_cap(
 
 
 def _latest_price_on_or_before(frame: pd.DataFrame, cutoff: date):
-    if frame.empty or "observation_date" not in frame:
+    if frame.empty or "observation_date" not in frame or "close" not in frame:
         return None
     dates = pd.to_datetime(frame["observation_date"], errors="coerce")
-    eligible = frame.loc[dates.dt.date <= cutoff].copy()
+    closes = pd.to_numeric(frame["close"], errors="coerce")
+    eligible = frame.loc[
+        dates.notna() & (dates.dt.date <= cutoff) & closes.notna() & (closes > 0)
+    ].copy()
     if eligible.empty:
         return None
     eligible["_date"] = pd.to_datetime(eligible["observation_date"], errors="coerce")

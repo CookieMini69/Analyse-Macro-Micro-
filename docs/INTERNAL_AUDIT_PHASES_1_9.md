@@ -1,13 +1,13 @@
 # Audit interne des phases 1 à 9
 
-Version : 1.0.0  
+Version : 1.0.1
 Date d'audit : 2026-08-29
 
 ## Résultat exécutif
 
 Le dépôt respecte la progression 1 à 9 du cahier des charges pour le périmètre
 de données effectivement disponible. Les valeurs absentes restent nulles et
-traçables. L'audit a corrigé trois écarts internes :
+traçables. Les audits ont corrigé cinq écarts internes :
 
 1. collecte FX datée ECB/Frankfurter et conversion effective des prix et
    capitalisations en USD/EUR, avec conservation de la devise originale ;
@@ -15,8 +15,12 @@ traçables. L'audit a corrigé trois écarts internes :
    Temporary Shock Score de la phase 5 ;
 3. moteur de backtest strict, exports, benchmarks, coûts et archives live
    immuables vérifiées par SHA-256.
+4. sélection de la dernière clôture exploitable lorsque Yahoo expose une bougie
+   courante incomplète ;
+5. sélection auditable du premier signal journalier si le scanner est relancé
+   plusieurs fois le même jour, sans doublon ni sélection rétrospective.
 
-La suite de régression finale contient 103 tests. Un résultat synthétique de
+La suite de régression finale contient 110 tests. Un résultat synthétique de
 test ne constitue pas une validation statistique de la stratégie.
 
 ## Matrice de conformité
@@ -102,3 +106,22 @@ cahier des charges.
 
 Les accès SEC EDGAR et FRED sont déjà configurés localement. Le FX
 ECB/Frankfurter ne nécessite pas de clé.
+
+## Nouvel audit d'accès du 2026-08-29
+
+Une source exploitable a été retenue et intégrée : Sharadar Direct Bundle avec
+au moins dix ans d'historique. Le bootstrap contrôle séparément `tickers`,
+`sp500`, `stocks`, `fundamentals`, `daily`, `actions` et `events`, puis vérifie
+les schémas et empreintes SHA-256 locales. Le rapport machine courant est
+`reports/historical_access_audit.json`.
+
+Résultat réel de la machine : `SHARADAR_API_KEY` absente, sept tables
+inaccessibles, `core_backtest_ready=false`, `full_spec_ready=false`. La phase 10
+n'est donc pas ouverte. Cette décision respecte l'exigence de ne passer à la
+phase suivante que lorsque la phase actuelle fonctionne sur ses données réelles.
+
+Les accès complémentaires sélectionnés sont LSEG Worldscope/Financials
+Point-in-Time (IFRS mondial), I/B/E/S Point-in-Time + Guidance, LSEG
+MarketPsych/Machine Readable News (archives causales datées), et OpenAI Responses
+API avec `gpt-5.6-terra` pour l'analyste critique. Voir
+`docs/HISTORICAL_DATA_ACCESS.md`.

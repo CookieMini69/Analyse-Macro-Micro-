@@ -1,6 +1,6 @@
 # Phase 9 compliance — strict point-in-time backtesting
 
-Version: 1.0.0  
+Version: 1.0.1
 Audit date: 2026-08-29
 
 ## Implemented
@@ -21,6 +21,9 @@ Audit date: 2026-08-29
 - [x] JSON result, flat metrics CSV, and transaction-level CSV.
 - [x] Write-once live universe/signal/source archives for future studies.
 - [x] Historical reconstructions run today are never mislabeled as old archives.
+- [x] Repeated intraday live scans select the earliest immutable daily signal;
+  explicitly unavailable/incomplete provider bars are excluded before outcome
+  validation, while malformed available bars still fail closed.
 - [x] Synthetic unit/integration tests cover success and every critical refusal.
 
 ## Deliberately unavailable today
@@ -33,9 +36,31 @@ Audit date: 2026-08-29
 - [ ] Proof that a higher bucket outperforms until the required real dataset is
   supplied and the out-of-sample study is run.
 
+## Historical-access remediation (2026-08-29)
+
+- [x] A concrete source was selected: Sharadar Direct Bundle, 10-year history.
+- [x] Required active/delisted master, historical S&P 500 membership, prices,
+  as-reported fundamentals, daily multiples, corporate actions, and 8-K event
+  tables are configured.
+- [x] A secret-safe entitlement audit and full-history bulk downloader exist.
+- [x] Every downloaded archive receives a provider/schema/SHA-256 manifest;
+  tampering is rejected.
+- [x] The audit cannot mark the core backtest ready merely because files exist.
+- [ ] `SHARADAR_API_KEY` is not configured; no provider entitlement or real
+  2018–2025 archive has therefore been validated yet.
+- [ ] Dated signal reconstruction and the strict real backtest remain blocked
+  until that access is supplied.
+
+See `docs/HISTORICAL_DATA_ACCESS.md` for the exact subscription and commands.
+
 ## Verification
 
-- Complete offline suite: 103 passed.
+- Complete offline suite: 110 passed.
+- Real cached-provider valuation re-audit after incomplete-bar fix: 14/15
+  issuers available and 15/15 with a usable valuation close.
+- Live-archive Phase 9 validation: all six integrity/anti-bias gates pass; the
+  result remains explicitly unavailable because no historical holding period is
+  present yet.
 - Synthetic five-bucket run: all required metrics and benchmark comparison
   produced.
 - Invalid future availability, missing membership, bad archive hash, absent

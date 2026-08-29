@@ -32,6 +32,14 @@ def test_default_settings_resolve_paths_from_project_root() -> None:
     assert settings.fx.enabled is True
     assert settings.fx.target_currencies == ["USD", "EUR"]
     assert settings.backtest.archive_live_runs is True
+    assert settings.historical_data.provider == "sharadar"
+    assert settings.historical_data.start_year == 2018
+    assert settings.historical_data.end_year == 2025
+    assert "sp500" in settings.historical_data.required_tables
+    assert settings.ai_analyst.enabled is False
+    assert settings.ai_analyst.provider == "openai"
+    assert settings.ai_analyst.model == "gpt-5.6-terra"
+    assert settings.ai_analyst.store is False
 
 
 def test_project_env_file_is_loaded_without_overriding_shell(

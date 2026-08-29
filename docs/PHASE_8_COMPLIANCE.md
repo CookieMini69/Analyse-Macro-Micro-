@@ -1,6 +1,6 @@
 # Phase 8 compliance — coverage-aware scoring
 
-Version: 1.0.0
+Version: 1.0.1
 Audit date: 2026-08-29
 
 ## Implemented
@@ -43,7 +43,7 @@ Audit date: 2026-08-29
 
 ## Verification result
 
-- Offline unit/integration/audit tests: 103 passed.
+- Offline unit/integration/audit tests: 110 passed.
 - Project environment dependency check: no broken requirements.
 - Real providers: SEC 15/15, FRED 6/6, price histories 16/16, valuation 14/15.
 - Real candidate outputs: historical analogues 3/3, scenarios 3/3, coverage-

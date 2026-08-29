@@ -1,6 +1,6 @@
 # AI Stock Opportunity Scanner
 
-Version `1.0.0` implements the price/drawdown scanner, a **point-in-time
+Version `1.0.1` implements the price/drawdown scanner, a **point-in-time
 fundamental engine for SEC-reporting US issuers**, valuation, point-in-time
 FRED/ALFRED macro vintages, public GDELT news metadata, and conservative shock
 detection, same-security historical drawdown analogues, and evidence-derived
@@ -380,6 +380,28 @@ is claimed without the required archives; the score must never be displayed as
 a chance of profit.
 
 ## Phase 9 backtest methodology
+
+### Obtaining a real 2018–2025 dataset
+
+The selected US source is Sharadar Direct Bundle with at least 10 years of
+history. The repository now includes a secret-safe access check, bulk downloader,
+schema validation, and SHA-256 manifests for the active/delisted security master,
+historical S&P 500 membership, prices, as-reported fundamentals, daily multiples,
+corporate actions, and material 8-K events.
+
+Add `SHARADAR_API_KEY` to the local `.env`, then run:
+
+```powershell
+python -m src.backtest.dataset access
+python -m src.backtest.dataset download
+python -m src.backtest.dataset audit-local
+```
+
+These commands intentionally keep `core_backtest_ready=false` until dated
+signals have been rebuilt from the verified archives and the strict Phase 9
+engine has completed. Full subscription guidance and the selected global,
+consensus/guidance, historical-news, and AI sources are documented in
+`docs/HISTORICAL_DATA_ACCESS.md`.
 
 The backtest consumes archived signal CSV files, outcome-price CSV files, and
 dated universe snapshots. It refuses output unless signal availability is no
@@ -817,7 +839,7 @@ and immutable 2018–2025 inputs listed in
 
 ## Backtesting status and required methodology
 
-The strict Phase 9 engine is implemented in version 1.0.0. It validates
+The strict Phase 9 engine is implemented in version 1.0.1. It validates
 point-in-time universe membership, archive integrity, signal availability,
 benchmark coverage, future outcome separation, and transaction assumptions.
 No current score is statistically validated because the repository does not

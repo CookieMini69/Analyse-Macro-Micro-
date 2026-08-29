@@ -18,7 +18,9 @@ def load_backtest_inputs(
     signal_path = Path(signals_path)
     signals = _load_csv_path(signal_path, {"ticker", "signal_date"})
     signals = _verify_source_archives(signals, signal_path)
+    signals = _select_first_daily_signal(signals)
     prices = _load_csv_path(Path(prices_path), {"ticker", "observation_date"})
+    prices = _exclude_explicitly_unavailable_prices(prices)
     snapshots = load_universe_snapshots(universe_directory)
     return signals, prices, snapshots
 
@@ -60,6 +62,44 @@ def _verify_source_archives(signals: pd.DataFrame, signal_path: Path) -> pd.Data
         verified.append(bool(original and digest == expected))
     frame["archive_integrity_verified"] = verified
     return frame
+
+
+def _select_first_daily_signal(signals: pd.DataFrame) -> pd.DataFrame:
+    """Keep the earliest immutable run when a daily archive was run repeatedly.
+
+    The backtest works at daily frequency. Selecting the earliest public signal
+    deterministically avoids both duplicate trades and a hindsight-biased choice
+    among later intraday reruns.
+    """
+
+    if signals.empty or "signal_available_at" not in signals:
+        return signals
+    frame = signals.copy()
+    frame["_available"] = pd.to_datetime(
+        frame["signal_available_at"], errors="coerce", utc=True
+    )
+    frame["_ticker"] = frame["ticker"].astype(str).str.strip().str.upper()
+    frame["_signal_date"] = pd.to_datetime(
+        frame["signal_date"], errors="coerce"
+    ).dt.date
+    frame = frame.sort_values(
+        ["_ticker", "_signal_date", "_available", "source_archive_id"],
+        na_position="last",
+    )
+    frame["daily_archive_count"] = frame.groupby(
+        ["_ticker", "_signal_date"], dropna=False
+    )["ticker"].transform("size")
+    frame = frame.drop_duplicates(["_ticker", "_signal_date"], keep="first")
+    return frame.drop(columns=["_available", "_ticker", "_signal_date"]).reset_index(drop=True)
+
+
+def _exclude_explicitly_unavailable_prices(prices: pd.DataFrame) -> pd.DataFrame:
+    """Drop provider rows explicitly marked unavailable, not arbitrary bad data."""
+
+    if prices.empty or "data_status" not in prices:
+        return prices
+    status = prices["data_status"].astype(str).str.strip().str.lower()
+    return prices.loc[status == "available"].reset_index(drop=True)
 
 
 def load_universe_snapshots(directory: str | Path) -> dict[date, set[str]]:

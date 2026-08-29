@@ -264,6 +264,80 @@ class BacktestSettings(BaseModel):
         return self
 
 
+class HistoricalDataSettings(BaseModel):
+    """Licensed point-in-time dataset used to reconstruct historical signals."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    provider: str = "sharadar"
+    api_key_env: str = "SHARADAR_API_KEY"
+    base_url: str = "https://api.sharadar.com/v1.0/data"
+    start_year: int = Field(default=2018, ge=1998, le=2100)
+    end_year: int = Field(default=2025, ge=1998, le=2100)
+    universe: str = "sp500"
+    required_tables: list[str] = Field(
+        default_factory=lambda: [
+            "tickers", "sp500", "stocks", "fundamentals", "daily", "actions",
+            "events",
+        ]
+    )
+    timeout_seconds: int = Field(default=60, ge=1, le=600)
+
+    @field_validator("provider")
+    @classmethod
+    def provider_is_supported(cls, value: str) -> str:
+        if value.lower() != "sharadar":
+            raise ValueError("historical_data currently supports only 'sharadar'")
+        return value.lower()
+
+    @field_validator("required_tables")
+    @classmethod
+    def validate_tables(cls, values: list[str]) -> list[str]:
+        supported = {
+            "tickers", "sp500", "stocks", "fundamentals", "daily", "actions",
+            "events",
+        }
+        normalized = list(dict.fromkeys(value.strip().lower() for value in values))
+        if not normalized or any(value not in supported for value in normalized):
+            raise ValueError(
+                "historical_data.required_tables contains an unsupported table"
+            )
+        return normalized
+
+    @model_validator(mode="after")
+    def validate_years(self) -> "HistoricalDataSettings":
+        if self.start_year > self.end_year:
+            raise ValueError("historical_data start_year cannot exceed end_year")
+        return self
+
+
+class AiAnalystSettings(BaseModel):
+    """Provider boundary for the later evidence-constrained critical analyst."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool = False
+    provider: str = "openai"
+    model: str = "gpt-5.6-terra"
+    api_key_env: str = "OPENAI_API_KEY"
+    api: str = "responses"
+    store: bool = False
+
+    @field_validator("provider")
+    @classmethod
+    def provider_is_supported(cls, value: str) -> str:
+        if value.lower() != "openai":
+            raise ValueError("ai_analyst currently supports only 'openai'")
+        return value.lower()
+
+    @field_validator("api")
+    @classmethod
+    def api_is_supported(cls, value: str) -> str:
+        if value.lower() != "responses":
+            raise ValueError("ai_analyst must use the OpenAI Responses API")
+        return value.lower()
+
+
 class ExportSettings(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -300,6 +374,10 @@ class AppSettings(BaseModel):
     scenario: ScenarioSettings = Field(default_factory=ScenarioSettings)
     scoring: ScoringSettings = Field(default_factory=ScoringSettings)
     backtest: BacktestSettings = Field(default_factory=BacktestSettings)
+    historical_data: HistoricalDataSettings = Field(
+        default_factory=HistoricalDataSettings
+    )
+    ai_analyst: AiAnalystSettings = Field(default_factory=AiAnalystSettings)
     screening: ScreeningSettings = Field(default_factory=ScreeningSettings)
     export: ExportSettings = Field(default_factory=ExportSettings)
     logging: LoggingSettings = Field(default_factory=LoggingSettings)

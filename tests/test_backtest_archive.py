@@ -77,3 +77,40 @@ def test_loader_detects_tampered_source_archive(tmp_path) -> None:
     ).to_csv(prices_path, index=False)
     loaded, _, _ = load_backtest_inputs(outputs[2].parent, prices_path, outputs[0].parent)
     assert bool(loaded.iloc[0]["archive_integrity_verified"]) is False
+
+
+def test_loader_keeps_earliest_daily_signal_and_drops_unavailable_price_rows(
+    tmp_path,
+) -> None:
+    now = datetime(2026, 8, 29, 12, tzinfo=UTC)
+    candidate = OpportunityCandidate(
+        ticker="TEST", opportunity_score=70.0, data_quality=DataQuality.HIGH,
+        decline_severity_score=40.0, is_candidate=True, retrieved_at=now,
+    )
+    security = Security(ticker="TEST", benchmark="^GSPC")
+    archive_live_run(
+        [candidate], [security], as_of=now, archive_root=tmp_path,
+        archived_at=now,
+    )
+    later = now.replace(hour=13)
+    archive_live_run(
+        [candidate.model_copy(update={"opportunity_score": 90.0})], [security],
+        as_of=later, archive_root=tmp_path, archived_at=later,
+    )
+    prices_path = tmp_path / "prices.csv"
+    pd.DataFrame(
+        [
+            {"ticker": "TEST", "observation_date": "2026-08-28",
+             "adjusted_close": 10, "data_status": "available"},
+            {"ticker": "TEST", "observation_date": "2026-08-29",
+             "adjusted_close": None, "data_status": "data_unavailable"},
+        ]
+    ).to_csv(prices_path, index=False)
+    signals, prices, _ = load_backtest_inputs(
+        tmp_path / "signals", prices_path, tmp_path / "universes"
+    )
+    assert len(signals) == 1
+    assert signals.iloc[0]["opportunity_score"] == 70.0
+    assert signals.iloc[0]["daily_archive_count"] == 2
+    assert len(prices) == 1
+    assert prices.iloc[0]["adjusted_close"] == 10

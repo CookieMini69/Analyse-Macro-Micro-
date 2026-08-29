@@ -147,6 +147,23 @@ def test_multiples_use_price_at_cutoff_and_first_close_after_publication() -> No
     assert "no dated" in result.dcf_scenarios["base"].reason
 
 
+def test_current_valuation_skips_incomplete_latest_market_bar() -> None:
+    security, prices = priced_security(price=20.0)
+    fundamental = fundamental_for(security)
+    eligible = prices.frame[
+        prices.frame["observation_date"].dt.date <= fundamental.as_of.date()
+    ]
+    latest_eligible_index = eligible.index[-1]
+    previous_date = eligible.iloc[-2]["observation_date"].date()
+    prices.frame.loc[latest_eligible_index, ["close", "adjusted_close"]] = np.nan
+    result = analyze_valuation(
+        security, fundamental, prices, None, ValuationSettings()
+    )
+    assert result.valuation_price == pytest.approx(20.0)
+    assert result.valuation_price_date == previous_date
+    assert result.status == DataStatus.AVAILABLE
+
+
 def test_historical_multiple_never_uses_a_post_cutoff_close() -> None:
     security, prices = priced_security(price=20.0)
     fundamental = fundamental_for(security)

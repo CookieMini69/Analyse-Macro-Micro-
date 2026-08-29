@@ -111,6 +111,28 @@ backtest:
   annual_risk_free_rate: 0.0
   minimum_trades: 5
 
+# Licensed, survivorship-free source used for a genuine 2018-2025 reconstruction.
+# The key is read only from SHARADAR_API_KEY and is never written to a manifest.
+historical_data:
+  provider: sharadar
+  api_key_env: SHARADAR_API_KEY
+  base_url: https://api.sharadar.com/v1.0/data
+  start_year: 2018
+  end_year: 2025
+  universe: sp500
+  required_tables: [tickers, sp500, stocks, fundamentals, daily, actions, events]
+  timeout_seconds: 60
+
+# Reserved until a distinct API key is supplied and the critical-analyst phase
+# is explicitly activated. Responses are not stored provider-side by default.
+ai_analyst:
+  enabled: false
+  provider: openai
+  model: gpt-5.6-terra
+  api_key_env: OPENAI_API_KEY
+  api: responses
+  store: false
+
 screening:
   drawdown_52w_threshold: -0.20
   drawdown_3m_threshold: -0.15
