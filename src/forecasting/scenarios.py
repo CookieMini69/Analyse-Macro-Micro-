@@ -65,6 +65,18 @@ def analyze_scenarios(
     """Build model-derived cases without discretionary percentage targets."""
 
     retrieved_at = datetime.now(UTC)
+    if fundamental is not None and fundamental.as_of > as_of:
+        return _unavailable_result(
+            security,
+            None,
+            current_price,
+            as_of,
+            retrieved_at,
+            settings.target_horizon_months,
+            "fundamental result postdates the scenario cutoff",
+        )
+    if valuation is not None and valuation.as_of > as_of:
+        valuation = None
     if fundamental is None or fundamental.status != DataStatus.AVAILABLE:
         return _unavailable_result(
             security,
@@ -155,7 +167,9 @@ def _build_case(
         )
         for name, series in evidence.items()
     }
-    for name in ("revenue", "diluted_shares", "debt", "cash"):
+    for name in (
+        "revenue", "eps", "free_cash_flow", "diluted_shares", "debt", "cash"
+    ):
         assumptions[name] = _latest_metric_assumption(fundamental, name)
     assumptions["wacc"] = _dcf_assumption(
         valuation, scenario, "wacc", as_of
@@ -427,6 +441,8 @@ def _latest_metric_assumption(
 ) -> ScenarioAssumption:
     lookup = {
         "revenue": ("revenue", "USD"),
+        "eps": ("diluted_eps", "USD/shares"),
+        "free_cash_flow": ("free_cash_flow", "USD"),
         "diluted_shares": ("diluted_shares", "shares"),
         "debt": ("debt", "USD"),
         "cash": ("cash", "USD"),
@@ -436,6 +452,32 @@ def _latest_metric_assumption(
     if name == "diluted_shares" and (metric is None or metric.value is None):
         metric = fundamental.metrics.get("shares_outstanding")
         metric_name = "shares_outstanding"
+    if name == "eps" and (metric is None or metric.value is None):
+        net_income = fundamental.metrics.get("net_income")
+        shares = fundamental.metrics.get("diluted_shares")
+        if shares is None or shares.value is None:
+            shares = fundamental.metrics.get("shares_outstanding")
+        if (
+            net_income is not None
+            and net_income.value is not None
+            and shares is not None
+            and shares.value is not None
+            and shares.value > 0
+        ):
+            accessions = list(
+                dict.fromkeys(net_income.source_accessions + shares.source_accessions)
+            )
+            return ScenarioAssumption(
+                name=name,
+                value=net_income.value / shares.value,
+                status=DataStatus.AVAILABLE,
+                unit=unit,
+                derivation="latest point-in-time SEC net income / diluted shares",
+                observation_count=1,
+                period_start=net_income.period_start,
+                period_end=net_income.period_end,
+                source_accessions=accessions,
+            )
     if metric is None or metric.value is None:
         return ScenarioAssumption(
             name=name,

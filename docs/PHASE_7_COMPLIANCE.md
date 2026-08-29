@@ -1,7 +1,7 @@
 # Phase 7 compliance — scenario engine, targets, invalidation, risk/reward
 
 Version: 0.8.0
-Audit date: 2026-08-28
+Audit date: 2026-08-29 (post-implementation adversarial review)
 
 ## Implemented
 
@@ -10,6 +10,8 @@ Audit date: 2026-08-28
   target-price uplift or discretionary scenario haircut.
 - [x] Explicit revenue-growth, operating/net/EBITDA/FCF-margin, share-count,
   multiple, debt, cash, WACC, and terminal-growth assumption records.
+- [x] Explicit latest point-in-time SEC EPS and FCF basis records, including a
+  documented net-income/share derivation when reported diluted EPS is absent.
 - [x] Real assumption counts, periods, SEC accessions, formulas, URLs, derivation,
   unit, availability status, and missing-data reason.
 - [x] 3M, 6M, 12M, 18M, and 24M projections for revenue, margin, EPS, FCF, and
@@ -17,10 +19,12 @@ Audit date: 2026-08-28
 - [x] P/E, EV/EBITDA, and P/FCF target methods calculated independently.
 - [x] Median aggregation of available positive model values with a configurable
   minimum model count.
-- [x] Fair Value, Normalized Fair Value, Bear/Base/Bull targets, and model-derived
-  TP1/TP2/TP3.
-- [x] Sourced base/normalized DCF takes precedence when configured and eligible
-  at `as_of`; no implicit WACC or terminal growth.
+- [x] Fair Value, Bear/Base/Bull targets, and model-derived TP1/TP2/TP3.
+- [x] Normalized Fair Value is emitted only from a dated sourced normalized DCF;
+  no generic temporal target is mislabeled as shock normalization.
+- [x] Sourced base DCF takes precedence for Fair Value; Normalized Fair Value
+  requires its own configured DCF eligible at `as_of`; no implicit WACC or
+  terminal growth.
 - [x] Fundamental invalidations for revenue growth, operating margin, FCF margin,
   and net-debt/EBITDA.
 - [x] Missing guidance, order-book, and market-share invalidation dimensions stay
@@ -32,6 +36,8 @@ Audit date: 2026-08-28
   45-row CSV for the three-candidate real smoke run.
 - [x] Same shared point-in-time cutoff as prices, SEC, valuation, macro, news,
   shock, and analogues.
+- [x] Defensive rejection of standalone fundamental or valuation evidence whose
+  analysis timestamp postdates the requested scenario cutoff.
 - [x] FRED key remains local and was never added to Git or report provenance.
 
 ## Deliberately not claimed
@@ -46,7 +52,7 @@ Audit date: 2026-08-28
 
 ## Verification result
 
-- Offline regression and Phase 7 tests: 80 passed before the final smoke run.
+- Offline regression, audit, Phase 7, and Phase 8 tests: 87 passed.
 - Real providers: SEC 15/15, FRED 6/6, price histories 16/16, valuation 14/15.
 - Real candidate outputs: historical analogues 3/3, scenarios 3/3, 45 scenario
   horizon rows.

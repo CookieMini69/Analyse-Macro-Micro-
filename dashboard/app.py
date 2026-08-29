@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-MESSAGE = """The Streamlit dashboard is planned for Phase 11 and is not implemented in v0.8.0.
+MESSAGE = """The Streamlit dashboard is planned for Phase 11 and is not implemented in v0.9.0.
 Run `python -m src.pipeline`, then open the newest workbook in `reports/`.
 This guard prevents a placeholder from being mistaken for a working interface."""
 

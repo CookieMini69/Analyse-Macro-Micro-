@@ -48,8 +48,11 @@ def test_scenarios_are_derived_from_observed_quartiles_and_median() -> None:
     assert result.targets.base_target.value < result.targets.bull_target.value
     assert result.targets.tp1.value < result.targets.tp2.value < result.targets.tp3.value
     assert result.cases["base"].assumptions["revenue_growth"].observation_count == 2
+    assert result.cases["base"].assumptions["eps"].value is not None
+    assert result.cases["base"].assumptions["free_cash_flow"].value is not None
     assert result.cases["base"].assumptions["wacc"].status == DataStatus.DATA_UNAVAILABLE
     assert result.cases["base"].assumption_coverage == pytest.approx(5 / 7, abs=1e-4)
+    assert result.targets.normalized_fair_value.status == DataStatus.DATA_UNAVAILABLE
 
 
 def test_targets_and_risk_reward_come_from_model_values() -> None:
@@ -103,6 +106,26 @@ def test_future_dcf_assumptions_never_enter_scenarios() -> None:
     )
     assert result.cases["base"].assumptions["wacc"].status == DataStatus.DATA_UNAVAILABLE
     assert result.cases["base"].assumptions["terminal_growth"].value is None
+
+
+def test_future_fundamental_result_is_rejected() -> None:
+    security, prices = priced_security(price=20.0)
+    data = complete_data()
+    data.security = security
+    fundamental = analyze_fundamentals(data).model_copy(
+        update={"as_of": datetime(2025, 3, 2, tzinfo=UTC)}
+    )
+    valuation = analyze_valuation(
+        security, fundamental, prices, None,
+        ValuationSettings(historical_minimum_points=1),
+    )
+    result = analyze_scenarios(
+        security, fundamental, valuation, 20.0,
+        ScenarioSettings(minimum_history_points=2),
+        as_of=datetime(2025, 3, 1, tzinfo=UTC),
+    )
+    assert result.status == DataStatus.DATA_UNAVAILABLE
+    assert "postdates" in result.error
 
 
 def test_no_historical_multiple_means_no_arbitrary_target() -> None:

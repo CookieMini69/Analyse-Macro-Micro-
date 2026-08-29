@@ -180,6 +180,40 @@ class ScenarioSettings(BaseModel):
         return self
 
 
+class ScoringSettings(BaseModel):
+    """Coverage-aware Phase 8 weights; scores are never probabilities."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool = True
+    fundamental_quality_weight: float = Field(default=0.20, ge=0.0, le=1.0)
+    valuation_weight: float = Field(default=0.20, ge=0.0, le=1.0)
+    temporary_shock_weight: float = Field(default=0.15, ge=0.0, le=1.0)
+    normalization_weight: float = Field(default=0.15, ge=0.0, le=1.0)
+    catalyst_weight: float = Field(default=0.10, ge=0.0, le=1.0)
+    future_growth_weight: float = Field(default=0.10, ge=0.0, le=1.0)
+    risk_weight: float = Field(default=0.10, ge=0.0, le=1.0)
+    minimum_subscore_coverage: float = Field(default=0.25, ge=0.0, le=1.0)
+    minimum_opportunity_coverage: float = Field(default=0.50, ge=0.0, le=1.0)
+
+    @model_validator(mode="after")
+    def validate_weights(self) -> "ScoringSettings":
+        total = sum(
+            (
+                self.fundamental_quality_weight,
+                self.valuation_weight,
+                self.temporary_shock_weight,
+                self.normalization_weight,
+                self.catalyst_weight,
+                self.future_growth_weight,
+                self.risk_weight,
+            )
+        )
+        if abs(total - 1.0) > 1e-9:
+            raise ValueError("Phase 8 opportunity-score weights must sum to 1.0")
+        return self
+
+
 class ExportSettings(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -213,6 +247,7 @@ class AppSettings(BaseModel):
     shock: ShockSettings = Field(default_factory=ShockSettings)
     historical: HistoricalSettings = Field(default_factory=HistoricalSettings)
     scenario: ScenarioSettings = Field(default_factory=ScenarioSettings)
+    scoring: ScoringSettings = Field(default_factory=ScoringSettings)
     screening: ScreeningSettings = Field(default_factory=ScreeningSettings)
     export: ExportSettings = Field(default_factory=ExportSettings)
     logging: LoggingSettings = Field(default_factory=LoggingSettings)

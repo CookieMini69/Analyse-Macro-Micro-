@@ -24,6 +24,8 @@ def test_default_settings_resolve_paths_from_project_root() -> None:
     assert settings.historical.minimum_drawdown == -0.15
     assert settings.scenario.horizons_months == [3, 6, 12, 18, 24]
     assert settings.scenario.target_horizon_months == 12
+    assert settings.scoring.enabled is True
+    assert settings.scoring.minimum_opportunity_coverage == 0.50
 
 
 def test_project_env_file_is_loaded_without_overriding_shell(

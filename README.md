@@ -1,17 +1,20 @@
 # AI Stock Opportunity Scanner
 
-Version `0.8.0` implements the price/drawdown scanner, a **point-in-time
+Version `0.9.0` implements the price/drawdown scanner, a **point-in-time
 fundamental engine for SEC-reporting US issuers**, valuation, point-in-time
 FRED/ALFRED macro vintages, public GDELT news metadata, and conservative shock
 detection, same-security historical drawdown analogues, and evidence-derived
-bear/base/bull temporal scenarios and targets. It preserves the
+bear/base/bull temporal scenarios and targets, plus coverage-aware Phase 8
+sub-scores and a Temporary Mispricing Opportunity Score. It preserves the
 actual availability cutoff of SEC filings and macro
 vintages, calculates current/historical/peer multiples, and can run sourced
 bear/base/bull, normalized, and reverse DCFs. Fundamental Quality, Valuation,
-and Temporary Shock scores are coverage-adjusted.
+Temporary Shock, Normalization, Catalyst, Future Growth, Risk Resilience, and
+Opportunity scores are coverage-adjusted.
 
 It still does **not** conclude that a decline is an investment opportunity or
-that a shock is temporary. Final scoring, AI analysis, and backtesting are
+that a shock is temporary. A high Opportunity Score is not a probability,
+recommendation, or validated return forecast. AI analysis and backtesting are
 reserved for later phases. DCF and macro-exposure
 output remain null until the user adds real, dated, reviewable assumptions.
 
@@ -190,7 +193,7 @@ data or abort unrelated stages: the corresponding results are exported as
 
 ## Current interface
 
-Through Phase 7, the supported user interface is the generated Excel workbook,
+Through Phase 8, the supported user interface is the generated Excel workbook,
 not Streamlit. Open the newest workbook after a run with:
 
 ```powershell
@@ -201,10 +204,10 @@ Invoke-Item $report.FullName
 The workbook contains `Candidates`, `All Results`, and `Run Metadata`. Detailed
 audit trails are the JSON/CSV files described below. `dashboard/app.py` is an
 explicit Phase 11 boundary and is not a runnable dashboard yet; launching it
-would falsely imply that the later scoring, backtest, AI, and UI phases
+would falsely imply that the later backtest, AI, and UI phases
 already exist.
 
-## Decision flow through Phase 7
+## Decision flow through Phase 8
 
 The current strategy is a sequence of evidence filters, not a BUY/SELL model:
 
@@ -220,15 +223,17 @@ The current strategy is a sequence of evidence filters, not a BUY/SELL model:
 6. Retrieve GDELT metadata only for decline candidates, match the configured
    shock taxonomy, require independent-source corroboration, and attach any
    dated macro-exposure assumptions.
-7. Export every security and its audit trail. The pipeline ranks decline severity;
-   it does not yet calculate the final Opportunity Score or an investment
-   verdict.
+7. Retain every intermediate result and its audit trail; no unavailable input is
+   converted to a neutral score.
 8. For every decline candidate, detect prior completed peak–trough–recovery
    episodes on the same security, reconstruct SEC fundamentals and valuation
    multiples that were public at each episode peak, and rank comparable paths.
 9. Derive lower-quartile/median/upper-quartile operating and valuation regimes,
    project them over 3/6/12/18/24 months, and calculate only model-supported
    targets, fundamental invalidations, and risk/reward.
+10. Calculate the seven configured scoring inputs, penalize missing evidence,
+    require minimum coverage, and rank candidates by Opportunity Score with
+    decline severity only as a tie/fallback signal.
 
 Outputs are timestamped under `reports/`:
 
@@ -251,6 +256,9 @@ Outputs are timestamped under `reports/`:
 - `scenario_analysis_*.csv` with 15 rows per analyzed candidate (three cases by
   five horizons), model-specific values, targets, coverage, invalidations, and
   risk/reward; full audit JSON lives under `data/processed/scenarios/`.
+- `opportunity_scoring_*.csv` with every sub-score, coverage, confidence,
+  score band, and methodology; full per-company audit JSON lives under
+  `data/processed/scoring/`.
 
 ## Historical analogue methodology
 
@@ -307,7 +315,8 @@ configurable minimum number of methods. No fixed price uplift is added. Bear,
 base, and bull targets use the configured 12-month horizon by default. TP1,
 TP2, and TP3 are the 6/12/24-month base targets. `Fair Value` uses a sourced base
 DCF when available and otherwise the base temporal target. `Normalized Fair
-Value` uses a sourced normalized DCF and otherwise the 24-month base target.
+Value` requires a sourced normalized DCF and otherwise remains null; a generic
+temporal target is not mislabeled as demonstrated shock normalization.
 
 WACC and terminal growth are preserved only when a dated, sourced DCF
 configuration exists by `as_of`; the temporal multiple models do not manufacture
@@ -322,6 +331,39 @@ a point-in-time source. These are thesis conditions, not technical stop-losses.
 Risk/reward is `base upside / abs(bear downside)` and remains null unless base
 upside is positive and bear downside is negative. Targets and risk/reward are
 model outputs, not forecasts validated by backtesting and not investment advice.
+
+## Phase 8 scoring methodology
+
+The configured Opportunity Score follows the master-specification proposal:
+
+- Fundamental Quality 20%;
+- Valuation 20%;
+- Temporary Shock 15%;
+- Normalization 15%;
+- Catalyst 10%;
+- Future Growth 10%;
+- Risk Resilience 10%.
+
+Fundamental, Valuation, and Temporary Shock retain the Phase 3–5 methods.
+Future Growth reuses the audited SEC growth pillar. Normalization combines the
+base-case valuation gap, similarity-weighted 12-month analogue outcomes,
+recovery precedent strength, and shock-resolution evidence. Catalyst uses only
+explicit dated resolution language and eligible configured macro relief; it
+stays null when neither is observed. Risk Resilience combines balance-sheet
+quality, bear-case protection, volatility, beta, and structural-shock evidence.
+For Risk Resilience, a higher score means lower measured risk.
+
+Every sub-score stores its raw observed score, evidence coverage, adjusted
+score, weights, sources, and missing-data reasons. Missing weight contributes
+zero to the adjusted score and is never filled with a neutral 50. The final
+score requires at least 50% of configured top-level weight. `Confidence Score`
+is the weighted raw evidence coverage expressed out of 100; it is not confidence
+in a positive return. Data Quality remains LOW when coverage or source support
+is weak, even if the numerical score is high.
+
+Score bands (`LOW_SCORE` through `HIGH_SCORE`) are descriptive ranking labels,
+not BUY/SELL verdicts. The score has not yet been calibrated by the mandatory
+Phase 9 backtest and must never be displayed as a chance of profit.
 
 Normalized daily observations are cached under `data/cache/prices/` and persisted
 under `data/processed/prices/`. Raw SEC API responses are cached under
@@ -580,10 +622,9 @@ A row is a V1 candidate if it has at least `minimum_observations` and crosses an
 configured threshold for 52-week, 3-month, 6-month, or sector-relative decline.
 All thresholds are editable in `config/settings.yaml`.
 
-`decline_severity_score` ranks the magnitude of observed price weakness from
-0–100. It is **not** the future multi-factor Opportunity Score, is not a
-probability of profit, and is not a BUY/WATCH/PASS verdict. Missing components
-contribute zero and are never imputed.
+`decline_severity_score` ranks only the magnitude of observed price weakness
+from 0–100. It remains separate from the Phase 8 multi-factor Opportunity Score
+and is not a probability of profit or a BUY/WATCH/PASS verdict.
 
 ## Price source and data quality
 
@@ -622,17 +663,18 @@ src/reporting/          auditable price/fundamental/valuation/macro/shock/analog
 src/pipeline.py         integrated point-in-time scanner CLI
 src/analysis/           fundamental, valuation, macro, shock, and analogue calculations
 src/forecasting/        assumption-driven DCF and reverse DCF
-src/scoring/            reserved opportunity/risk scoring boundary
+src/scoring/            normalization/catalyst/risk/opportunity scoring
 src/backtest/           reserved point-in-time backtest boundary
 src/ai/                 reserved critical analyst boundary
 dashboard/              reserved Streamlit boundary
 tests/                  offline unit and integration tests
 ```
 
-Reserved modules contain no hidden placeholder calculations. This keeps the
-specified architecture visible without pretending later phases are implemented.
-The current checked/partial/deferred audit is maintained in
-`docs/PHASE_7_COMPLIANCE.md`.
+Remaining reserved modules contain no hidden placeholder calculations. This
+keeps the specified architecture visible without pretending later phases are
+implemented.
+The current checked/partial/deferred audits are maintained in
+`docs/PHASE_7_COMPLIANCE.md` and `docs/PHASE_8_COMPLIANCE.md`.
 
 ## Known V1 limitations
 
@@ -688,23 +730,26 @@ The current checked/partial/deferred audit is maintained in
   statistically calibrated outcome probabilities. Annual SEC facts can miss
   recent quarterly inflections; model targets can be widely dispersed when the
   historical multiple distribution is wide.
-- WACC and terminal growth stay null without a dated DCF configuration. The
-  fallback normalized fair value is explicitly the 24-month base target, not a
-  separately sourced shock-free DCF.
+- WACC, terminal growth, and Normalized Fair Value stay null without a dated,
+  sourced normalized DCF configuration.
+- Phase 8 score bands and weights are deterministic research heuristics. They
+  are not statistically calibrated probabilities; Catalyst can remain null when
+  dated resolution evidence is absent, and missing evidence lowers both score
+  and confidence.
 - A severe decline can be entirely rational. Ranking does not establish
   undervaluation or temporary mispricing.
 
 ## Next recommended phase
 
-Phase 8 should combine the existing audited sub-scores into Normalization,
-Catalyst, Risk, and final Opportunity Scores while keeping every score separate
-from probability. Before broad production use, also add sector-specific
-fundamental scorecards and daily archived SEC/GDELT snapshots for strict
-historical backtesting.
+Phase 9 should backtest the point-in-time scores by the specified score buckets
+and years, including delisted securities, benchmark comparisons, transaction
+assumptions, and revision-safe archived inputs. Before broad production use,
+also add sector-specific fundamental scorecards and daily archived SEC/GDELT
+snapshots.
 
 ## Backtesting status and required methodology
 
-Backtesting is Phase 9 and is not implemented in version 0.8.0. No current score
+Backtesting is Phase 9 and is not implemented in version 0.9.0. No current score
 should therefore be treated as statistically validated. The future engine must
 use point-in-time universe membership, unrevised provider snapshots, actual
 filing/news availability, delisted securities, region-appropriate benchmarks,

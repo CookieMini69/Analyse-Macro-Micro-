@@ -78,6 +78,18 @@ scenario:
   minimum_history_points: 2
   minimum_target_models: 1
 
+scoring:
+  enabled: true
+  fundamental_quality_weight: 0.20
+  valuation_weight: 0.20
+  temporary_shock_weight: 0.15
+  normalization_weight: 0.15
+  catalyst_weight: 0.10
+  future_growth_weight: 0.10
+  risk_weight: 0.10
+  minimum_subscore_coverage: 0.25
+  minimum_opportunity_coverage: 0.50
+
 screening:
   drawdown_52w_threshold: -0.20
   drawdown_3m_threshold: -0.15

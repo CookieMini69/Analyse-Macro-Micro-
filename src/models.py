@@ -820,8 +820,70 @@ class ScenarioAnalysisResult(BaseModel):
     error: str | None = None
 
 
+class ScoreComponent(BaseModel):
+    """One auditable input to a coverage-aware score."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str
+    score: float | None = Field(default=None, ge=0.0, le=100.0)
+    weight: float = Field(ge=0.0, le=1.0)
+    observed: bool
+    source: str
+    evidence: dict[str, Any] = Field(default_factory=dict)
+    reason: str | None = None
+
+    @model_validator(mode="after")
+    def validate_observation(self) -> "ScoreComponent":
+        if self.observed != (self.score is not None):
+            raise ValueError("observed score components require a numeric score")
+        return self
+
+
+class EvidenceScore(BaseModel):
+    """Coverage-adjusted analytical score; explicitly not a probability."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str
+    score: float | None = Field(default=None, ge=0.0, le=100.0)
+    observed_score: float | None = Field(default=None, ge=0.0, le=100.0)
+    coverage: float = Field(ge=0.0, le=1.0)
+    status: DataStatus
+    methodology_version: str
+    components: dict[str, ScoreComponent] = Field(default_factory=dict)
+    reason: str | None = None
+    interpretation: str = "analytical score out of 100; not a probability"
+
+
+class ScoringAnalysisResult(BaseModel):
+    """Phase 8 sub-scores and final Temporary Mispricing Opportunity Score."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    ticker: str
+    company: str | None = None
+    as_of: datetime
+    status: DataStatus
+    data_quality: DataQuality
+    fundamental_quality: EvidenceScore
+    valuation: EvidenceScore
+    temporary_shock: EvidenceScore
+    normalization: EvidenceScore
+    catalyst: EvidenceScore
+    future_growth: EvidenceScore
+    risk: EvidenceScore
+    opportunity: EvidenceScore
+    confidence_score: float = Field(ge=0.0, le=100.0)
+    score_band: str
+    methodology_version: str = "opportunity-scoring-v1"
+    retrieved_at: datetime
+    sources: list[dict[str, Any]] = Field(default_factory=list)
+    error: str | None = None
+
+
 class OpportunityCandidate(BaseModel):
-    """Price candidate enriched through the historical-analogue phase."""
+    """Price candidate enriched by point-in-time analysis stages."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -927,6 +989,21 @@ class OpportunityCandidate(BaseModel):
     risk_reward: float | None = None
     fundamental_invalidation: list[dict[str, Any]] = Field(default_factory=list)
     scenario_metrics: dict[str, Any] = Field(default_factory=dict)
+    normalization_score: float | None = None
+    normalization_score_coverage: float | None = None
+    catalyst_score: float | None = None
+    catalyst_score_coverage: float | None = None
+    future_growth_score: float | None = None
+    risk_score: float | None = None
+    risk_score_coverage: float | None = None
+    opportunity_score: float | None = None
+    opportunity_observed_score: float | None = None
+    opportunity_score_coverage: float | None = None
+    opportunity_score_status: DataStatus | None = None
+    opportunity_data_quality: DataQuality | None = None
+    confidence_score: float | None = Field(default=None, ge=0.0, le=100.0)
+    score_band: str | None = None
+    scoring_metrics: dict[str, Any] = Field(default_factory=dict)
     decline_severity_score: float = Field(ge=0.0, le=100.0)
     is_candidate: bool
     candidate_reasons: list[str] = Field(default_factory=list)

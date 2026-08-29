@@ -64,6 +64,7 @@ from src.models import (
     NewsSearchResult,
     OpportunityCandidate,
     ScenarioAnalysisResult,
+    ScoringAnalysisResult,
     Security,
     ShockAnalysisResult,
     ValuationAnalysisResult,
@@ -73,7 +74,9 @@ from src.reporting.fundamentals import persist_fundamental_results
 from src.reporting.historical import persist_historical_results
 from src.reporting.macro_shock import persist_macro_results, persist_shock_results
 from src.reporting.scenarios import persist_scenario_results
+from src.reporting.scoring import persist_scoring_results
 from src.reporting.valuation import persist_valuation_results
+from src.scoring.opportunity import analyze_opportunity_score
 from src.screening.scanner import build_scan_result, rank_results
 from src.screening.universe import auxiliary_benchmarks, load_universe
 from src.valuation_config import ValuationConfig, load_valuation_config
@@ -106,6 +109,9 @@ class PipelineResult:
     scenario_results: dict[str, ScenarioAnalysisResult]
     scenario_exported_files: list[Path]
     scenario_errors: dict[str, str]
+    scoring_results: dict[str, ScoringAnalysisResult]
+    scoring_exported_files: list[Path]
+    scoring_errors: dict[str, str]
 
 
 def _configure_logging(level: str) -> None:
@@ -662,6 +668,52 @@ def _enrich_with_scenario(
     return OpportunityCandidate.model_validate({**result.model_dump(), **updates})
 
 
+def _enrich_with_scoring(
+    result: OpportunityCandidate,
+    scoring: ScoringAnalysisResult | None,
+) -> OpportunityCandidate:
+    if scoring is None:
+        return result
+    updates = {
+        "normalization_score": scoring.normalization.score,
+        "normalization_score_coverage": scoring.normalization.coverage,
+        "catalyst_score": scoring.catalyst.score,
+        "catalyst_score_coverage": scoring.catalyst.coverage,
+        "future_growth_score": scoring.future_growth.score,
+        "risk_score": scoring.risk.score,
+        "risk_score_coverage": scoring.risk.coverage,
+        "opportunity_score": scoring.opportunity.score,
+        "opportunity_observed_score": scoring.opportunity.observed_score,
+        "opportunity_score_coverage": scoring.opportunity.coverage,
+        "opportunity_score_status": scoring.opportunity.status,
+        "opportunity_data_quality": scoring.data_quality,
+        "confidence_score": scoring.confidence_score,
+        "score_band": scoring.score_band,
+        "scoring_metrics": scoring.model_dump(mode="json"),
+        "sources": result.sources
+        + [{**source, "role": "opportunity_scoring"} for source in scoring.sources],
+        "retrieved_at": max(result.retrieved_at, scoring.retrieved_at),
+    }
+    return OpportunityCandidate.model_validate({**result.model_dump(), **updates})
+
+
+def _rank_with_opportunity_scores(
+    results: list[OpportunityCandidate],
+) -> list[OpportunityCandidate]:
+    candidates = [item for item in results if item.is_candidate]
+    others = [item.model_copy(update={"rank": None}) for item in results if not item.is_candidate]
+    candidates.sort(
+        key=lambda item: (
+            item.opportunity_score is not None,
+            item.opportunity_score if item.opportunity_score is not None else -1.0,
+            item.decline_severity_score,
+        ),
+        reverse=True,
+    )
+    ranked = [item.model_copy(update={"rank": index}) for index, item in enumerate(candidates, 1)]
+    return ranked + others
+
+
 def run_pipeline(
     settings: AppSettings | str | Path = "config/settings.yaml",
     *,
@@ -979,6 +1031,52 @@ def run_pipeline(
     else:
         scenario_available = 0
 
+    scoring_results: dict[str, ScoringAnalysisResult] = {}
+    scoring_exported: list[Path] = []
+    if app_settings.scoring.enabled:
+        candidate_rows = {
+            result.ticker.upper(): result for result in ranked if result.is_candidate
+        }
+        for security in securities:
+            ticker = security.ticker.upper()
+            row = candidate_rows.get(ticker)
+            if row is None:
+                continue
+            scoring_results[ticker] = analyze_opportunity_score(
+                security,
+                fundamental_results.get(ticker),
+                valuation_results.get(ticker),
+                shock_results.get(ticker),
+                historical_results.get(ticker),
+                scenario_results.get(ticker),
+                app_settings.scoring,
+                as_of=cutoff,
+                volatility=row.volatility,
+                beta=row.beta,
+            )
+        if scoring_results:
+            scoring_exported = persist_scoring_results(
+                list(scoring_results.values()),
+                app_settings.paths.processed_data,
+                app_settings.paths.reports,
+            )
+        ranked = [
+            _enrich_with_scoring(result, scoring_results.get(result.ticker.upper()))
+            for result in ranked
+        ]
+        ranked = _rank_with_opportunity_scores(ranked)
+        scoring_available = sum(
+            result.status == DataStatus.AVAILABLE
+            for result in scoring_results.values()
+        )
+        LOGGER.info(
+            "%d/%d candidates have coverage-qualified opportunity scores",
+            scoring_available,
+            len(scoring_results),
+        )
+    else:
+        scoring_available = 0
+
     LOGGER.info("Exporting scan results...")
     exported = export_scan_results(
         ranked,
@@ -1003,6 +1101,8 @@ def run_pipeline(
             "historical_available_count": historical_available,
             "scenario_result_count": len(scenario_results),
             "scenario_available_count": scenario_available,
+            "scoring_result_count": len(scoring_results),
+            "scoring_available_count": scoring_available,
             "pipeline_as_of": cutoff.isoformat(),
             "fundamental_as_of": (
                 cutoff.isoformat() if app_settings.fundamentals.enabled else None
@@ -1047,6 +1147,11 @@ def run_pipeline(
         for ticker, result in scenario_results.items()
         if result.error is not None
     }
+    scoring_errors = {
+        ticker: result.error
+        for ticker, result in scoring_results.items()
+        if result.error is not None
+    }
     return PipelineResult(
         results=ranked,
         exported_files=exported,
@@ -1071,6 +1176,9 @@ def run_pipeline(
         scenario_results=scenario_results,
         scenario_exported_files=scenario_exported,
         scenario_errors=scenario_errors,
+        scoring_results=scoring_results,
+        scoring_exported_files=scoring_exported,
+        scoring_errors=scoring_errors,
     )
 
 
@@ -1078,7 +1186,7 @@ def build_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
             "Scan an explicit equity universe for price declines and "
-            "point-in-time fundamentals, valuation, analogues, and scenarios."
+            "point-in-time fundamentals, valuation, analogues, scenarios, and scores."
         )
     )
     parser.add_argument(

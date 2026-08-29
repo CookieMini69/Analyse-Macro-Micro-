@@ -180,6 +180,8 @@ def test_offline_pipeline_runs_end_to_end(tmp_path: Path) -> None:
     assert len(output.historical_exported_files) == 2
     assert "TEST" in output.scenario_results
     assert len(output.scenario_exported_files) == 2
+    assert "TEST" in output.scoring_results
+    assert len(output.scoring_exported_files) == 2
 
 
 def test_provider_exception_is_exported_as_unavailable_row(tmp_path: Path) -> None:
@@ -391,3 +393,8 @@ severe_structural_terms: []
     assert output.macro_analysis["synthetic_macro"].latest_value == 110.0
     assert len(output.macro_exported_files) == 2
     assert len(output.shock_exported_files) == 3
+    assert result.normalization_score is not None
+    assert result.catalyst_score is not None
+    assert result.risk_score is not None
+    assert result.opportunity_score is not None
+    assert 0 < result.confidence_score <= result.opportunity_score_coverage * 100

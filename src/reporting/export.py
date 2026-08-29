@@ -118,6 +118,21 @@ EXPORT_COLUMNS = [
     "risk_reward",
     "fundamental_invalidation",
     "scenario_metrics",
+    "normalization_score",
+    "normalization_score_coverage",
+    "catalyst_score",
+    "catalyst_score_coverage",
+    "future_growth_score",
+    "risk_score",
+    "risk_score_coverage",
+    "opportunity_score",
+    "opportunity_observed_score",
+    "opportunity_score_coverage",
+    "opportunity_score_status",
+    "opportunity_data_quality",
+    "confidence_score",
+    "score_band",
+    "scoring_metrics",
     "decline_severity_score",
     "is_candidate",
     "candidate_reasons",
@@ -176,6 +191,9 @@ def results_to_frame(results: Iterable[OpportunityCandidate]) -> pd.DataFrame:
         row["scenario_metrics"] = json.dumps(
             row["scenario_metrics"], ensure_ascii=False, sort_keys=True
         )
+        row["scoring_metrics"] = json.dumps(
+            row["scoring_metrics"], ensure_ascii=False, sort_keys=True
+        )
         row["shock_missing_criteria"] = json.dumps(
             row["shock_missing_criteria"], ensure_ascii=False
         )
@@ -225,6 +243,13 @@ def _style_sheet(sheet: Worksheet) -> None:
         "risk_reward",
         "valuation_score",
         "temporary_shock_score",
+        "normalization_score",
+        "catalyst_score",
+        "future_growth_score",
+        "risk_score",
+        "opportunity_score",
+        "opportunity_observed_score",
+        "confidence_score",
         "best_historical_similarity",
         "beta",
         "decline_severity_score",
@@ -246,6 +271,7 @@ def _style_sheet(sheet: Worksheet) -> None:
             "historical_metrics",
             "fundamental_invalidation",
             "scenario_metrics",
+            "scoring_metrics",
             "shock_missing_criteria",
             "sources",
             "valuation_metrics",
@@ -287,9 +313,10 @@ def export_scan_results(
             "result_count": len(frame),
             "candidate_count": len(candidates),
             "note": (
-                "Decline severity, valuation, and temporary-shock scores are "
-                "analytical indicators, not investment recommendations or "
-                "return/normalization probabilities."
+                "All scores are coverage-adjusted analytical indicators out of "
+                "100, not investment recommendations or return/normalization "
+                "probabilities. Risk Score is resilience: higher means lower "
+                "measured risk."
             ),
             **(run_metadata or {}),
         }

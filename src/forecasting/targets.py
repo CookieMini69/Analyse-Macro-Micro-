@@ -46,8 +46,6 @@ def build_target_summary(
     if fair_value.value is None:
         fair_value = base
     normalized = _dcf_value(valuation, "normalized")
-    if normalized.value is None:
-        normalized = _horizon_target(cases.get("base"), 24)
     return ScenarioTargetSummary(
         fair_value=fair_value,
         normalized_fair_value=normalized,
@@ -60,8 +58,8 @@ def build_target_summary(
         target_horizon_months=target_horizon_months,
         methodology=(
             "fair value uses sourced base DCF when available, otherwise the "
-            "base temporal target; normalized fair value uses sourced normalized "
-            "DCF when available, otherwise the 24-month base target; TP1/TP2/TP3 "
+            "base temporal target; normalized fair value requires a sourced "
+            "normalized DCF and otherwise remains unavailable; TP1/TP2/TP3 "
             "are the 6/12/24-month base targets"
         ),
     )
