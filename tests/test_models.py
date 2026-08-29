@@ -3,7 +3,7 @@ from datetime import UTC, date, datetime
 import pytest
 from pydantic import ValidationError
 
-from src.models import DataStatus, FinancialMetric, ObservationMetadata
+from src.models import DataStatus, FinancialMetric, ObservationMetadata, Security
 
 
 def metadata(status: DataStatus) -> ObservationMetadata:
@@ -42,3 +42,8 @@ def test_confidence_must_be_bounded() -> None:
             retrieved_at=datetime.now(UTC),
             confidence=1.2,
         )
+
+
+def test_non_default_price_scale_requires_an_explanation() -> None:
+    with pytest.raises(ValidationError, match="price_scale_reason"):
+        Security(ticker="TEST.L", price_scale=0.01)

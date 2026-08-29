@@ -446,7 +446,8 @@ def _run_news(
     )
     cutoff = normalize_as_of(as_of)
     results: dict[str, NewsSearchResult] = {}
-    for security in securities:
+
+    def fetch_one(security: Security) -> tuple[str, NewsSearchResult]:
         try:
             result = provider.fetch(
                 security,
@@ -464,7 +465,13 @@ def _run_news(
                 GDELT_DOC_URL,
                 f"{type(exc).__name__}: {exc}",
             )
-        results[security.ticker.upper()] = result
+        return security.ticker.upper(), result
+
+    with ThreadPoolExecutor(max_workers=settings.news.max_workers) as executor:
+        futures = [executor.submit(fetch_one, security) for security in securities]
+        for future in as_completed(futures):
+            ticker, result = future.result()
+            results[ticker] = result
     return results
 
 
@@ -959,7 +966,11 @@ def run_pipeline(
         max_workers=app_settings.price.max_workers,
     )
     price_results = _filter_prices_as_of(downloaded_price_results, cutoff)
-    updated = sum(1 for result in price_results.values() if not result.frame.empty)
+    updated = sum(
+        1
+        for result in price_results.values()
+        if result.status == DataStatus.AVAILABLE and not result.frame.empty
+    )
     LOGGER.info("%d/%d price histories available", updated, len(all_downloads))
     _persist_normalized_prices(price_results, app_settings.paths.processed_data / "prices")
 

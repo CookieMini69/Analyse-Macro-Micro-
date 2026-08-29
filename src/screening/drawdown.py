@@ -22,13 +22,20 @@ class PriceMetrics:
 def select_price_series(frame: pd.DataFrame) -> tuple[pd.Series | None, str | None]:
     """Prefer adjusted close; disclose close as fallback rather than hiding it."""
 
-    for column in ("adjusted_close", "close"):
-        if column in frame:
-            series = pd.to_numeric(frame[column], errors="coerce")
-            if series.notna().any():
-                dates = pd.to_datetime(frame["observation_date"], errors="coerce")
-                series.index = dates
-                return series.dropna().sort_index(), column
+    dates = pd.to_datetime(frame["observation_date"], errors="coerce")
+    adjusted = pd.to_numeric(frame.get("adjusted_close"), errors="coerce")
+    close = pd.to_numeric(frame.get("close"), errors="coerce")
+    adjusted = adjusted.where(adjusted > 0)
+    close = close.where(close > 0)
+    if adjusted.notna().any():
+        fallback_count = int((adjusted.isna() & close.notna()).sum())
+        series = adjusted.combine_first(close)
+        series.index = dates
+        basis = "adjusted_close_with_close_fallback" if fallback_count else "adjusted_close"
+        return series.dropna().sort_index(), basis
+    if close.notna().any():
+        close.index = dates
+        return close.dropna().sort_index(), "close"
     return None, None
 
 

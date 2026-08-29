@@ -152,6 +152,7 @@ class NewsSettings(BaseModel):
     max_retries: int = Field(default=3, ge=0, le=8)
     lookback_days: int = Field(default=30, ge=1, le=90)
     max_articles: int = Field(default=75, ge=1, le=250)
+    max_workers: int = Field(default=4, ge=1, le=16)
 
     @field_validator("provider")
     @classmethod

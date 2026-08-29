@@ -1,0 +1,440 @@
+ticker,cik,company,country,listing_country,country_basis,region,sector,exchange,currency,benchmark,sector_benchmark,index_memberships,universe_source_urls,universe_observation_date,price_scale,price_scale_reason
+ABI.BR,,AB InBev,Belgium,Belgium,listing_market,Europe,Consumer Discretionary,Euronext Brussels,EUR,^BFX,,BEL 20,https://en.wikipedia.org/wiki/BEL_20,2026-08-29,1.0,
+ACKB.BR,,Ackermans & van Haaren,Belgium,Belgium,listing_market,Europe,Industrials,Euronext Brussels,EUR,^BFX,,BEL 20,https://en.wikipedia.org/wiki/BEL_20,2026-08-29,1.0,
+AED.BR,,Aedifica,Belgium,Belgium,listing_market,Europe,Real Estate,Euronext Brussels,EUR,^BFX,,BEL 20,https://en.wikipedia.org/wiki/BEL_20,2026-08-29,1.0,
+AGS.BR,,Ageas,Belgium,Belgium,listing_market,Europe,Financials,Euronext Brussels,EUR,^BFX,,BEL 20,https://en.wikipedia.org/wiki/BEL_20,2026-08-29,1.0,
+APAM.AS,,Aperam,Belgium,Belgium,listing_market,Europe,Materials,Euronext Brussels,EUR,^BFX,,BEL 20,https://en.wikipedia.org/wiki/BEL_20,2026-08-29,1.0,
+ARGX.BR,,arGEN-X,Belgium,Belgium,listing_market,Europe,Health Care,Euronext Brussels,EUR,^BFX,,BEL 20,https://en.wikipedia.org/wiki/BEL_20,2026-08-29,1.0,
+AZE.BR,,Azelis Group,Belgium,Belgium,listing_market,Europe,Industrials,Euronext Brussels,EUR,^BFX,,BEL 20,https://en.wikipedia.org/wiki/BEL_20,2026-08-29,1.0,
+DIE.BR,,D'Ieteren,Belgium,Belgium,listing_market,Europe,Consumer Discretionary,Euronext Brussels,EUR,^BFX,,BEL 20,https://en.wikipedia.org/wiki/BEL_20,2026-08-29,1.0,
+ELI.BR,,Elia Group,Belgium,Belgium,listing_market,Europe,Utilities,Euronext Brussels,EUR,^BFX,,BEL 20,https://en.wikipedia.org/wiki/BEL_20,2026-08-29,1.0,
+GBLB.BR,,GBL,Belgium,Belgium,listing_market,Europe,Financials,Euronext Brussels,EUR,^BFX,,BEL 20,https://en.wikipedia.org/wiki/BEL_20,2026-08-29,1.0,
+KBC.BR,,KBC,Belgium,Belgium,listing_market,Europe,Financials,Euronext Brussels,EUR,^BFX,,BEL 20,https://en.wikipedia.org/wiki/BEL_20,2026-08-29,1.0,
+LOTB.BR,,Lotus Bakeries,Belgium,Belgium,listing_market,Europe,Consumer Discretionary,Euronext Brussels,EUR,^BFX,,BEL 20,https://en.wikipedia.org/wiki/BEL_20,2026-08-29,1.0,
+MELE.BR,,Melexis,Belgium,Belgium,listing_market,Europe,Information Technology,Euronext Brussels,EUR,^BFX,,BEL 20,https://en.wikipedia.org/wiki/BEL_20,2026-08-29,1.0,
+MONT.BR,,Montea,Belgium,Belgium,listing_market,Europe,Real Estate,Euronext Brussels,EUR,^BFX,,BEL 20,https://en.wikipedia.org/wiki/BEL_20,2026-08-29,1.0,
+SOF.BR,,Sofina,Belgium,Belgium,listing_market,Europe,Financials,Euronext Brussels,EUR,^BFX,,BEL 20,https://en.wikipedia.org/wiki/BEL_20,2026-08-29,1.0,
+SOLB.BR,,Solvay,Belgium,Belgium,listing_market,Europe,Materials,Euronext Brussels,EUR,^BFX,,BEL 20,https://en.wikipedia.org/wiki/BEL_20,2026-08-29,1.0,
+SYENS.BR,,Syensqo,Belgium,Belgium,listing_market,Europe,Materials,Euronext Brussels,EUR,^BFX,,BEL 20,https://en.wikipedia.org/wiki/BEL_20,2026-08-29,1.0,
+UCB.BR,,UCB,Belgium,Belgium,listing_market,Europe,Health Care,Euronext Brussels,EUR,^BFX,,BEL 20,https://en.wikipedia.org/wiki/BEL_20,2026-08-29,1.0,
+UMI.BR,,Umicore,Belgium,Belgium,listing_market,Europe,Materials,Euronext Brussels,EUR,^BFX,,BEL 20,https://en.wikipedia.org/wiki/BEL_20,2026-08-29,1.0,
+WDP.BR,,WDP,Belgium,Belgium,listing_market,Europe,Real Estate,Euronext Brussels,EUR,^BFX,,BEL 20,https://en.wikipedia.org/wiki/BEL_20,2026-08-29,1.0,
+ALSYDB.CO,,AL Sydbank,Denmark,Denmark,listing_market,Europe,Financials,Nasdaq Copenhagen,DKK,^OMXC25,,OMX Copenhagen 25,https://en.wikipedia.org/wiki/OMX_Copenhagen_25,2026-08-29,1.0,
+AMBU-B.CO,,Ambu,Denmark,Denmark,listing_market,Europe,Health Care,Nasdaq Copenhagen,DKK,^OMXC25,,OMX Copenhagen 25,https://en.wikipedia.org/wiki/OMX_Copenhagen_25,2026-08-29,1.0,
+CARL-B.CO,,Carlsberg Group,Denmark,Denmark,listing_market,Europe,Consumer Staples,Nasdaq Copenhagen,DKK,^OMXC25,,OMX Copenhagen 25,https://en.wikipedia.org/wiki/OMX_Copenhagen_25,2026-08-29,1.0,
+COLO-B.CO,,Coloplast,Denmark,Denmark,listing_market,Europe,Health Care,Nasdaq Copenhagen,DKK,^OMXC25,,OMX Copenhagen 25,https://en.wikipedia.org/wiki/OMX_Copenhagen_25,2026-08-29,1.0,
+DANSKE.CO,,Danske Bank,Denmark,Denmark,listing_market,Europe,Financials,Nasdaq Copenhagen,DKK,^OMXC25,,OMX Copenhagen 25,https://en.wikipedia.org/wiki/OMX_Copenhagen_25,2026-08-29,1.0,
+DEMANT.CO,,Demant,Denmark,Denmark,listing_market,Europe,Health Care,Nasdaq Copenhagen,DKK,^OMXC25,,OMX Copenhagen 25,https://en.wikipedia.org/wiki/OMX_Copenhagen_25,2026-08-29,1.0,
+DSV.CO,,DSV,Denmark,Denmark,listing_market,Europe,Industrials,Nasdaq Copenhagen,DKK,^OMXC25,,OMX Copenhagen 25,https://en.wikipedia.org/wiki/OMX_Copenhagen_25,2026-08-29,1.0,
+FLS.CO,,FLSmidth & Co.,Denmark,Denmark,listing_market,Europe,Materials,Nasdaq Copenhagen,DKK,^OMXC25,,OMX Copenhagen 25,https://en.wikipedia.org/wiki/OMX_Copenhagen_25,2026-08-29,1.0,
+GMAB.CO,,Genmab,Denmark,Denmark,listing_market,Europe,Health Care,Nasdaq Copenhagen,DKK,^OMXC25,,OMX Copenhagen 25,https://en.wikipedia.org/wiki/OMX_Copenhagen_25,2026-08-29,1.0,
+GN.CO,,GN Store Nord,Denmark,Denmark,listing_market,Europe,Health Care,Nasdaq Copenhagen,DKK,^OMXC25,,OMX Copenhagen 25,https://en.wikipedia.org/wiki/OMX_Copenhagen_25,2026-08-29,1.0,
+ISS.CO,,ISS,Denmark,Denmark,listing_market,Europe,Industrials,Nasdaq Copenhagen,DKK,^OMXC25,,OMX Copenhagen 25,https://en.wikipedia.org/wiki/OMX_Copenhagen_25,2026-08-29,1.0,
+JYSK.CO,,Jyske Bank,Denmark,Denmark,listing_market,Europe,Financials,Nasdaq Copenhagen,DKK,^OMXC25,,OMX Copenhagen 25,https://en.wikipedia.org/wiki/OMX_Copenhagen_25,2026-08-29,1.0,
+MAERSK-A.CO,,A.P. Møller-Mærsk (class A),Denmark,Denmark,listing_market,Europe,Industrials,Nasdaq Copenhagen,DKK,^OMXC25,,OMX Copenhagen 25,https://en.wikipedia.org/wiki/OMX_Copenhagen_25,2026-08-29,1.0,
+MAERSK-B.CO,,A.P. Møller-Mærsk (class B),Denmark,Denmark,listing_market,Europe,Industrials,Nasdaq Copenhagen,DKK,^OMXC25,,OMX Copenhagen 25,https://en.wikipedia.org/wiki/OMX_Copenhagen_25,2026-08-29,1.0,
+NDA-DK.CO,,Nordea Bank Abp,Denmark,Denmark,listing_market,Europe,Financials,Nasdaq Copenhagen,DKK,^OMXC25,,OMX Copenhagen 25,https://en.wikipedia.org/wiki/OMX_Copenhagen_25;https://view.news.eu.nasdaq.com/view?id=ba970a92a1ae2b95ffb13144306dcf48e&lang=en&src=rss,2026-08-29,1.0,
+NKT.CO,,NKT,Denmark,Denmark,listing_market,Europe,Industrials,Nasdaq Copenhagen,DKK,^OMXC25,,OMX Copenhagen 25,https://en.wikipedia.org/wiki/OMX_Copenhagen_25,2026-08-29,1.0,
+NOVO-B.CO,,Novo Nordisk,Denmark,Denmark,listing_market,Europe,Health Care,Nasdaq Copenhagen,DKK,^OMXC25,,OMX Copenhagen 25,https://en.wikipedia.org/wiki/OMX_Copenhagen_25,2026-08-29,1.0,
+NSIS-B.CO,,Novonesis,Denmark,Denmark,listing_market,Europe,Health Care,Nasdaq Copenhagen,DKK,^OMXC25,,OMX Copenhagen 25,https://en.wikipedia.org/wiki/OMX_Copenhagen_25,2026-08-29,1.0,
+ORSTED.CO,,Ørsted,Denmark,Denmark,listing_market,Europe,Utilities,Nasdaq Copenhagen,DKK,^OMXC25,,OMX Copenhagen 25,https://en.wikipedia.org/wiki/OMX_Copenhagen_25,2026-08-29,1.0,
+PNDORA.CO,,Pandora,Denmark,Denmark,listing_market,Europe,Consumer Discretionary,Nasdaq Copenhagen,DKK,^OMXC25,,OMX Copenhagen 25,https://en.wikipedia.org/wiki/OMX_Copenhagen_25,2026-08-29,1.0,
+RBREW.CO,,Royal Unibrew,Denmark,Denmark,listing_market,Europe,Consumer Staples,Nasdaq Copenhagen,DKK,^OMXC25,,OMX Copenhagen 25,https://en.wikipedia.org/wiki/OMX_Copenhagen_25,2026-08-29,1.0,
+ROCK-B.CO,,Rockwool International,Denmark,Denmark,listing_market,Europe,Materials,Nasdaq Copenhagen,DKK,^OMXC25,,OMX Copenhagen 25,https://en.wikipedia.org/wiki/OMX_Copenhagen_25,2026-08-29,1.0,
+TRYG.CO,,Tryg,Denmark,Denmark,listing_market,Europe,Financials,Nasdaq Copenhagen,DKK,^OMXC25,,OMX Copenhagen 25,https://en.wikipedia.org/wiki/OMX_Copenhagen_25,2026-08-29,1.0,
+VWS.CO,,Vestas Wind Systems,Denmark,Denmark,listing_market,Europe,Energy,Nasdaq Copenhagen,DKK,^OMXC25,,OMX Copenhagen 25,https://en.wikipedia.org/wiki/OMX_Copenhagen_25,2026-08-29,1.0,
+ZEAL.CO,,Zealand Pharma,Denmark,Denmark,listing_market,Europe,Health Care,Nasdaq Copenhagen,DKK,^OMXC25,,OMX Copenhagen 25,https://en.wikipedia.org/wiki/OMX_Copenhagen_25,2026-08-29,1.0,
+ELISA.HE,,Elisa,Finland,Finland,listing_market,Europe,Communication Services,Nasdaq Helsinki,EUR,^OMXH25,,OMX Helsinki 25,https://en.wikipedia.org/wiki/OMX_Helsinki_25,2026-08-29,1.0,
+FORTUM.HE,,Fortum,Finland,Finland,listing_market,Europe,Utilities,Nasdaq Helsinki,EUR,^OMXH25,,OMX Helsinki 25,https://en.wikipedia.org/wiki/OMX_Helsinki_25,2026-08-29,1.0,
+HIAB.HE,,Hiab,Finland,Finland,listing_market,Europe,Industrials,Nasdaq Helsinki,EUR,^OMXH25,,OMX Helsinki 25,https://en.wikipedia.org/wiki/OMX_Helsinki_25,2026-08-29,1.0,
+HUH1V.HE,,Huhtamäki,Finland,Finland,listing_market,Europe,Industrials,Nasdaq Helsinki,EUR,^OMXH25,,OMX Helsinki 25,https://en.wikipedia.org/wiki/OMX_Helsinki_25,2026-08-29,1.0,
+KALMAR.HE,,Kalmar  B,Finland,Finland,listing_market,Europe,Industrials,Nasdaq Helsinki,EUR,^OMXH25,,OMX Helsinki 25,https://en.wikipedia.org/wiki/OMX_Helsinki_25,2026-08-29,1.0,
+KCR.HE,,Konecranes,Finland,Finland,listing_market,Europe,Industrials,Nasdaq Helsinki,EUR,^OMXH25,,OMX Helsinki 25,https://en.wikipedia.org/wiki/OMX_Helsinki_25,2026-08-29,1.0,
+KEMIRA.HE,,Kemira,Finland,Finland,listing_market,Europe,Materials,Nasdaq Helsinki,EUR,^OMXH25,,OMX Helsinki 25,https://en.wikipedia.org/wiki/OMX_Helsinki_25,2026-08-29,1.0,
+KESKOB.HE,,Kesko B,Finland,Finland,listing_market,Europe,Consumer Discretionary,Nasdaq Helsinki,EUR,^OMXH25,,OMX Helsinki 25,https://en.wikipedia.org/wiki/OMX_Helsinki_25,2026-08-29,1.0,
+KNEBV.HE,,KONE,Finland,Finland,listing_market,Europe,Industrials,Nasdaq Helsinki,EUR,^OMXH25,,OMX Helsinki 25,https://en.wikipedia.org/wiki/OMX_Helsinki_25,2026-08-29,1.0,
+LUMO.HE,,Lumo Homes Plc,Finland,Finland,listing_market,Europe,Real Estate,Nasdaq Helsinki,EUR,^OMXH25,,OMX Helsinki 25,https://en.wikipedia.org/wiki/OMX_Helsinki_25;https://view.news.eu.nasdaq.com/view?id=b0f37e430d4f3cb0c18b367d364b9ffc3&lang=en,2026-08-29,1.0,
+MANTA.HE,,Mandatum,Finland,Finland,listing_market,Europe,Financials,Nasdaq Helsinki,EUR,^OMXH25,,OMX Helsinki 25,https://en.wikipedia.org/wiki/OMX_Helsinki_25,2026-08-29,1.0,
+METSO.HE,,Metso,Finland,Finland,listing_market,Europe,Industrials,Nasdaq Helsinki,EUR,^OMXH25,,OMX Helsinki 25,https://en.wikipedia.org/wiki/OMX_Helsinki_25,2026-08-29,1.0,
+NDA-FI.HE,,Nordea,Finland,Finland,listing_market,Europe,Financials,Nasdaq Helsinki,EUR,^OMXH25,,OMX Helsinki 25,https://en.wikipedia.org/wiki/OMX_Helsinki_25,2026-08-29,1.0,
+NESTE.HE,,Neste,Finland,Finland,listing_market,Europe,Energy,Nasdaq Helsinki,EUR,^OMXH25,,OMX Helsinki 25,https://en.wikipedia.org/wiki/OMX_Helsinki_25,2026-08-29,1.0,
+NOKIA.HE,,Nokia,Finland,Finland,listing_market,Europe,Information Technology,Nasdaq Helsinki,EUR,^OMXH25,,OMX Helsinki 25,https://en.wikipedia.org/wiki/OMX_Helsinki_25,2026-08-29,1.0,
+ORNBV.HE,,Orion,Finland,Finland,listing_market,Europe,Health Care,Nasdaq Helsinki,EUR,^OMXH25,,OMX Helsinki 25,https://en.wikipedia.org/wiki/OMX_Helsinki_25,2026-08-29,1.0,
+OUT1V.HE,,Outokumpu,Finland,Finland,listing_market,Europe,Materials,Nasdaq Helsinki,EUR,^OMXH25,,OMX Helsinki 25,https://en.wikipedia.org/wiki/OMX_Helsinki_25,2026-08-29,1.0,
+QTCOM.HE,,Qt Group,Finland,Finland,listing_market,Europe,Information Technology,Nasdaq Helsinki,EUR,^OMXH25,,OMX Helsinki 25,https://en.wikipedia.org/wiki/OMX_Helsinki_25,2026-08-29,1.0,
+SAMPO.HE,,Sampo A,Finland,Finland,listing_market,Europe,Financials,Nasdaq Helsinki,EUR,^OMXH25,,OMX Helsinki 25,https://en.wikipedia.org/wiki/OMX_Helsinki_25,2026-08-29,1.0,
+STERV.HE,,Stora Enso R,Finland,Finland,listing_market,Europe,Materials,Nasdaq Helsinki,EUR,^OMXH25,,OMX Helsinki 25,https://en.wikipedia.org/wiki/OMX_Helsinki_25,2026-08-29,1.0,
+TIETO.HE,,TietoEVRY,Finland,Finland,listing_market,Europe,Information Technology,Nasdaq Helsinki,EUR,^OMXH25,,OMX Helsinki 25,https://en.wikipedia.org/wiki/OMX_Helsinki_25,2026-08-29,1.0,
+TYRES.HE,,Nokian Tyres,Finland,Finland,listing_market,Europe,Consumer Discretionary,Nasdaq Helsinki,EUR,^OMXH25,,OMX Helsinki 25,https://en.wikipedia.org/wiki/OMX_Helsinki_25,2026-08-29,1.0,
+UPM.HE,,UPM-Kymmene,Finland,Finland,listing_market,Europe,Materials,Nasdaq Helsinki,EUR,^OMXH25,,OMX Helsinki 25,https://en.wikipedia.org/wiki/OMX_Helsinki_25,2026-08-29,1.0,
+VALMT.HE,,Valmet,Finland,Finland,listing_market,Europe,Industrials,Nasdaq Helsinki,EUR,^OMXH25,,OMX Helsinki 25,https://en.wikipedia.org/wiki/OMX_Helsinki_25,2026-08-29,1.0,
+WRT1V.HE,,Wärtsilä,Finland,Finland,listing_market,Europe,Industrials,Nasdaq Helsinki,EUR,^OMXH25,,OMX Helsinki 25,https://en.wikipedia.org/wiki/OMX_Helsinki_25,2026-08-29,1.0,
+AC.PA,,Accor,France,France,listing_market,Europe,Consumer Discretionary,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+ACA.PA,,Crédit Agricole,France,France,listing_market,Europe,Financials,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+AI.PA,,Air Liquide,France,France,listing_market,Europe,Materials,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+AIR.PA,,Airbus,France,France,listing_market,Europe,Industrials,Euronext Paris,EUR,^FCHI,,CAC 40;DAX 40,https://en.wikipedia.org/wiki/CAC_40;https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+BN.PA,,Danone,France,France,listing_market,Europe,Consumer Discretionary,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+BNP.PA,,BNP Paribas,France,France,listing_market,Europe,Financials,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+BVI.PA,,Bureau Veritas,France,France,listing_market,Europe,Inspection and certification,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+CA.PA,,Carrefour,France,France,listing_market,Europe,Consumer Discretionary,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+CAP.PA,,Capgemini,France,France,listing_market,Europe,Information Technology,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+CS.PA,,Axa,France,France,listing_market,Europe,Financials,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+DG.PA,,Vinci,France,France,listing_market,Europe,Industrials,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+DSY.PA,,Dassault Systèmes,France,France,listing_market,Europe,Information Technology,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+EDEN.PA,,Edenred,France,France,listing_market,Europe,Industrials,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+EL.PA,,EssilorLuxottica,France,France,listing_market,Europe,Health Care,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+EN.PA,,Bouygues,France,France,listing_market,Europe,Industrials,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+ENGI.PA,,Engie,France,France,listing_market,Europe,Utilities,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+ERF.PA,,Eurofins Scientific,France,France,listing_market,Europe,Health Care,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+GLE.PA,,Société Générale,France,France,listing_market,Europe,Financials,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+HO.PA,,Thales,France,France,listing_market,Europe,Industrials,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+KER.PA,,Kering,France,France,listing_market,Europe,Consumer Discretionary,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+LR.PA,,Legrand,France,France,listing_market,Europe,Industrials,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+MC.PA,,LVMH,France,France,listing_market,Europe,Consumer Discretionary,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+ML.PA,,Michelin,France,France,listing_market,Europe,Industrials,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+MT.AS,,ArcelorMittal,France,France,listing_market,Europe,Materials,Euronext Paris,EUR,^FCHI,,AEX 25;CAC 40,https://en.wikipedia.org/wiki/AEX_index;https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+OR.PA,,L'Oréal,France,France,listing_market,Europe,Consumer Discretionary,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+ORA.PA,,Orange,France,France,listing_market,Europe,Communication Services,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+PUB.PA,,Publicis,France,France,listing_market,Europe,Communication Services,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+RI.PA,,Pernod Ricard,France,France,listing_market,Europe,Consumer Discretionary,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+RMS.PA,,Hermès,France,France,listing_market,Europe,Consumer Discretionary,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+RNO.PA,,Renault,France,France,listing_market,Europe,Consumer Discretionary,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+SAF.PA,,Safran,France,France,listing_market,Europe,Industrials,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+SAN.PA,,Sanofi,France,France,listing_market,Europe,Health Care,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+SGO.PA,,Saint-Gobain,France,France,listing_market,Europe,Industrials,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+STLAP.PA,,Stellantis,France,France,listing_market,Europe,Consumer Discretionary,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+STMPA.PA,,STMicroelectronics,France,France,listing_market,Europe,Information Technology,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+SU.PA,,Schneider Electric,France,France,listing_market,Europe,Industrials,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+TEP.PA,,Teleperformance,France,France,listing_market,Europe,Communication Services,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+TTE.PA,879764,TotalEnergies,France,France,listing_market,Europe,Energy,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+URW.PA,,Unibail-Rodamco-Westfield,France,France,listing_market,Europe,Real Estate,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+VIE.PA,,Veolia,France,France,listing_market,Europe,Industrials,Euronext Paris,EUR,^FCHI,,CAC 40,https://en.wikipedia.org/wiki/CAC_40,2026-08-29,1.0,
+ADS.DE,,Adidas,Germany,Germany,listing_market,Europe,Apparel,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+ALV.DE,,Allianz,Germany,Germany,listing_market,Europe,Financials,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+BAS.DE,,BASF,Germany,Germany,listing_market,Europe,Materials,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+BAYN.DE,,Bayer,Germany,Germany,listing_market,Europe,Health Care,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+BEI.DE,,Beiersdorf,Germany,Germany,listing_market,Europe,Consumer Discretionary,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+BMW.DE,,BMW,Germany,Germany,listing_market,Europe,Automotive,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+BNR.DE,,Brenntag,Germany,Germany,listing_market,Europe,Distribution,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+CBK.DE,,Commerzbank,Germany,Germany,listing_market,Europe,Financials,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+CON.DE,,Continental,Germany,Germany,listing_market,Europe,Automotive,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+DB1.DE,,Deutsche Börse,Germany,Germany,listing_market,Europe,Financials,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+DBK.DE,,Deutsche Bank,Germany,Germany,listing_market,Europe,Financials,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+DHL.DE,,Deutsche Post,Germany,Germany,listing_market,Europe,Logistics,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+DTE.DE,,Deutsche Telekom,Germany,Germany,listing_market,Europe,Communication Services,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+DTG.DE,,Daimler Truck,Germany,Germany,listing_market,Europe,Automotive,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+ENR.DE,,Siemens Energy,Germany,Germany,listing_market,Europe,Information Technology,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+EOAN.DE,,E.ON,Germany,Germany,listing_market,Europe,Utilities,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+FME.DE,,Fresenius Medical Care,Germany,Germany,listing_market,Europe,Health Care,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+FRE.DE,,Fresenius,Germany,Germany,listing_market,Europe,Health Care,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+G1A.DE,,GEA Group,Germany,Germany,listing_market,Europe,Mechanical Engineering,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+G24.DE,,Scout24,Germany,Germany,listing_market,Europe,E-Commerce,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+HEI.DE,,Heidelberg Materials,Germany,Germany,listing_market,Europe,Materials,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+HEN3.DE,,Henkel,Germany,Germany,listing_market,Europe,Consumer Discretionary,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+HNR1.DE,,Hannover Re,Germany,Germany,listing_market,Europe,Financials,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+IFX.DE,,Infineon Technologies,Germany,Germany,listing_market,Europe,Information Technology,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+MBG.DE,,Mercedes-Benz Group,Germany,Germany,listing_market,Europe,Automotive,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+MRK.DE,,Merck,Germany,Germany,listing_market,Europe,Health Care,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+MTX.DE,,MTU Aero Engines,Germany,Germany,listing_market,Europe,Industrials,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+MUV2.DE,,Munich Re,Germany,Germany,listing_market,Europe,Financials,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+PAH3.DE,,Porsche SE,Germany,Germany,listing_market,Europe,Automotive,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+QIA.DE,,Qiagen,Germany,Germany,listing_market,Europe,Biotech,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+RHM.DE,,Rheinmetall,Germany,Germany,listing_market,Europe,Industrials,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+RWE.DE,,RWE,Germany,Germany,listing_market,Europe,Utilities,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+SAP.DE,1000184,SAP,Germany,Germany,listing_market,Europe,Information Technology,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+SHL.DE,,Siemens Healthineers,Germany,Germany,listing_market,Europe,Health Care,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+SIE.DE,,Siemens,Germany,Germany,listing_market,Europe,Industrials,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+SY1.DE,,Symrise,Germany,Germany,listing_market,Europe,Materials,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+VNA.DE,,Vonovia,Germany,Germany,listing_market,Europe,Real Estate,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+VOW3.DE,,Volkswagen Group,Germany,Germany,listing_market,Europe,Automotive,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+ZAL.DE,,Zalando,Germany,Germany,listing_market,Europe,E-Commerce,Xetra,EUR,^GDAXI,,DAX 40,https://en.wikipedia.org/wiki/DAX,2026-08-29,1.0,
+A2A.MI,,A2A,Italy,Italy,listing_market,Europe,Utilities,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+AMP.MI,,Amplifon,Italy,Italy,listing_market,Europe,Health Care,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+AVIO.MI,,Avio,Italy,Italy,listing_market,Europe,Industrials,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+AZM.MI,,Azimut,Italy,Italy,listing_market,Europe,Financials,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+BAMI.MI,,Banco BPM,Italy,Italy,listing_market,Europe,Financials,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+BC.MI,,Brunello Cucinelli,Italy,Italy,listing_market,Europe,Consumer Discretionary,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+BMED.MI,,Banca Mediolanum,Italy,Italy,listing_market,Europe,Financials,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+BMPS.MI,,Banca Monte dei Paschi di Siena,Italy,Italy,listing_market,Europe,Financials,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+BPE.MI,,BPER Banca,Italy,Italy,listing_market,Europe,Financials,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+BZU.MI,,Buzzi,Italy,Italy,listing_market,Europe,Materials,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+CPR.MI,,Campari,Italy,Italy,listing_market,Europe,Consumer Staples,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+DIA.MI,,Diasorin,Italy,Italy,listing_market,Europe,Health Care,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+ENEL.MI,,Enel,Italy,Italy,listing_market,Europe,Utilities,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+ENI.MI,,Eni,Italy,Italy,listing_market,Europe,Energy,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+FBK.MI,,FinecoBank,Italy,Italy,listing_market,Europe,Financials,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+FCT.MI,,Fincantieri,Italy,Italy,listing_market,Europe,Shipbuilding,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+G.MI,,Generali,Italy,Italy,listing_market,Europe,Financials,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+HER.MI,,Hera,Italy,Italy,listing_market,Europe,Utilities,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+IG.MI,,Italgas,Italy,Italy,listing_market,Europe,Utilities,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+INW.MI,,INWIT,Italy,Italy,listing_market,Europe,Communication Services,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+ISP.MI,,Intesa Sanpaolo,Italy,Italy,listing_market,Europe,Financials,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+IVG.MI,,Iveco,Italy,Italy,listing_market,Europe,Industrials,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+LDO.MI,,Leonardo,Italy,Italy,listing_market,Europe,Industrials,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+LTMC.MI,,Lottomatica Group,Italy,Italy,listing_market,Europe,Gambling,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+MB.MI,,Mediobanca,Italy,Italy,listing_market,Europe,Financials,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+MONC.MI,,Moncler,Italy,Italy,listing_market,Europe,Consumer Discretionary,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+NEXI.MI,,Nexi,Italy,Italy,listing_market,Europe,Industrials,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+PRY.MI,,Prysmian,Italy,Italy,listing_market,Europe,Industrials,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+PST.MI,,Poste italiane,Italy,Italy,listing_market,Europe,Financials,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+RACE.MI,,Ferrari,Italy,Italy,listing_market,Europe,Consumer Discretionary,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+REC.MI,,Recordati,Italy,Italy,listing_market,Europe,Health Care,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+SPM.MI,,Saipem,Italy,Italy,listing_market,Europe,Energy,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+SRG.MI,,Snam,Italy,Italy,listing_market,Europe,Energy,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+STLAM.MI,,Stellantis,Italy,Italy,listing_market,Europe,Consumer Discretionary,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+STMMI.MI,,STMicroelectronics,Italy,Italy,listing_market,Europe,Information Technology,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+TEN.MI,,Tenaris,Italy,Italy,listing_market,Europe,Energy,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+TIT.MI,,Telecom Italia,Italy,Italy,listing_market,Europe,Communication Services,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+TRN.MI,,Terna,Italy,Italy,listing_market,Europe,Utilities,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+UCG.MI,,UniCredit,Italy,Italy,listing_market,Europe,Financials,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+UNI.MI,,Unipol,Italy,Italy,listing_market,Europe,Financials,Borsa Italiana,EUR,FTSEMIB.MI,,FTSE MIB 40,https://en.wikipedia.org/wiki/FTSE_MIB,2026-08-29,1.0,
+ABN.AS,,ABN AMRO,Netherlands,Netherlands,listing_market,Europe,Financials,Euronext Amsterdam,EUR,^AEX,,AEX 25,https://en.wikipedia.org/wiki/AEX_index,2026-08-29,1.0,
+AD.AS,,Ahold Delhaize,Netherlands,Netherlands,listing_market,Europe,Consumer Discretionary,Euronext Amsterdam,EUR,^AEX,,AEX 25,https://en.wikipedia.org/wiki/AEX_index,2026-08-29,1.0,
+ADYEN.AS,,Adyen,Netherlands,Netherlands,listing_market,Europe,Industrials,Euronext Amsterdam,EUR,^AEX,,AEX 25,https://en.wikipedia.org/wiki/AEX_index,2026-08-29,1.0,
+AGN.AS,,Aegon,Netherlands,Netherlands,listing_market,Europe,Financials,Euronext Amsterdam,EUR,^AEX,,AEX 25,https://en.wikipedia.org/wiki/AEX_index,2026-08-29,1.0,
+AKZA.AS,,AkzoNobel,Netherlands,Netherlands,listing_market,Europe,Materials,Euronext Amsterdam,EUR,^AEX,,AEX 25,https://en.wikipedia.org/wiki/AEX_index,2026-08-29,1.0,
+ASM.AS,,ASM International,Netherlands,Netherlands,listing_market,Europe,Information Technology,Euronext Amsterdam,EUR,^AEX,,AEX 25,https://en.wikipedia.org/wiki/AEX_index,2026-08-29,1.0,
+ASML.AS,937966,ASML Holding,Netherlands,Netherlands,listing_market,Europe,Information Technology,Euronext Amsterdam,EUR,^AEX,,AEX 25,https://en.wikipedia.org/wiki/AEX_index,2026-08-29,1.0,
+ASRNL.AS,,ASR Nederland,Netherlands,Netherlands,listing_market,Europe,Financials,Euronext Amsterdam,EUR,^AEX,,AEX 25,https://en.wikipedia.org/wiki/AEX_index,2026-08-29,1.0,
+BESI.AS,,BE Semiconductors,Netherlands,Netherlands,listing_market,Europe,Information Technology,Euronext Amsterdam,EUR,^AEX,,AEX 25,https://en.wikipedia.org/wiki/AEX_index,2026-08-29,1.0,
+DSFIR.AS,,DSM Firmenich AG,Netherlands,Netherlands,listing_market,Europe,Consumer Discretionary,Euronext Amsterdam,EUR,^AEX,,AEX 25,https://en.wikipedia.org/wiki/AEX_index,2026-08-29,1.0,
+EXO.AS,,Exor,Netherlands,Netherlands,listing_market,Europe,Financials,Euronext Amsterdam,EUR,^AEX,,AEX 25,https://en.wikipedia.org/wiki/AEX_index,2026-08-29,1.0,
+HEIA.AS,,Heineken,Netherlands,Netherlands,listing_market,Europe,Consumer Discretionary,Euronext Amsterdam,EUR,^AEX,,AEX 25,https://en.wikipedia.org/wiki/AEX_index,2026-08-29,1.0,
+IMCD.AS,,IMCD,Netherlands,Netherlands,listing_market,Europe,Materials,Euronext Amsterdam,EUR,^AEX,,AEX 25,https://en.wikipedia.org/wiki/AEX_index,2026-08-29,1.0,
+INGA.AS,,ING Group,Netherlands,Netherlands,listing_market,Europe,Financials,Euronext Amsterdam,EUR,^AEX,,AEX 25,https://en.wikipedia.org/wiki/AEX_index,2026-08-29,1.0,
+KPN.AS,,KPN,Netherlands,Netherlands,listing_market,Europe,Communication Services,Euronext Amsterdam,EUR,^AEX,,AEX 25,https://en.wikipedia.org/wiki/AEX_index,2026-08-29,1.0,
+NN.AS,,NN Group,Netherlands,Netherlands,listing_market,Europe,Financials,Euronext Amsterdam,EUR,^AEX,,AEX 25,https://en.wikipedia.org/wiki/AEX_index,2026-08-29,1.0,
+PHIA.AS,,Philips,Netherlands,Netherlands,listing_market,Europe,Health Care,Euronext Amsterdam,EUR,^AEX,,AEX 25,https://en.wikipedia.org/wiki/AEX_index,2026-08-29,1.0,
+PRX.AS,,Prosus,Netherlands,Netherlands,listing_market,Europe,Information Technology,Euronext Amsterdam,EUR,^AEX,,AEX 25,https://en.wikipedia.org/wiki/AEX_index,2026-08-29,1.0,
+RAND.AS,,Randstad,Netherlands,Netherlands,listing_market,Europe,Industrials,Euronext Amsterdam,EUR,^AEX,,AEX 25,https://en.wikipedia.org/wiki/AEX_index,2026-08-29,1.0,
+REN.AS,,RELX,Netherlands,Netherlands,listing_market,Europe,Consumer Discretionary,Euronext Amsterdam,EUR,^AEX,,AEX 25,https://en.wikipedia.org/wiki/AEX_index,2026-08-29,1.0,
+SHELL.AS,,Shell plc,Netherlands,Netherlands,listing_market,Europe,Energy,Euronext Amsterdam,EUR,^AEX,,AEX 25,https://en.wikipedia.org/wiki/AEX_index,2026-08-29,1.0,
+UMG.AS,,Universal Music Group,Netherlands,Netherlands,listing_market,Europe,Consumer Discretionary,Euronext Amsterdam,EUR,^AEX,,AEX 25,https://en.wikipedia.org/wiki/AEX_index,2026-08-29,1.0,
+UNA.AS,,Unilever,Netherlands,Netherlands,listing_market,Europe,Consumer Discretionary,Euronext Amsterdam,EUR,^AEX,,AEX 25,https://en.wikipedia.org/wiki/AEX_index,2026-08-29,1.0,
+WKL.AS,,Wolters Kluwer,Netherlands,Netherlands,listing_market,Europe,Consumer Discretionary,Euronext Amsterdam,EUR,^AEX,,AEX 25,https://en.wikipedia.org/wiki/AEX_index,2026-08-29,1.0,
+AKRBP.OL,,Aker BP,Norway,Norway,listing_market,Europe,Energy,Oslo Bors,NOK,OBXD.OL,,OBX 25,https://en.wikipedia.org/wiki/OBX_Index,2026-08-29,1.0,
+BWLPG.OL,,BW LPG,Norway,Norway,listing_market,Europe,Industrials,Oslo Bors,NOK,OBXD.OL,,OBX 25,https://en.wikipedia.org/wiki/OBX_Index,2026-08-29,1.0,
+CMBTO.OL,,CMB.TECH NV,Norway,Norway,listing_market,Europe,Industrials,Oslo Bors,NOK,OBXD.OL,,OBX 25,https://en.wikipedia.org/wiki/OBX_Index;https://live.euronext.com/en/products/equities/company-news/2025-08-20-cmbtech-completes-merger-golden-ocean,2026-08-29,1.0,
+DNB.OL,,DNB Bank,Norway,Norway,listing_market,Europe,Financials,Oslo Bors,NOK,OBXD.OL,,OBX 25,https://en.wikipedia.org/wiki/OBX_Index,2026-08-29,1.0,
+EQNR.OL,,Equinor,Norway,Norway,listing_market,Europe,Energy,Oslo Bors,NOK,OBXD.OL,,OBX 25,https://en.wikipedia.org/wiki/OBX_Index,2026-08-29,1.0,
+FRO.OL,,Frontline,Norway,Norway,listing_market,Europe,Industrials,Oslo Bors,NOK,OBXD.OL,,OBX 25,https://en.wikipedia.org/wiki/OBX_Index,2026-08-29,1.0,
+GJF.OL,,Gjensidige Forsikring,Norway,Norway,listing_market,Europe,Financials,Oslo Bors,NOK,OBXD.OL,,OBX 25,https://en.wikipedia.org/wiki/OBX_Index,2026-08-29,1.0,
+HAFNI.OL,,Hafnia Limited,Norway,Norway,listing_market,Europe,Industrials,Oslo Bors,NOK,OBXD.OL,,OBX 25,https://en.wikipedia.org/wiki/OBX_Index,2026-08-29,1.0,
+HAUTO.OL,,Höegh Autoliners ASA,Norway,Norway,listing_market,Europe,Industrials,Oslo Bors,NOK,OBXD.OL,,OBX 25,https://en.wikipedia.org/wiki/OBX_Index,2026-08-29,1.0,
+KOG.OL,,Kongsberg Gruppen,Norway,Norway,listing_market,Europe,Industrials,Oslo Bors,NOK,OBXD.OL,,OBX 25,https://en.wikipedia.org/wiki/OBX_Index,2026-08-29,1.0,
+MOWI.OL,,Mowi,Norway,Norway,listing_market,Europe,"farming, fishing, ranching and plantations",Oslo Bors,NOK,OBXD.OL,,OBX 25,https://en.wikipedia.org/wiki/OBX_Index,2026-08-29,1.0,
+MPCC.OL,,MPC Container Ships,Norway,Norway,listing_market,Europe,Industrials,Oslo Bors,NOK,OBXD.OL,,OBX 25,https://en.wikipedia.org/wiki/OBX_Index,2026-08-29,1.0,
+NAS.OL,,Norwegian Air Shuttle,Norway,Norway,listing_market,Europe,airlines,Oslo Bors,NOK,OBXD.OL,,OBX 25,https://en.wikipedia.org/wiki/OBX_Index,2026-08-29,1.0,
+NHY.OL,,Norsk Hydro,Norway,Norway,listing_market,Europe,Materials,Oslo Bors,NOK,OBXD.OL,,OBX 25,https://en.wikipedia.org/wiki/OBX_Index,2026-08-29,1.0,
+NOD.OL,,Nordic Semiconductor,Norway,Norway,listing_market,Europe,Information Technology,Oslo Bors,NOK,OBXD.OL,,OBX 25,https://en.wikipedia.org/wiki/OBX_Index,2026-08-29,1.0,
+ORK.OL,,Orkla,Norway,Norway,listing_market,Europe,Consumer Staples,Oslo Bors,NOK,OBXD.OL,,OBX 25,https://en.wikipedia.org/wiki/OBX_Index,2026-08-29,1.0,
+SALM.OL,,SalMar,Norway,Norway,listing_market,Europe,"farming, fishing, ranching and plantations",Oslo Bors,NOK,OBXD.OL,,OBX 25,https://en.wikipedia.org/wiki/OBX_Index,2026-08-29,1.0,
+STB.OL,,Storebrand,Norway,Norway,listing_market,Europe,Financials,Oslo Bors,NOK,OBXD.OL,,OBX 25,https://en.wikipedia.org/wiki/OBX_Index,2026-08-29,1.0,
+SUBC.OL,,Subsea 7,Norway,Norway,listing_market,Europe,Energy,Oslo Bors,NOK,OBXD.OL,,OBX 25,https://en.wikipedia.org/wiki/OBX_Index,2026-08-29,1.0,
+TEL.OL,,Telenor,Norway,Norway,listing_market,Europe,Communication Services,Oslo Bors,NOK,OBXD.OL,,OBX 25,https://en.wikipedia.org/wiki/OBX_Index,2026-08-29,1.0,
+TGS.OL,,TGS ASA,Norway,Norway,listing_market,Europe,Energy,Oslo Bors,NOK,OBXD.OL,,OBX 25,https://en.wikipedia.org/wiki/OBX_Index,2026-08-29,1.0,
+TOM.OL,,Tomra Systems,Norway,Norway,listing_market,Europe,Industrials,Oslo Bors,NOK,OBXD.OL,,OBX 25,https://en.wikipedia.org/wiki/OBX_Index,2026-08-29,1.0,
+VAR.OL,,Vår Energi ASA,Norway,Norway,listing_market,Europe,Energy,Oslo Bors,NOK,OBXD.OL,,OBX 25,https://en.wikipedia.org/wiki/OBX_Index,2026-08-29,1.0,
+WAWI.OL,,Wallenius Wilhelmsen,Norway,Norway,listing_market,Europe,Industrials,Oslo Bors,NOK,OBXD.OL,,OBX 25,https://en.wikipedia.org/wiki/OBX_Index,2026-08-29,1.0,
+YAR.OL,,Yara International,Norway,Norway,listing_market,Europe,Materials,Oslo Bors,NOK,OBXD.OL,,OBX 25,https://en.wikipedia.org/wiki/OBX_Index,2026-08-29,1.0,
+ALTR.LS,,Altri SGPS,Portugal,Portugal,listing_market,Europe,Materials,Euronext Lisbon,EUR,PSI20.LS,,PSI,https://live.euronext.com/en/product/indices/pting0200002-xlis/market-information,2026-08-29,1.0,
+BCP.LS,,Banco Comercial Português,Portugal,Portugal,listing_market,Europe,Financials,Euronext Lisbon,EUR,PSI20.LS,,PSI,https://live.euronext.com/en/product/indices/pting0200002-xlis/market-information,2026-08-29,1.0,
+COR.LS,,Corticeira Amorim,Portugal,Portugal,listing_market,Europe,Materials,Euronext Lisbon,EUR,PSI20.LS,,PSI,https://live.euronext.com/en/product/indices/pting0200002-xlis/market-information,2026-08-29,1.0,
+CTT.LS,,CTT Correios de Portugal,Portugal,Portugal,listing_market,Europe,Industrials,Euronext Lisbon,EUR,PSI20.LS,,PSI,https://live.euronext.com/en/product/indices/pting0200002-xlis/market-information,2026-08-29,1.0,
+EDP.LS,,Energias de Portugal,Portugal,Portugal,listing_market,Europe,Utilities,Euronext Lisbon,EUR,PSI20.LS,,PSI,https://live.euronext.com/en/product/indices/pting0200002-xlis/market-information,2026-08-29,1.0,
+EDPR.LS,,EDP Renováveis,Portugal,Portugal,listing_market,Europe,Utilities,Euronext Lisbon,EUR,PSI20.LS,,PSI,https://live.euronext.com/en/product/indices/pting0200002-xlis/market-information,2026-08-29,1.0,
+EGL.LS,,Mota-Engil,Portugal,Portugal,listing_market,Europe,Industrials,Euronext Lisbon,EUR,PSI20.LS,,PSI,https://live.euronext.com/en/product/indices/pting0200002-xlis/market-information,2026-08-29,1.0,
+GALP.LS,,Galp Energia,Portugal,Portugal,listing_market,Europe,Energy,Euronext Lisbon,EUR,PSI20.LS,,PSI,https://live.euronext.com/en/product/indices/pting0200002-xlis/market-information,2026-08-29,1.0,
+IBS.LS,,Ibersol,Portugal,Portugal,listing_market,Europe,Consumer Discretionary,Euronext Lisbon,EUR,PSI20.LS,,PSI,https://live.euronext.com/en/product/indices/pting0200002-xlis/market-information,2026-08-29,1.0,
+JMT.LS,,Jerónimo Martins,Portugal,Portugal,listing_market,Europe,Consumer Discretionary,Euronext Lisbon,EUR,PSI20.LS,,PSI,https://live.euronext.com/en/product/indices/pting0200002-xlis/market-information,2026-08-29,1.0,
+NOS.LS,,NOS,Portugal,Portugal,listing_market,Europe,Communication Services,Euronext Lisbon,EUR,PSI20.LS,,PSI,https://live.euronext.com/en/product/indices/pting0200002-xlis/market-information,2026-08-29,1.0,
+NVG.LS,,The Navigator Company,Portugal,Portugal,listing_market,Europe,Materials,Euronext Lisbon,EUR,PSI20.LS,,PSI,https://live.euronext.com/en/product/indices/pting0200002-xlis/market-information,2026-08-29,1.0,
+RENE.LS,,Redes Energéticas Nacionais,Portugal,Portugal,listing_market,Europe,Utilities,Euronext Lisbon,EUR,PSI20.LS,,PSI,https://live.euronext.com/en/product/indices/pting0200002-xlis/market-information,2026-08-29,1.0,
+SEM.LS,,Semapa,Portugal,Portugal,listing_market,Europe,Materials,Euronext Lisbon,EUR,PSI20.LS,,PSI,https://live.euronext.com/en/product/indices/pting0200002-xlis/market-information,2026-08-29,1.0,
+SON.LS,,Sonae,Portugal,Portugal,listing_market,Europe,Consumer Discretionary,Euronext Lisbon,EUR,PSI20.LS,,PSI,https://live.euronext.com/en/product/indices/pting0200002-xlis/market-information,2026-08-29,1.0,
+TDSA.LS,,Teixeira Duarte,Portugal,Portugal,listing_market,Europe,Industrials,Euronext Lisbon,EUR,PSI20.LS,,PSI,https://live.euronext.com/en/product/indices/pting0200002-xlis/market-information,2026-08-29,1.0,
+ACS.MC,,ACS,Spain,Spain,listing_market,Europe,Industrials,Bolsa de Madrid,EUR,^IBEX,,IBEX 35,https://en.wikipedia.org/wiki/IBEX_35,2026-08-29,1.0,
+ACX.MC,,Acerinox,Spain,Spain,listing_market,Europe,Steel,Bolsa de Madrid,EUR,^IBEX,,IBEX 35,https://en.wikipedia.org/wiki/IBEX_35,2026-08-29,1.0,
+AENA.MC,,AENA,Spain,Spain,listing_market,Europe,Aviation,Bolsa de Madrid,EUR,^IBEX,,IBEX 35,https://en.wikipedia.org/wiki/IBEX_35,2026-08-29,1.0,
+AMS.MC,,Amadeus IT Group,Spain,Spain,listing_market,Europe,Tourism,Bolsa de Madrid,EUR,^IBEX,,IBEX 35,https://en.wikipedia.org/wiki/IBEX_35,2026-08-29,1.0,
+ANA.MC,,Acciona,Spain,Spain,listing_market,Europe,Industrials,Bolsa de Madrid,EUR,^IBEX,,IBEX 35,https://en.wikipedia.org/wiki/IBEX_35,2026-08-29,1.0,
+ANE.MC,,Acciona Energía,Spain,Spain,listing_market,Europe,Energy,Bolsa de Madrid,EUR,^IBEX,,IBEX 35,https://en.wikipedia.org/wiki/IBEX_35,2026-08-29,1.0,
+BBVA.MC,,BBVA,Spain,Spain,listing_market,Europe,Financials,Bolsa de Madrid,EUR,^IBEX,,IBEX 35,https://en.wikipedia.org/wiki/IBEX_35,2026-08-29,1.0,
+BKT.MC,,Bankinter,Spain,Spain,listing_market,Europe,Financials,Bolsa de Madrid,EUR,^IBEX,,IBEX 35,https://en.wikipedia.org/wiki/IBEX_35,2026-08-29,1.0,
+CABK.MC,,CaixaBank,Spain,Spain,listing_market,Europe,Financials,Bolsa de Madrid,EUR,^IBEX,,IBEX 35,https://en.wikipedia.org/wiki/IBEX_35,2026-08-29,1.0,
+CLNX.MC,,Cellnex Telecom,Spain,Spain,listing_market,Europe,Communication Services,Bolsa de Madrid,EUR,^IBEX,,IBEX 35,https://en.wikipedia.org/wiki/IBEX_35,2026-08-29,1.0,
+COL.MC,,Inmobiliaria Colonial,Spain,Spain,listing_market,Europe,Real Estate,Bolsa de Madrid,EUR,^IBEX,,IBEX 35,https://en.wikipedia.org/wiki/IBEX_35,2026-08-29,1.0,
+ELE.MC,,Endesa,Spain,Spain,listing_market,Europe,Energy,Bolsa de Madrid,EUR,^IBEX,,IBEX 35,https://en.wikipedia.org/wiki/IBEX_35,2026-08-29,1.0,
+ENG.MC,,Enagás,Spain,Spain,listing_market,Europe,Energy,Bolsa de Madrid,EUR,^IBEX,,IBEX 35,https://en.wikipedia.org/wiki/IBEX_35,2026-08-29,1.0,
+FDR.MC,,Fluidra,Spain,Spain,listing_market,Europe,Manufacturing,Bolsa de Madrid,EUR,^IBEX,,IBEX 35,https://en.wikipedia.org/wiki/IBEX_35,2026-08-29,1.0,
+FER.MC,,Ferrovial,Spain,Spain,listing_market,Europe,Infrastructure,Bolsa de Madrid,EUR,^IBEX,,IBEX 35,https://en.wikipedia.org/wiki/IBEX_35,2026-08-29,1.0,
+GRF.MC,,Grifols,Spain,Spain,listing_market,Europe,Health Care,Bolsa de Madrid,EUR,^IBEX,,IBEX 35,https://en.wikipedia.org/wiki/IBEX_35,2026-08-29,1.0,
+IAG.MC,,International Airlines Group,Spain,Spain,listing_market,Europe,Aviation,Bolsa de Madrid,EUR,^IBEX,,IBEX 35,https://en.wikipedia.org/wiki/IBEX_35,2026-08-29,1.0,
+IBE.MC,,Iberdrola,Spain,Spain,listing_market,Europe,Energy,Bolsa de Madrid,EUR,^IBEX,,IBEX 35,https://en.wikipedia.org/wiki/IBEX_35,2026-08-29,1.0,
+IDR.MC,,Indra,Spain,Spain,listing_market,Europe,Information Technology,Bolsa de Madrid,EUR,^IBEX,,IBEX 35,https://en.wikipedia.org/wiki/IBEX_35,2026-08-29,1.0,
+ITX.MC,,Inditex,Spain,Spain,listing_market,Europe,Textile,Bolsa de Madrid,EUR,^IBEX,,IBEX 35,https://en.wikipedia.org/wiki/IBEX_35,2026-08-29,1.0,
+LOG.MC,,Logista,Spain,Spain,listing_market,Europe,Logistics,Bolsa de Madrid,EUR,^IBEX,,IBEX 35,https://en.wikipedia.org/wiki/IBEX_35,2026-08-29,1.0,
+MAP.MC,,Mapfre,Spain,Spain,listing_market,Europe,Financials,Bolsa de Madrid,EUR,^IBEX,,IBEX 35,https://en.wikipedia.org/wiki/IBEX_35,2026-08-29,1.0,
+MRL.MC,,Merlin Properties,Spain,Spain,listing_market,Europe,Real Estate,Bolsa de Madrid,EUR,^IBEX,,IBEX 35,https://en.wikipedia.org/wiki/IBEX_35,2026-08-29,1.0,
+MTS.MC,,ArcelorMittal,Spain,Spain,listing_market,Europe,Steel,Bolsa de Madrid,EUR,^IBEX,,IBEX 35,https://en.wikipedia.org/wiki/IBEX_35,2026-08-29,1.0,
+NTGY.MC,,Naturgy,Spain,Spain,listing_market,Europe,Energy,Bolsa de Madrid,EUR,^IBEX,,IBEX 35,https://en.wikipedia.org/wiki/IBEX_35,2026-08-29,1.0,
+PUIG.MC,,Puig,Spain,Spain,listing_market,Europe,Clothes and Cosmetics,Bolsa de Madrid,EUR,^IBEX,,IBEX 35,https://en.wikipedia.org/wiki/IBEX_35,2026-08-29,1.0,
+RED.MC,,Redeia Corporación,Spain,Spain,listing_market,Europe,Energy,Bolsa de Madrid,EUR,^IBEX,,IBEX 35,https://en.wikipedia.org/wiki/IBEX_35,2026-08-29,1.0,
+REP.MC,,Repsol,Spain,Spain,listing_market,Europe,Energy,Bolsa de Madrid,EUR,^IBEX,,IBEX 35,https://en.wikipedia.org/wiki/IBEX_35,2026-08-29,1.0,
+ROVI.MC,,Laboratorios Rovi,Spain,Spain,listing_market,Europe,Health Care,Bolsa de Madrid,EUR,^IBEX,,IBEX 35,https://en.wikipedia.org/wiki/IBEX_35,2026-08-29,1.0,
+SAB.MC,,Banco Sabadell,Spain,Spain,listing_market,Europe,Financials,Bolsa de Madrid,EUR,^IBEX,,IBEX 35,https://en.wikipedia.org/wiki/IBEX_35,2026-08-29,1.0,
+SAN.MC,,Santander,Spain,Spain,listing_market,Europe,Financials,Bolsa de Madrid,EUR,^IBEX,,IBEX 35,https://en.wikipedia.org/wiki/IBEX_35,2026-08-29,1.0,
+SCYR.MC,,Sacyr,Spain,Spain,listing_market,Europe,Industrials,Bolsa de Madrid,EUR,^IBEX,,IBEX 35,https://en.wikipedia.org/wiki/IBEX_35,2026-08-29,1.0,
+SLR.MC,,Solaria,Spain,Spain,listing_market,Europe,Energy,Bolsa de Madrid,EUR,^IBEX,,IBEX 35,https://en.wikipedia.org/wiki/IBEX_35,2026-08-29,1.0,
+TEF.MC,,Telefónica,Spain,Spain,listing_market,Europe,Communication Services,Bolsa de Madrid,EUR,^IBEX,,IBEX 35,https://en.wikipedia.org/wiki/IBEX_35,2026-08-29,1.0,
+UNI.MC,,Unicaja,Spain,Spain,listing_market,Europe,Financials,Bolsa de Madrid,EUR,^IBEX,,IBEX 35,https://en.wikipedia.org/wiki/IBEX_35,2026-08-29,1.0,
+ABB.ST,,ABB Ltd,Sweden,Sweden,listing_market,Europe,Industrials,Nasdaq Stockholm,SEK,^OMX,,OMX Stockholm 30,https://en.wikipedia.org/wiki/OMX_Stockholm_30,2026-08-29,1.0,
+ADDT-B.ST,,Addtech B,Sweden,Sweden,listing_market,Europe,Industrials,Nasdaq Stockholm,SEK,^OMX,,OMX Stockholm 30,https://en.wikipedia.org/wiki/OMX_Stockholm_30,2026-08-29,1.0,
+ALFA.ST,,Alfa Laval,Sweden,Sweden,listing_market,Europe,Industrials,Nasdaq Stockholm,SEK,^OMX,,OMX Stockholm 30,https://en.wikipedia.org/wiki/OMX_Stockholm_30,2026-08-29,1.0,
+ASSA-B.ST,,Assa Abloy B,Sweden,Sweden,listing_market,Europe,Industrials,Nasdaq Stockholm,SEK,^OMX,,OMX Stockholm 30,https://en.wikipedia.org/wiki/OMX_Stockholm_30,2026-08-29,1.0,
+ATCO-A.ST,,Atlas Copco A,Sweden,Sweden,listing_market,Europe,Industrials,Nasdaq Stockholm,SEK,^OMX,,OMX Stockholm 30,https://en.wikipedia.org/wiki/OMX_Stockholm_30,2026-08-29,1.0,
+AZN.ST,,AstraZeneca,Sweden,Sweden,listing_market,Europe,Health Care,Nasdaq Stockholm,SEK,^OMX,,OMX Stockholm 30,https://en.wikipedia.org/wiki/OMX_Stockholm_30,2026-08-29,1.0,
+BOL.ST,,Boliden,Sweden,Sweden,listing_market,Europe,Materials,Nasdaq Stockholm,SEK,^OMX,,OMX Stockholm 30,https://en.wikipedia.org/wiki/OMX_Stockholm_30,2026-08-29,1.0,
+EPI-A.ST,,Epiroc A,Sweden,Sweden,listing_market,Europe,Industrials,Nasdaq Stockholm,SEK,^OMX,,OMX Stockholm 30,https://en.wikipedia.org/wiki/OMX_Stockholm_30,2026-08-29,1.0,
+EQT.ST,,EQT,Sweden,Sweden,listing_market,Europe,Financials,Nasdaq Stockholm,SEK,^OMX,,OMX Stockholm 30,https://en.wikipedia.org/wiki/OMX_Stockholm_30,2026-08-29,1.0,
+ERIC-B.ST,,Ericsson B,Sweden,Sweden,listing_market,Europe,Information Technology,Nasdaq Stockholm,SEK,^OMX,,OMX Stockholm 30,https://en.wikipedia.org/wiki/OMX_Stockholm_30,2026-08-29,1.0,
+ESSITY-B.ST,,Essity B,Sweden,Sweden,listing_market,Europe,Consumer Discretionary,Nasdaq Stockholm,SEK,^OMX,,OMX Stockholm 30,https://en.wikipedia.org/wiki/OMX_Stockholm_30,2026-08-29,1.0,
+EVO.ST,,Evolution,Sweden,Sweden,listing_market,Europe,Consumer Discretionary,Nasdaq Stockholm,SEK,^OMX,,OMX Stockholm 30,https://en.wikipedia.org/wiki/OMX_Stockholm_30,2026-08-29,1.0,
+HEXA-B.ST,,Hexagon B,Sweden,Sweden,listing_market,Europe,Information Technology,Nasdaq Stockholm,SEK,^OMX,,OMX Stockholm 30,https://en.wikipedia.org/wiki/OMX_Stockholm_30,2026-08-29,1.0,
+HM-B.ST,,Hennes & Mauritz B,Sweden,Sweden,listing_market,Europe,Consumer Discretionary,Nasdaq Stockholm,SEK,^OMX,,OMX Stockholm 30,https://en.wikipedia.org/wiki/OMX_Stockholm_30,2026-08-29,1.0,
+INDU-C.ST,,Industrivärden C,Sweden,Sweden,listing_market,Europe,Financials,Nasdaq Stockholm,SEK,^OMX,,OMX Stockholm 30,https://en.wikipedia.org/wiki/OMX_Stockholm_30,2026-08-29,1.0,
+INVE-B.ST,,Investor B,Sweden,Sweden,listing_market,Europe,Financials,Nasdaq Stockholm,SEK,^OMX,,OMX Stockholm 30,https://en.wikipedia.org/wiki/OMX_Stockholm_30,2026-08-29,1.0,
+LIFCO-B.ST,,Lifco B,Sweden,Sweden,listing_market,Europe,Industrials,Nasdaq Stockholm,SEK,^OMX,,OMX Stockholm 30,https://en.wikipedia.org/wiki/OMX_Stockholm_30,2026-08-29,1.0,
+NDA-SE.ST,,Nordea Bank Abp,Sweden,Sweden,listing_market,Europe,Financials,Nasdaq Stockholm,SEK,^OMX,,OMX Stockholm 30,https://en.wikipedia.org/wiki/OMX_Stockholm_30,2026-08-29,1.0,
+NIBE-B.ST,,Nibe Industrier B,Sweden,Sweden,listing_market,Europe,Industrials,Nasdaq Stockholm,SEK,^OMX,,OMX Stockholm 30,https://en.wikipedia.org/wiki/OMX_Stockholm_30,2026-08-29,1.0,
+SAAB-B.ST,,Saab B,Sweden,Sweden,listing_market,Europe,Industrials,Nasdaq Stockholm,SEK,^OMX,,OMX Stockholm 30,https://en.wikipedia.org/wiki/OMX_Stockholm_30,2026-08-29,1.0,
+SAND.ST,,Sandvik,Sweden,Sweden,listing_market,Europe,Industrials,Nasdaq Stockholm,SEK,^OMX,,OMX Stockholm 30,https://en.wikipedia.org/wiki/OMX_Stockholm_30,2026-08-29,1.0,
+SCA-B.ST,,SCA B,Sweden,Sweden,listing_market,Europe,Materials,Nasdaq Stockholm,SEK,^OMX,,OMX Stockholm 30,https://en.wikipedia.org/wiki/OMX_Stockholm_30,2026-08-29,1.0,
+SEB-A.ST,,SEB A,Sweden,Sweden,listing_market,Europe,Financials,Nasdaq Stockholm,SEK,^OMX,,OMX Stockholm 30,https://en.wikipedia.org/wiki/OMX_Stockholm_30,2026-08-29,1.0,
+SHB-A.ST,,Handelsbanken A,Sweden,Sweden,listing_market,Europe,Financials,Nasdaq Stockholm,SEK,^OMX,,OMX Stockholm 30,https://en.wikipedia.org/wiki/OMX_Stockholm_30,2026-08-29,1.0,
+SKA-B.ST,,Skanska B,Sweden,Sweden,listing_market,Europe,Industrials,Nasdaq Stockholm,SEK,^OMX,,OMX Stockholm 30,https://en.wikipedia.org/wiki/OMX_Stockholm_30,2026-08-29,1.0,
+SKF-B.ST,,SKF B,Sweden,Sweden,listing_market,Europe,Industrials,Nasdaq Stockholm,SEK,^OMX,,OMX Stockholm 30,https://en.wikipedia.org/wiki/OMX_Stockholm_30,2026-08-29,1.0,
+SWED-A.ST,,Swedbank A,Sweden,Sweden,listing_market,Europe,Financials,Nasdaq Stockholm,SEK,^OMX,,OMX Stockholm 30,https://en.wikipedia.org/wiki/OMX_Stockholm_30,2026-08-29,1.0,
+TEL2-B.ST,,Tele2 B,Sweden,Sweden,listing_market,Europe,Communication Services,Nasdaq Stockholm,SEK,^OMX,,OMX Stockholm 30,https://en.wikipedia.org/wiki/OMX_Stockholm_30,2026-08-29,1.0,
+TELIA.ST,,Telia Company,Sweden,Sweden,listing_market,Europe,Communication Services,Nasdaq Stockholm,SEK,^OMX,,OMX Stockholm 30,https://en.wikipedia.org/wiki/OMX_Stockholm_30,2026-08-29,1.0,
+VOLV-B.ST,,Volvo B,Sweden,Sweden,listing_market,Europe,Industrials,Nasdaq Stockholm,SEK,^OMX,,OMX Stockholm 30,https://en.wikipedia.org/wiki/OMX_Stockholm_30,2026-08-29,1.0,
+ABBN.SW,,ABB Ltd,Switzerland,Switzerland,listing_market,Europe,Industrials,SIX Swiss Exchange,CHF,^SSMI,,SMI 20,https://en.wikipedia.org/wiki/Swiss_Market_Index,2026-08-29,1.0,
+ALC.SW,,Alcon Inc,Switzerland,Switzerland,listing_market,Europe,Health Care,SIX Swiss Exchange,CHF,^SSMI,,SMI 20,https://en.wikipedia.org/wiki/Swiss_Market_Index,2026-08-29,1.0,
+AMRZ.SW,,Amrize AG,Switzerland,Switzerland,listing_market,Europe,Materials,SIX Swiss Exchange,CHF,^SSMI,,SMI 20,https://en.wikipedia.org/wiki/Swiss_Market_Index,2026-08-29,1.0,
+CFR.SW,,Compagnie Financière Richemont SA,Switzerland,Switzerland,listing_market,Europe,Consumer Discretionary,SIX Swiss Exchange,CHF,^SSMI,,SMI 20,https://en.wikipedia.org/wiki/Swiss_Market_Index,2026-08-29,1.0,
+GEBN.SW,,Geberit AG,Switzerland,Switzerland,listing_market,Europe,Industrials,SIX Swiss Exchange,CHF,^SSMI,,SMI 20,https://en.wikipedia.org/wiki/Swiss_Market_Index,2026-08-29,1.0,
+GIVN.SW,,Givaudan SA,Switzerland,Switzerland,listing_market,Europe,Materials,SIX Swiss Exchange,CHF,^SSMI,,SMI 20,https://en.wikipedia.org/wiki/Swiss_Market_Index,2026-08-29,1.0,
+HOLN.SW,,Holcim Limited,Switzerland,Switzerland,listing_market,Europe,Materials,SIX Swiss Exchange,CHF,^SSMI,,SMI 20,https://en.wikipedia.org/wiki/Swiss_Market_Index,2026-08-29,1.0,
+KNIN.SW,,Kuehne + Nagel,Switzerland,Switzerland,listing_market,Europe,Industrials,SIX Swiss Exchange,CHF,^SSMI,,SMI 20,https://en.wikipedia.org/wiki/Swiss_Market_Index,2026-08-29,1.0,
+LOGN.SW,,Logitech International SA,Switzerland,Switzerland,listing_market,Europe,Information Technology,SIX Swiss Exchange,CHF,^SSMI,,SMI 20,https://en.wikipedia.org/wiki/Swiss_Market_Index,2026-08-29,1.0,
+LONN.SW,,Lonza Group AG,Switzerland,Switzerland,listing_market,Europe,Materials,SIX Swiss Exchange,CHF,^SSMI,,SMI 20,https://en.wikipedia.org/wiki/Swiss_Market_Index,2026-08-29,1.0,
+NESN.SW,,Nestlé SA,Switzerland,Switzerland,listing_market,Europe,Consumer Staples,SIX Swiss Exchange,CHF,^SSMI,,SMI 20,https://en.wikipedia.org/wiki/Swiss_Market_Index,2026-08-29,1.0,
+NOVN.SW,,Novartis International AG,Switzerland,Switzerland,listing_market,Europe,Health Care,SIX Swiss Exchange,CHF,^SSMI,,SMI 20,https://en.wikipedia.org/wiki/Swiss_Market_Index,2026-08-29,1.0,
+PGHN.SW,,Partners Group Holding AG,Switzerland,Switzerland,listing_market,Europe,Financials,SIX Swiss Exchange,CHF,^SSMI,,SMI 20,https://en.wikipedia.org/wiki/Swiss_Market_Index,2026-08-29,1.0,
+ROP.SW,,Roche Holding AG,Switzerland,Switzerland,listing_market,Europe,Health Care,SIX Swiss Exchange,CHF,^SSMI,,SMI 20,https://en.wikipedia.org/wiki/Swiss_Market_Index;https://www.roche.com/investors/updates/inv-update-2026-03-16,2026-08-29,1.0,
+SCMN.SW,,Swisscom AG,Switzerland,Switzerland,listing_market,Europe,Communication Services,SIX Swiss Exchange,CHF,^SSMI,,SMI 20,https://en.wikipedia.org/wiki/Swiss_Market_Index,2026-08-29,1.0,
+SIKA.SW,,Sika AG,Switzerland,Switzerland,listing_market,Europe,Materials,SIX Swiss Exchange,CHF,^SSMI,,SMI 20,https://en.wikipedia.org/wiki/Swiss_Market_Index,2026-08-29,1.0,
+SLHN.SW,,Swiss Life Holding AG,Switzerland,Switzerland,listing_market,Europe,Financials,SIX Swiss Exchange,CHF,^SSMI,,SMI 20,https://en.wikipedia.org/wiki/Swiss_Market_Index,2026-08-29,1.0,
+SREN.SW,,Swiss Reinsurance Company Ltd,Switzerland,Switzerland,listing_market,Europe,Financials,SIX Swiss Exchange,CHF,^SSMI,,SMI 20,https://en.wikipedia.org/wiki/Swiss_Market_Index,2026-08-29,1.0,
+UBSG.SW,1610520,UBS Group AG,Switzerland,Switzerland,listing_market,Europe,Financials,SIX Swiss Exchange,CHF,^SSMI,,SMI 20,https://en.wikipedia.org/wiki/Swiss_Market_Index,2026-08-29,1.0,
+ZURN.SW,,Zurich Insurance Group AG,Switzerland,Switzerland,listing_market,Europe,Financials,SIX Swiss Exchange,CHF,^SSMI,,SMI 20,https://en.wikipedia.org/wiki/Swiss_Market_Index,2026-08-29,1.0,
+AAF.L,,Airtel Africa,United Kingdom,United Kingdom,listing_market,Europe,Communication Services,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+AAL.L,,Anglo American plc,United Kingdom,United Kingdom,listing_market,Europe,Materials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+ABDN.L,,Aberdeen Group,United Kingdom,United Kingdom,listing_market,Europe,Financials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+ABF.L,,Associated British Foods,United Kingdom,United Kingdom,listing_market,Europe,Consumer Staples,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+ADM.L,,Admiral Group,United Kingdom,United Kingdom,listing_market,Europe,Financials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+ALW.L,,Alliance Witan,United Kingdom,United Kingdom,listing_market,Europe,Financials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+ANTO.L,,Antofagasta plc,United Kingdom,United Kingdom,listing_market,Europe,Materials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+AUTO.L,,Autotrader Group,United Kingdom,United Kingdom,listing_market,Europe,Communication Services,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+AV.L,,Aviva,United Kingdom,United Kingdom,listing_market,Europe,Financials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+AZN.L,901832,AstraZeneca,United Kingdom,United Kingdom,listing_market,Europe,Information Technology,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+BA.L,,BAE Systems,United Kingdom,United Kingdom,listing_market,Europe,Industrials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+BAB.L,,Babcock International,United Kingdom,United Kingdom,listing_market,Europe,Industrials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+BARC.L,,Barclays,United Kingdom,United Kingdom,listing_market,Europe,Financials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+BATS.L,,British American Tobacco,United Kingdom,United Kingdom,listing_market,Europe,Consumer Staples,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+BBOX.L,,Tritax Big Box REIT,United Kingdom,United Kingdom,listing_market,Europe,Financials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+BEZ.L,,Beazley,United Kingdom,United Kingdom,listing_market,Europe,Financials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+BGEO.L,,Lion Finance Group,United Kingdom,United Kingdom,listing_market,Europe,Financials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+BLND.L,,British Land,United Kingdom,United Kingdom,listing_market,Europe,Real Estate,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+BNZL.L,,Bunzl,United Kingdom,United Kingdom,listing_market,Europe,Support services,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+BP.L,313807,BP,United Kingdom,United Kingdom,listing_market,Europe,Energy,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+BRBY.L,,Burberry Group,United Kingdom,United Kingdom,listing_market,Europe,Personal goods,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+BT-A.L,,BT Group,United Kingdom,United Kingdom,listing_market,Europe,Communication Services,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+BTRW.L,,Barratt Redrow,United Kingdom,United Kingdom,listing_market,Europe,Industrials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+CCC.L,,Computacenter,United Kingdom,United Kingdom,listing_market,Europe,Information Technology,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+CCEP.L,,Coca-Cola Europacific Partners,United Kingdom,United Kingdom,listing_market,Europe,Consumer Staples,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+CCH.L,,Coca-Cola HBC,United Kingdom,United Kingdom,listing_market,Europe,Consumer Staples,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+CNA.L,,Centrica,United Kingdom,United Kingdom,listing_market,Europe,Utilities,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+CPG.L,,Compass Group,United Kingdom,United Kingdom,listing_market,Europe,Support services,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+CRDA.L,,Croda International,United Kingdom,United Kingdom,listing_market,Europe,Materials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+CTEC.L,,Convatec,United Kingdom,United Kingdom,listing_market,Europe,Health Care,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+DCC.L,,DCC Energy,United Kingdom,United Kingdom,listing_market,Europe,Support services,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+DGE.L,835403,Diageo,United Kingdom,United Kingdom,listing_market,Europe,Consumer Staples,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+DPLM.L,,Diploma,United Kingdom,United Kingdom,listing_market,Europe,Industrials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+EDV.L,,Endeavour Mining,United Kingdom,United Kingdom,listing_market,Europe,Materials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+ENT.L,,Entain,United Kingdom,United Kingdom,listing_market,Europe,Consumer Discretionary,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+EXPN.L,,Experian,United Kingdom,United Kingdom,listing_market,Europe,Support services,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+FCIT.L,,F & C Investment Trust,United Kingdom,United Kingdom,listing_market,Europe,Financials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+FRES.L,,Fresnillo plc,United Kingdom,United Kingdom,listing_market,Europe,Materials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+GAW.L,,Games Workshop,United Kingdom,United Kingdom,listing_market,Europe,Consumer Discretionary,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+GLEN.L,,Glencore,United Kingdom,United Kingdom,listing_market,Europe,Materials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+GSK.L,1131399,GSK plc,United Kingdom,United Kingdom,listing_market,Europe,Information Technology,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+HLMA.L,,Halma plc,United Kingdom,United Kingdom,listing_market,Europe,Information Technology,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+HLN.L,,Haleon,United Kingdom,United Kingdom,listing_market,Europe,Information Technology,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+HSBA.L,,HSBC,United Kingdom,United Kingdom,listing_market,Europe,Financials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+HSX.L,,Hiscox,United Kingdom,United Kingdom,listing_market,Europe,Financials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+HWDN.L,,Howdens Joinery,United Kingdom,United Kingdom,listing_market,Europe,Industrials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+IAG.L,,International Airlines Group,United Kingdom,United Kingdom,listing_market,Europe,Consumer Discretionary,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+ICG.L,,ICG,United Kingdom,United Kingdom,listing_market,Europe,Financials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+IGG.L,,IG Group,United Kingdom,United Kingdom,listing_market,Europe,Financials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+IHG.L,,IHG Hotels & Resorts,United Kingdom,United Kingdom,listing_market,Europe,Consumer Discretionary,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+III.L,,3i,United Kingdom,United Kingdom,listing_market,Europe,Financials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+IMB.L,,Imperial Brands,United Kingdom,United Kingdom,listing_market,Europe,Consumer Staples,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+IMI.L,,IMI,United Kingdom,United Kingdom,listing_market,Europe,Industrials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+INF.L,,Informa,United Kingdom,United Kingdom,listing_market,Europe,Communication Services,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+INVP.L,,Investec,United Kingdom,United Kingdom,listing_market,Europe,Financials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+ITRK.L,,Intertek,United Kingdom,United Kingdom,listing_market,Europe,Support services,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+JD.L,,JD Sports,United Kingdom,United Kingdom,listing_market,Europe,General retailers,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+KGF.L,,Kingfisher plc,United Kingdom,United Kingdom,listing_market,Europe,Retailers,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+LAND.L,,Land Securities,United Kingdom,United Kingdom,listing_market,Europe,Financials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+LGEN.L,,Legal & General,United Kingdom,United Kingdom,listing_market,Europe,Financials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+LLOY.L,,Lloyds Banking Group,United Kingdom,United Kingdom,listing_market,Europe,Financials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+LMP.L,,LondonMetric Property,United Kingdom,United Kingdom,listing_market,Europe,Financials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+LSEG.L,,London Stock Exchange Group,United Kingdom,United Kingdom,listing_market,Europe,Financials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+MKS.L,,Marks & Spencer,United Kingdom,United Kingdom,listing_market,Europe,Consumer Staples,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+MNG.L,,M&G,United Kingdom,United Kingdom,listing_market,Europe,Financials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+MRO.L,,Melrose Industries,United Kingdom,United Kingdom,listing_market,Europe,Industrials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+MTLN.L,,Metlen Energy & Metals,United Kingdom,United Kingdom,listing_market,Europe,Utilities,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+NG.L,,National Grid plc,United Kingdom,United Kingdom,listing_market,Europe,Utilities,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+NWG.L,,NatWest Group,United Kingdom,United Kingdom,listing_market,Europe,Financials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+NXT.L,,Next plc,United Kingdom,United Kingdom,listing_market,Europe,General retailers,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+PCT.L,,Polar Capital Technology Trust,United Kingdom,United Kingdom,listing_market,Europe,Financials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+PRU.L,,Prudential plc,United Kingdom,United Kingdom,listing_market,Europe,Financials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+PSH.L,,Pershing Square Holdings,United Kingdom,United Kingdom,listing_market,Europe,Financials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+PSN.L,,Persimmon,United Kingdom,United Kingdom,listing_market,Europe,Industrials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+PSON.L,,Pearson plc,United Kingdom,United Kingdom,listing_market,Europe,Communication Services,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+REL.L,,RELX,United Kingdom,United Kingdom,listing_market,Europe,Communication Services,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+RIO.L,863064,Rio Tinto,United Kingdom,United Kingdom,listing_market,Europe,Materials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+RKT.L,,Reckitt,United Kingdom,United Kingdom,listing_market,Europe,Industrials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+RR.L,,Rolls-Royce Holdings,United Kingdom,United Kingdom,listing_market,Europe,Industrials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+RTO.L,,Rentokil Initial,United Kingdom,United Kingdom,listing_market,Europe,Support services,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+SBRY.L,,Sainsbury's,United Kingdom,United Kingdom,listing_market,Europe,Consumer Staples,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+SDLF.L,,Standard Life,United Kingdom,United Kingdom,listing_market,Europe,Financials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+SDR.L,,Schroders,United Kingdom,United Kingdom,listing_market,Europe,Financials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+SGE.L,,Sage Group,United Kingdom,United Kingdom,listing_market,Europe,Information Technology,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+SGRO.L,,Segro,United Kingdom,United Kingdom,listing_market,Europe,Financials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+SHEL.L,1306965,Shell plc,United Kingdom,United Kingdom,listing_market,Europe,Energy,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+SMIN.L,,Smiths Group,United Kingdom,United Kingdom,listing_market,Europe,Industrials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+SMT.L,,Scottish Mortgage Investment Trust,United Kingdom,United Kingdom,listing_market,Europe,Financials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+SN.L,,Smith & Nephew,United Kingdom,United Kingdom,listing_market,Europe,Health Care,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+SPX.L,,Spirax Group,United Kingdom,United Kingdom,listing_market,Europe,Industrials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+SSE.L,,SSE plc,United Kingdom,United Kingdom,listing_market,Europe,Utilities,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+STAN.L,,Standard Chartered,United Kingdom,United Kingdom,listing_market,Europe,Financials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+STJ.L,,St. James's Place,United Kingdom,United Kingdom,listing_market,Europe,Financials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+SVT.L,,Severn Trent,United Kingdom,United Kingdom,listing_market,Europe,Utilities,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+TSCO.L,,Tesco,United Kingdom,United Kingdom,listing_market,Europe,Consumer Staples,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+ULVR.L,217410,Unilever,United Kingdom,United Kingdom,listing_market,Europe,Personal goods,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+UU.L,,United Utilities,United Kingdom,United Kingdom,listing_market,Europe,Utilities,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+VOD.L,,Vodafone Group,United Kingdom,United Kingdom,listing_market,Europe,Communication Services,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+WEIR.L,,Weir,United Kingdom,United Kingdom,listing_market,Europe,Industrials,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP
+WTB.L,,Whitbread,United Kingdom,United Kingdom,listing_market,Europe,Retail hospitality,London Stock Exchange,GBP,^FTSE,,FTSE 100,https://en.wikipedia.org/wiki/FTSE_100_Index,2026-08-29,0.01,London Stock Exchange Yahoo quotes are expressed in GBp; convert pence to GBP

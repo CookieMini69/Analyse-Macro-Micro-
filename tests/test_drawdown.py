@@ -25,6 +25,14 @@ def test_discloses_close_fallback() -> None:
     assert metrics.current_price == pytest.approx(20.0)
 
 
+def test_discloses_row_level_close_fallback_for_invalid_adjusted_value() -> None:
+    frame = price_frame(np.linspace(10, 20, 260))
+    frame.loc[100, "adjusted_close"] = np.nan
+    metrics = calculate_price_metrics(frame)
+    assert metrics.price_basis == "adjusted_close_with_close_fallback"
+    assert metrics.current_price == pytest.approx(20.0)
+
+
 def test_insufficient_history_returns_null_with_status() -> None:
     metrics = calculate_price_metrics(price_frame([10.0, 9.0, 8.0]))
     one_year = metrics.values["drawdown_1y"]

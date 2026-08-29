@@ -29,6 +29,11 @@ def test_results_frame_serializes_nested_audit_fields() -> None:
     frame = results_to_frame([candidate()])
     assert frame.loc[0, "ticker"] == "TEST"
     assert "synthetic_test_fixture" in frame.loc[0, "sources"]
+    assert frame.loc[0, "drawdown"] == -0.2
+    assert frame.loc[0, "verdict"] == "NOT_CALIBRATED"
+    assert frame.loc[0, "critical_verdict"] == "AI_ANALYST_DISABLED"
+    assert frame.loc[0, "bull_case"] == "data_unavailable"
+    assert frame.loc[0, "timestamp"].startswith("2026-01-01")
 
 
 def test_exports_csv_and_workbook_sheets(tmp_path: Path) -> None:
@@ -37,4 +42,3 @@ def test_exports_csv_and_workbook_sheets(tmp_path: Path) -> None:
     workbook_path = next(path for path in paths if path.suffix == ".xlsx")
     workbook = load_workbook(workbook_path, read_only=True)
     assert workbook.sheetnames == ["Candidates", "All Results", "Run Metadata"]
-

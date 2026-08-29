@@ -81,11 +81,19 @@ class Security(BaseModel):
     cik: str | None = Field(default=None, pattern=r"^\d{1,10}$")
     company: str | None = None
     country: str | None = None
+    listing_country: str | None = None
+    country_basis: str | None = None
+    region: str | None = None
     sector: str | None = None
     exchange: str | None = None
     currency: str | None = None
     benchmark: str | None = None
     sector_benchmark: str | None = None
+    index_memberships: str | None = None
+    universe_source_urls: str | None = None
+    universe_observation_date: date | None = None
+    price_scale: float = Field(default=1.0, gt=0.0, le=100.0)
+    price_scale_reason: str | None = None
     market_cap: float | None = Field(default=None, ge=0)
     market_cap_currency: str | None = None
     market_cap_source: str | None = None
@@ -107,6 +115,8 @@ class Security(BaseModel):
 
     @model_validator(mode="after")
     def market_cap_has_provenance(self) -> "Security":
+        if self.price_scale != 1.0 and not self.price_scale_reason:
+            raise ValueError("non-default price_scale requires price_scale_reason")
         if self.market_cap is None:
             return self
         required = {
@@ -1008,9 +1018,13 @@ class OpportunityCandidate(BaseModel):
     ticker: str
     company: str | None = None
     country: str | None = None
+    listing_country: str | None = None
+    country_basis: str | None = None
+    region: str | None = None
     sector: str | None = None
     exchange: str | None = None
     currency: str | None = None
+    index_memberships: str | None = None
     market_cap: float | None = None
     market_cap_currency: str | None = None
     current_price: float | None = None

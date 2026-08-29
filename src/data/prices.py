@@ -115,7 +115,10 @@ class YahooFinancePriceSource:
         self.confidence = confidence
 
     def fetch(self, security: Security, *, period: str = "max") -> PriceHistoryResult:
-        cache_key = f"{security.ticker}__{period}"
+        # The scaling rule is part of the normalized data contract. Including it
+        # in the cache key prevents an old GBp-denominated London cache entry
+        # from being mistaken for a GBP-denominated observation.
+        cache_key = f"{security.ticker}__{period}__scale_{security.price_scale:g}"
         cache_path = self.cache_dir / f"{_safe_cache_name(cache_key)}.csv"
         cached = self._read_fresh_cache(cache_path)
         if cached is not None:
@@ -190,7 +193,10 @@ class YahooFinancePriceSource:
 
         def source_column(name: str) -> pd.Series:
             if name in history.columns:
-                return pd.to_numeric(history[name], errors="coerce")
+                values = pd.to_numeric(history[name], errors="coerce")
+                if name != "Volume":
+                    values = values * security.price_scale
+                return values
             return pd.Series(pd.NA, index=history.index, dtype="Float64")
 
         normalized = pd.DataFrame(
@@ -213,6 +219,13 @@ class YahooFinancePriceSource:
                 "confidence": self.confidence,
             }
         )
+        # Some long European Yahoo histories contain zero OHLC values around
+        # old corporate actions while another price field remains valid. Zero
+        # is not a price: preserve it as missing. Downstream selection can use
+        # the explicitly disclosed close fallback when adjusted close is null.
+        for price_column in ("open", "high", "low", "close", "adjusted_close"):
+            invalid = pd.to_numeric(normalized[price_column], errors="coerce") <= 0
+            normalized.loc[invalid, price_column] = pd.NA
         has_price = normalized["adjusted_close"].notna() | normalized["close"].notna()
         normalized["data_status"] = has_price.map(
             {True: DataStatus.AVAILABLE.value, False: DataStatus.DATA_UNAVAILABLE.value}

@@ -12,9 +12,11 @@ paths:
   shock_taxonomy: "config/shock_taxonomy.yaml"
   macro_cache: "data/cache/macro"
   news_cache: "data/cache/news"
-  # New immutable lineage for the 44-security global-universe methodology.
+  # Immutable lineage for the expanded global-universe methodology.
   # The prior 15-security archive remains untouched in data/raw/backtest.
-  backtest_archive: "data/raw/backtest_global_v1_0_2"
+  # Universe membership is immutable per observation date. Expansion to the
+  # European indices therefore starts a distinct archive lineage.
+  backtest_archive: "data/raw/backtest_global_v1_2_0"
   reports: "reports"
 
 price:
@@ -65,10 +67,15 @@ news:
   enabled: true
   provider: "gdelt"
   cache_ttl_hours: 6
-  timeout_seconds: 30
-  max_retries: 3
+  # GDELT is best-effort. A failed candidate must not stall a 483-title scan;
+  # the result remains explicitly data_unavailable and can be refreshed later.
+  timeout_seconds: 6
+  max_retries: 0
   lookback_days: 30
   max_articles: 75
+  # Bounded parallelism keeps a 483-title global scan practical without
+  # overwhelming the public GDELT endpoint.
+  max_workers: 4
 
 shock:
   enabled: true

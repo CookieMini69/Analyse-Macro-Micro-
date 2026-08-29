@@ -43,13 +43,13 @@ Les titres natifs, les sociétés sans dépôt SEC et les radiations historiques
 nécessitent toujours un corpus séparé avant un backtest strict.
 
 Le changement de méthodologie ouvre une nouvelle lignée d'archives immuables
-dans `data/raw/backtest_global_v1_0_2`. L'ancien snapshot 15 titres est conservé
-intact dans `data/raw/backtest` et n'est jamais réécrit.
+dans `data/raw/backtest_global_v1_2_0`. Les anciennes lignées restent conservées
+intactes et ne sont jamais réécrites.
 
 ## Vérification réelle
 
-- 117 tests automatisés réussis ;
-- 44/44 titres et 18/18 ETF pays téléchargés avec succès lors du smoke test ;
+- 125 tests automatisés réussis ;
+- 483/483 titres et 31/31 benchmarks téléchargés avec succès lors du scan réel ;
 - VIX, taux BCE, put/call Cboe et COT CFTC récupérés avec succès ;
 - contrôles SEC réels réussis sur ASML, Novo Nordisk, TSMC et Shopify, incluant
   les formulaires étrangers et les unités IFRS locales.

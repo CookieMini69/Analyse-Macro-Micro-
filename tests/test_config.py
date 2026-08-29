@@ -15,7 +15,7 @@ def test_default_settings_resolve_paths_from_project_root() -> None:
         Path.cwd().resolve() / "config" / "shock_taxonomy.yaml"
     )
     assert settings.paths.backtest_archive == (
-        Path.cwd().resolve() / "data" / "raw" / "backtest_global_v1_0_2"
+        Path.cwd().resolve() / "data" / "raw" / "backtest_global_v1_2_0"
     )
     assert settings.macro.provider == "mixed_official"
     assert settings.price.history_period == "max"
@@ -23,6 +23,7 @@ def test_default_settings_resolve_paths_from_project_root() -> None:
     assert settings.valuation.historical_minimum_points == 3
     assert settings.macro.enabled is True
     assert settings.news.lookback_days == 30
+    assert settings.news.max_workers == 4
     assert settings.shock.minimum_independent_sources == 2
     assert settings.historical.enabled is True
     assert settings.historical.minimum_drawdown == -0.15

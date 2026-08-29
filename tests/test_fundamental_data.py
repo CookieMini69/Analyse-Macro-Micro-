@@ -176,6 +176,38 @@ def test_ifrs_local_currency_fact_is_normalized_without_conversion() -> None:
     assert observation.value == 900.0
 
 
+def test_security_currency_is_preferred_when_sec_exposes_multiple_units() -> None:
+    accession = "0000000000-23-000022"
+    fact = revenue_fact(900.0, accession, "2023-03-10", form="20-F")
+    payload = {
+        "facts": {
+            "ifrs-full": {
+                "Revenue": {
+                    "units": {
+                        "USD": [{**fact, "val": 130.0}],
+                        "DKK": [fact],
+                    }
+                }
+            }
+        }
+    }
+    selected = extract_annual_observations(
+        payload,
+        cik="0000000001",
+        filing_index={
+            accession: filing(
+                accession, "2023-03-10T18:00:00Z", "2023-03-10"
+            )
+        },
+        as_of=datetime(2023, 3, 11, tzinfo=UTC),
+        retrieved_at=datetime(2026, 1, 1, tzinfo=UTC),
+        history_years=5,
+        preferred_currency="DKK",
+    )
+    assert selected["revenue"][0].currency == "DKK"
+    assert selected["revenue"][0].value == 900.0
+
+
 def test_date_only_cutoff_means_end_of_day() -> None:
     cutoff = normalize_as_of("2023-02-01")
     assert cutoff.hour == 23

@@ -10,7 +10,7 @@ version: 1
 # avant tout futur backtest d'appartenance sectorielle.
 # Les capitalisations sont volontairement absentes : elles doivent etre datees et
 # sourcees, et ne sont jamais inventees par le scanner.
-csv_path: null
+csv_path: universe_europe.csv
 
 filters:
   minimum_market_cap: null
@@ -30,6 +30,7 @@ filters:
     - Sweden
     - Spain
     - Italy
+    - Portugal
     - Australia
     - Japan
     - Hong Kong

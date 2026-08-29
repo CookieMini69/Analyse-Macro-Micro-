@@ -346,6 +346,7 @@ class SecEdgarFundamentalSource:
                 as_of=cutoff,
                 retrieved_at=companyfacts.retrieved_at,
                 history_years=self.history_years,
+                preferred_currency=security.currency,
             )
         except Exception as exc:
             return unavailable_fundamental_data(
@@ -399,6 +400,7 @@ def extract_annual_observations(
     as_of: datetime,
     retrieved_at: datetime,
     history_years: int,
+    preferred_currency: str | None = None,
 ) -> dict[str, list[FundamentalObservation]]:
     """Select the latest fact available by cutoff for each annual end date."""
 
@@ -409,7 +411,7 @@ def extract_annual_observations(
         for priority, (taxonomy, concept) in enumerate(spec.concepts):
             concept_payload = facts.get(taxonomy, {}).get(concept, {})
             units = concept_payload.get("units", {})
-            unit = _select_unit(spec, units)
+            unit = _select_unit(spec, units, preferred_currency=preferred_currency)
             if unit is None:
                 continue
             for raw in units.get(unit, []):
@@ -568,7 +570,20 @@ def _optional_int(value: Any) -> int | None:
         return None
 
 
-def _select_unit(spec: ConceptSpec, units: dict[str, Any]) -> str | None:
+def _select_unit(
+    spec: ConceptSpec,
+    units: dict[str, Any],
+    *,
+    preferred_currency: str | None = None,
+) -> str | None:
+    currency = preferred_currency.strip().upper() if preferred_currency else None
+    if currency:
+        if any("/shares" in item for item in spec.preferred_units):
+            local_per_share = f"{currency}/shares"
+            if local_per_share in units:
+                return local_per_share
+        elif "shares" not in spec.preferred_units and currency in units:
+            return currency
     preferred = next(
         (candidate for candidate in spec.preferred_units if candidate in units), None
     )

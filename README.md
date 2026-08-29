@@ -1,6 +1,6 @@
 # AI Stock Opportunity Scanner
 
-Version `1.0.2` implements the price/drawdown scanner, a **point-in-time
+Version `1.2.0` implements the price/drawdown scanner, a **point-in-time
 fundamental engine for domestic and foreign SEC-reporting issuers**, valuation,
 point-in-time FRED/ALFRED and ECB macro vintages, official Cboe put/call and CFTC
 positioning context, public GDELT news metadata, and conservative shock
@@ -13,7 +13,8 @@ bear/base/bull, normalized, and reverse DCFs. Fundamental Quality, Valuation,
 Temporary Shock, Normalization, Catalyst, Future Growth, Risk Resilience, and
 Opportunity scores are coverage-adjusted. Phase 9 adds strict archived-snapshot
 backtesting, dated ECB/Frankfurter FX conversion, and write-once live signal
-archives with SHA-256 integrity checks.
+archives with SHA-256 integrity checks. Phase 10 provides the final styled Excel
+report and Phase 11 provides a working Streamlit dashboard.
 
 It still does **not** conclude that a decline is an investment opportunity or
 that a shock is temporary. A high Opportunity Score is not a probability,
@@ -71,13 +72,13 @@ or reports. ECB, Cboe, CFTC, GDELT, Yahoo, and ECB/Frankfurter FX require no key
 
 ## Configure the universe
 
-`config/universe.yaml` ships with 44 liquid US-listed securities from 18 issuer
-countries. It includes ADRs/foreign shares from Europe, Asia, Canada, Latin
-America, Australia, South Africa, and Israel. CIKs, issuer names, and exchanges
-were checked against the official SEC ticker mapping on 2026-08-29. Country ETF
-benchmarks are denominated in USD to make relative returns comparable with the
-USD-listed security. This is a broad live research universe, not a complete or
-survivorship-free historical index. You can edit or replace its entries:
+`config/universe.yaml` merges 44 liquid US-listed securities with 439 native
+European listings from 13 flagship indices: CAC 40, DAX 40, FTSE 100, AEX 25,
+BEL 20, SMI 20, IBEX 35, FTSE MIB 40, OMX Stockholm 30, OMX Copenhagen 25,
+OMX Helsinki 25, OBX 25 and PSI. Duplicate memberships are merged, producing
+483 unique primary listings across 25 listing countries. The generated snapshot
+retains its observation date and source URLs. It is a live research universe,
+not a survivorship-free historical index. You can edit or replace its entries:
 
 ```yaml
 securities:
@@ -98,7 +99,9 @@ and should be replaced with verified identifiers.
 For a large universe, set `csv_path` in `config/universe.yaml`. The CSV supports:
 
 ```text
-ticker,cik,company,country,sector,exchange,currency,benchmark,sector_benchmark,
+ticker,cik,company,country,listing_country,country_basis,region,sector,exchange,
+currency,benchmark,sector_benchmark,index_memberships,universe_source_urls,
+universe_observation_date,price_scale,price_scale_reason,
 market_cap,market_cap_currency,market_cap_source,market_cap_source_url,
 market_cap_observation_date,market_cap_retrieved_at,market_cap_confidence
 ```
@@ -110,6 +113,20 @@ source, observation/retrieval date, and confidence fields are mandatory. The
 universe is explicit and point-in-time: keep dated
 snapshots externally if you later intend to backtest. `minimum_market_cap` filters
 only rows that already contain a market cap; V1 does not fetch or infer one.
+
+Refresh the public European snapshot deliberately, after reviewing constituent
+changes, with:
+
+```powershell
+python scripts/update_europe_universe.py --snapshot-date 2026-08-29
+```
+
+The generator fails closed if a constituent-table count changes. It also retains
+official corporate-action links for known symbol changes. London Yahoo quotes
+are published in GBp; `price_scale=0.01` converts OHLC fields to configured GBP
+without scaling volume, and the scaling rule is included in the cache key. The
+OBX relative-performance benchmark uses the tradable `OBXD.OL` DNB OBX ETF proxy
+because the public Yahoo feed does not reliably expose the official OBX index.
 
 ## Configure valuation assumptions
 
@@ -199,24 +216,31 @@ Missing `SEC_USER_AGENT` or `FRED_API_KEY` does not fabricate
 data or abort unrelated stages: the corresponding results are exported as
 `data_unavailable`.
 
-## Current interface
+## Current interfaces
 
-Through Phase 9, the supported scanner interface is the generated Excel workbook,
-not Streamlit. Open the newest workbook after a run with:
+The Phase 10 workbook contains `Candidates`, `All Results`, and `Run Metadata`.
+Open the newest workbook after a run with:
 
 ```powershell
 $report = Get-ChildItem reports\*.xlsx | Sort-Object LastWriteTime -Descending | Select-Object -First 1
 Invoke-Item $report.FullName
 ```
 
-The workbook contains `Candidates`, `All Results`, and `Run Metadata`. Detailed
-audit trails are the JSON/CSV files described below. `dashboard/app.py` is an
-explicit Phase 11 boundary and is not a runnable dashboard yet; launching it
-would falsely imply that the later AI and UI phases already exist. The Phase 9
-backtest has a separate command-line interface and produces JSON/CSV rather than
-pretending that the Phase 10 final reporting UI already exists.
+Launch the Phase 11 dashboard from the repository root with:
 
-## Decision flow through Phase 9
+```powershell
+python -m streamlit run dashboard/app.py
+```
+
+Then open `http://localhost:8501`. The dashboard automatically reads the newest
+`stock_opportunity_scan_*.csv`, exposes country, sector, index, score, drawdown,
+market-cap, shock, risk and horizon filters, and provides price, fundamental,
+valuation, evidence and scenario tabs. Run the scanner again and refresh the
+page to display the new report. The dashboard never generates a BUY verdict:
+before a valid Phase 9 calibration it displays an analytical priority or
+`Non classé`, and the inactive critical-AI panel is explicit.
+
+## Decision flow through Phase 11
 
 The current strategy is a sequence of evidence filters, not a BUY/SELL model:
 
@@ -247,6 +271,10 @@ The current strategy is a sequence of evidence filters, not a BUY/SELL model:
 11. On a genuinely live run, freeze the complete result, signal rows, and dated
     universe for future point-in-time research. Historical reconstructions made
     today are never labeled as old live archives.
+12. Export all required Phase 10 fields, using `NOT_CALIBRATED` and
+    `data_unavailable` instead of invented verdicts, catalysts, or risks.
+13. Let Phase 11 read the latest immutable output and expose the evidence and
+    coverage interactively without recalculating or mutating the scan.
 
 Outputs are timestamped under `reports/`:
 
@@ -758,20 +786,18 @@ src/forecasting/        assumption-driven DCF and reverse DCF
 src/scoring/            normalization/catalyst/risk/opportunity scoring
 src/backtest/           strict validation, archives, engine, metrics, and loaders
 src/ai/                 reserved critical analyst boundary
-dashboard/              reserved Streamlit boundary
+dashboard/              Phase 11 Streamlit application and testable data helpers
 tests/                  offline unit and integration tests
 ```
 
-Remaining reserved modules contain no hidden placeholder calculations. This
-keeps the specified architecture visible without pretending later phases are
-implemented.
-The current checked/partial/deferred audits are maintained in
-`docs/INTERNAL_AUDIT_PHASES_1_9.md` and the phase-specific compliance files.
+Remaining reserved modules contain no hidden placeholder calculations. The
+current checked/partial/deferred audits are maintained in
+`docs/INTERNAL_AUDIT_PHASES_1_11.md` and the phase-specific compliance files.
 
 ## Known V1 limitations
 
-- The shipped global universe is a current, curated set of US-listed ADRs/shares,
-  not native listings and not a survivorship-free historical membership archive.
+- The shipped universe includes native European listings, but remains a current
+  snapshot rather than a survivorship-free historical membership archive.
 - Yahoo data can be delayed, adjusted, incomplete, unavailable, or subject to
   provider changes. V1 does not corroborate it with an exchange feed.
 - Market cap is not fetched. Valuation may derive it from the point-in-time close
@@ -816,8 +842,8 @@ The current checked/partial/deferred audits are maintained in
   guidance, and analyst expectations stay missing rather than imputed.
 - FX conversion is available through dated ECB reference rates via Frankfurter;
   it is a daily reference rate, not an executable intraday quote.
-- No causal multi-company event catalogue, critical AI verdict, dashboard, or
-  alerts exist yet.
+- No causal multi-company event catalogue, critical AI verdict, or alerts exist
+  yet. The dashboard exists, but faithfully displays those fields as unavailable.
 - Phase 6 compares episodes only within the same security. It does not yet search
   other companies or attach a causal crisis label. Old episodes can have price
   comparisons while fundamental/valuation context stays null because the live
@@ -841,10 +867,10 @@ The current checked/partial/deferred audits are maintained in
 
 ## Next recommended phase
 
-Phase 10 is the final professional Excel reporting layer. Before treating Phase
-9 as an empirical validation, supply the survivorship-free historical universes
-and immutable 2018–2025 inputs listed in
-`docs/INTERNAL_AUDIT_PHASES_1_9.md`.
+Phase 12 is automation and alerts. It should only be started after choosing the
+desired schedule and notification destination. Before treating Phase 9 as an
+empirical validation, supply the survivorship-free historical universes and
+immutable 2018–2025 inputs listed in `docs/INTERNAL_AUDIT_PHASES_1_11.md`.
 
 ## Backtesting status and required methodology
 

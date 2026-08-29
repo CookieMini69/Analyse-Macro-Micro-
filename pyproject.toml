@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ai-stock-opportunity-scanner"
-version = "1.0.2"
+version = "1.2.0"
 description = "Traceable point-in-time equity scanner with evidence-aware scoring"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -19,6 +19,9 @@ dependencies = [
   "requests>=2.32,<3.0",
   "yfinance>=0.2.54,<2.0",
   "openpyxl>=3.1,<4.0",
+  "lxml>=5.2,<7.0",
+  "streamlit>=1.38,<2.0",
+  "plotly>=5.24,<7.0",
 ]
 
 [project.optional-dependencies]

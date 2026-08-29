@@ -19,8 +19,12 @@ EXPORT_COLUMNS = [
     "ticker",
     "company",
     "country",
+    "listing_country",
+    "country_basis",
+    "region",
     "sector",
     "exchange",
+    "index_memberships",
     "current_price",
     "currency",
     "current_price_usd",
@@ -33,6 +37,7 @@ EXPORT_COLUMNS = [
     "fx_metrics",
     "observation_date",
     "price_basis",
+    "drawdown",
     "drawdown_ath",
     "drawdown_52w",
     "drawdown_1m",
@@ -88,6 +93,8 @@ EXPORT_COLUMNS = [
     "reverse_dcf_implied_revenue_growth",
     "valuation_metrics",
     "shock_category",
+    "cause",
+    "shock_type",
     "shock_nature",
     "temporary_shock_score",
     "temporary_shock_observed_score",
@@ -122,6 +129,13 @@ EXPORT_COLUMNS = [
     "upside_bull",
     "downside_bear",
     "risk_reward",
+    "horizon",
+    "verdict",
+    "bull_case",
+    "bear_case",
+    "critical_verdict",
+    "catalysts",
+    "risks",
     "fundamental_invalidation",
     "scenario_metrics",
     "normalization_score",
@@ -147,9 +161,11 @@ EXPORT_COLUMNS = [
     "missing_metrics",
     "sources",
     "retrieved_at",
+    "timestamp",
 ]
 
 PERCENT_COLUMNS = {
+    "drawdown",
     "drawdown_ath",
     "drawdown_52w",
     "drawdown_1m",
@@ -178,6 +194,30 @@ def results_to_frame(results: Iterable[OpportunityCandidate]) -> pd.DataFrame:
     rows = []
     for result in results:
         row = result.model_dump(mode="json")
+        scenario_payload = row.get("scenario_metrics") or {}
+        target_payload = scenario_payload.get("targets") or {}
+        horizon = target_payload.get("target_horizon_months")
+        row.update(
+            {
+                "drawdown": row.get("drawdown_52w"),
+                "cause": row.get("shock_conclusion"),
+                "shock_type": row.get("shock_nature"),
+                "horizon": horizon,
+                # A BUY/SELL label would be misleading before the required
+                # survivorship-free backtest and critical analyst are active.
+                "verdict": "NOT_CALIBRATED",
+                "bull_case": _case_summary(
+                    row.get("bull_target"), row.get("upside_bull"), horizon
+                ),
+                "bear_case": _case_summary(
+                    row.get("bear_target"), row.get("downside_bear"), horizon
+                ),
+                "critical_verdict": "AI_ANALYST_DISABLED",
+                "catalysts": "data_unavailable",
+                "risks": "data_unavailable",
+                "timestamp": row.get("retrieved_at"),
+            }
+        )
         row["candidate_reasons"] = json.dumps(row["candidate_reasons"], ensure_ascii=False)
         row["fundamental_metrics"] = json.dumps(
             row["fundamental_metrics"], ensure_ascii=False, sort_keys=True
@@ -213,6 +253,17 @@ def results_to_frame(results: Iterable[OpportunityCandidate]) -> pd.DataFrame:
         row["sources"] = json.dumps(row["sources"], ensure_ascii=False)
         rows.append(row)
     return pd.DataFrame(rows, columns=EXPORT_COLUMNS)
+
+
+def _case_summary(target: object, return_value: object, horizon: object) -> str:
+    if target is None:
+        return "data_unavailable"
+    target_text = f"{float(target):.2f}"
+    return_text = (
+        f", modeled return {float(return_value):+.1%}" if return_value is not None else ""
+    )
+    horizon_text = f" at {horizon} months" if horizon is not None else ""
+    return f"target {target_text}{horizon_text}{return_text}"
 
 
 def _style_sheet(sheet: Worksheet) -> None:
@@ -277,6 +328,11 @@ def _style_sheet(sheet: Worksheet) -> None:
         sample_width = max((len(str(cell.value or "")) for cell in column_cells[:100]), default=0)
         wide_columns = {
             "candidate_reasons",
+            "bull_case",
+            "bear_case",
+            "critical_verdict",
+            "catalysts",
+            "risks",
             "fundamental_metrics",
             "metric_statuses",
             "shock_conclusion",

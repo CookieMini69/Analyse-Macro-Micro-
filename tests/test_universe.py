@@ -56,7 +56,29 @@ def test_auxiliary_benchmarks_are_unique() -> None:
 def test_default_universe_has_global_sec_reporting_coverage() -> None:
     universe = load_universe(Path("config/universe.yaml"))
     countries = {security.country for security in universe}
-    assert len(universe) >= 40
+    european = [security for security in universe if security.index_memberships]
+    assert len(universe) == 483
+    assert len(european) == 439
     assert {"United States", "France", "Japan", "Brazil", "South Africa"} <= countries
-    assert all(security.cik for security in universe)
-    assert all(security.currency == "USD" for security in universe)
+    assert sum(bool(security.cik) for security in universe) >= 44
+    assert {"USD", "EUR", "GBP", "CHF", "SEK", "DKK", "NOK"} <= {
+        security.currency for security in universe
+    }
+    assert all(security.universe_source_urls for security in european)
+    assert all(security.universe_observation_date for security in european)
+    assert all(security.country_basis == "listing_market" for security in european)
+    assert all(
+        security.price_scale == 0.01 and security.price_scale_reason
+        for security in european
+        if security.exchange == "London Stock Exchange"
+    )
+    memberships = {
+        index
+        for security in european
+        for index in security.index_memberships.split(";")
+    }
+    assert memberships == {
+        "AEX 25", "BEL 20", "CAC 40", "DAX 40", "FTSE 100",
+        "FTSE MIB 40", "IBEX 35", "OBX 25", "OMX Copenhagen 25",
+        "OMX Helsinki 25", "OMX Stockholm 30", "PSI", "SMI 20",
+    }
