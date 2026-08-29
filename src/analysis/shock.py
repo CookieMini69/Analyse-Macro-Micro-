@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from datetime import UTC, datetime
+from statistics import median
 
 from src.macro_config import (
     MacroExposureDefinition,
@@ -13,6 +14,7 @@ from src.models import (
     DataQuality,
     DataStatus,
     FundamentalAnalysisResult,
+    HistoricalAnalogueResult,
     MacroAssociation,
     MacroSeriesAnalysis,
     NewsArticle,
@@ -27,10 +29,12 @@ from src.models import (
 )
 
 TEMPORARY_SCORE_WEIGHTS = {
-    "resolution_evidence": 0.35,
-    "structural_damage": 0.35,
-    "source_corroboration": 0.15,
+    "resolution_evidence": 0.25,
+    "structural_damage": 0.25,
+    "source_corroboration": 0.10,
     "fundamental_resilience": 0.15,
+    "historical_duration": 0.10,
+    "historical_precedents": 0.15,
 }
 
 SPECIFICATION_CRITERIA = (
@@ -129,8 +133,8 @@ def _criterion_statuses(
     """Expose which master-specification criteria are genuinely evidenced.
 
     A headline category is not enough to claim quantified financial impact.
-    Historical duration and precedents deliberately remain unavailable until
-    the Phase 6 analogue engine exists.
+    Historical duration and precedents begin unavailable here and are added
+    after the Phase 6 analogue engine runs.
     """
 
     resolution_observed = _has_terms(
@@ -244,7 +248,102 @@ def score_temporary_shock(
                 else "Fundamental Quality Score unavailable"
             ),
         ),
+        "historical_duration": _score_component(
+            "historical_duration",
+            None,
+            evidence={},
+            reason="historical analogues are evaluated after shock detection",
+        ),
+        "historical_precedents": _score_component(
+            "historical_precedents",
+            None,
+            evidence={},
+            reason="historical analogues are evaluated after shock detection",
+        ),
     }
+    return _finalize_temporary_score(components, minimum_coverage)
+
+
+def augment_shock_with_historical(
+    result: ShockAnalysisResult,
+    historical: HistoricalAnalogueResult | None,
+    *,
+    minimum_coverage: float,
+) -> ShockAnalysisResult:
+    """Add Phase 6 duration/precedent evidence without changing the cutoff."""
+
+    if (
+        historical is None
+        or historical.as_of > result.as_of
+        or historical.status != DataStatus.AVAILABLE
+        or not historical.analogues
+    ):
+        return result
+    durations = [
+        item.episode.recovery_duration_days
+        for item in historical.analogues
+        if item.episode.recovery_duration_days is not None
+    ]
+    median_duration = median(durations) if durations else None
+    duration_score = (
+        _duration_score(float(median_duration)) if median_duration is not None else None
+    )
+    analogue_count = len(historical.analogues)
+    similarity = historical.best_similarity_score
+    precedent_score = (
+        min(100.0, similarity * min(1.0, analogue_count / 3.0))
+        if similarity is not None else None
+    )
+    components = dict(result.temporary_score.components)
+    components["historical_duration"] = _score_component(
+        "historical_duration",
+        duration_score,
+        evidence={
+            "median_recovery_duration_days": median_duration,
+            "eligible_analogue_count": len(durations),
+        },
+        reason=None if duration_score is not None else "recovery duration unavailable",
+    )
+    components["historical_precedents"] = _score_component(
+        "historical_precedents",
+        precedent_score,
+        evidence={
+            "analogue_count": analogue_count,
+            "best_similarity_score": similarity,
+        },
+        reason=None if precedent_score is not None else "historical precedent unavailable",
+    )
+    statuses = dict(result.criterion_statuses)
+    statuses["historical_shock_duration"] = (
+        DataStatus.AVAILABLE if duration_score is not None else DataStatus.DATA_UNAVAILABLE
+    )
+    statuses["historical_precedents"] = (
+        DataStatus.AVAILABLE if precedent_score is not None else DataStatus.DATA_UNAVAILABLE
+    )
+    missing = [name for name, status in statuses.items() if status != DataStatus.AVAILABLE]
+    historical_source = {
+        "source": historical.source,
+        "source_url": historical.source_url,
+        "retrieved_at": historical.retrieved_at.isoformat(),
+        "role": "historical_shock_evidence",
+    }
+    return result.model_copy(
+        update={
+            "temporary_score": _finalize_temporary_score(components, minimum_coverage),
+            "criterion_statuses": statuses,
+            "missing_criteria": missing,
+            "specification_criteria_coverage": round(
+                (len(SPECIFICATION_CRITERIA) - len(missing)) / len(SPECIFICATION_CRITERIA), 4
+            ),
+            "sources": result.sources + [historical_source],
+            "retrieved_at": max(result.retrieved_at, historical.retrieved_at),
+        }
+    )
+
+
+def _finalize_temporary_score(
+    components: dict[str, TemporaryShockScoreComponent], minimum_coverage: float
+) -> TemporaryShockScore:
     available = [item for item in components.values() if item.observed]
     coverage = sum(item.weight for item in available)
     observed_score = (
@@ -274,6 +373,18 @@ def score_temporary_shock(
             else f"score coverage {coverage:.2%} is below required {minimum_coverage:.2%}"
         ),
     )
+
+
+def _duration_score(days: float) -> float:
+    bands = ((90.0, 100.0), (180.0, 90.0), (365.0, 70.0), (730.0, 35.0), (1095.0, 0.0))
+    if days <= bands[0][0]:
+        return bands[0][1]
+    if days >= bands[-1][0]:
+        return bands[-1][1]
+    for (left_x, left_y), (right_x, right_y) in zip(bands, bands[1:]):
+        if left_x <= days <= right_x:
+            return left_y + (days - left_x) / (right_x - left_x) * (right_y - left_y)
+    return 0.0
 
 
 def _article_evidence(

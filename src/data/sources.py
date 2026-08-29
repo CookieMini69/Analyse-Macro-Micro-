@@ -13,7 +13,7 @@ from src.models import DataQuality, DataStatus, Security
 if TYPE_CHECKING:
     from src.data.fundamentals import FundamentalDataResult
     from src.macro_config import MacroSeriesDefinition
-    from src.models import MacroSeriesResult, NewsSearchResult
+    from src.models import FxRateResult, MacroSeriesResult, NewsSearchResult
 
 
 @dataclass(slots=True)
@@ -72,3 +72,14 @@ class NewsSource(Protocol):
         max_articles: int = 75,
     ) -> "NewsSearchResult":
         """Return only article metadata seen by the requested cutoff."""
+
+
+class FxSource(Protocol):
+    def fetch(
+        self,
+        base: str,
+        quote: str,
+        *,
+        as_of: date | datetime | str | None = None,
+    ) -> "FxRateResult":
+        """Return a dated exchange rate eligible at the requested cutoff."""

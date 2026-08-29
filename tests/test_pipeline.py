@@ -9,6 +9,8 @@ from src.data.sources import PriceHistoryResult
 from src.models import (
     DataQuality,
     DataStatus,
+    FxRateObservation,
+    FxRateResult,
     MacroObservation,
     MacroSeriesResult,
     NewsArticle,
@@ -121,6 +123,35 @@ class FakeNewsSource:
         )
 
 
+class FakeFxSource:
+    def fetch(self, base, quote, *, as_of=None):
+        rates = {("EUR", "USD"): 1.20, ("EUR", "EUR"): 1.0}
+        rate = rates[(base, quote)]
+        observation = FxRateObservation(
+            base_currency=base,
+            quote_currency=quote,
+            rate=rate,
+            observation_date=as_of.date(),
+            as_of=as_of,
+            source="synthetic FX fixture",
+            source_url="https://example.invalid/fx",
+            retrieved_at=as_of,
+            unit=f"{quote} per {base}",
+            confidence=1.0,
+        )
+        return FxRateResult(
+            pair=f"{base}/{quote}",
+            base_currency=base,
+            quote_currency=quote,
+            as_of=as_of,
+            status=DataStatus.AVAILABLE,
+            data_quality=DataQuality.HIGH,
+            observation=observation,
+            retrieved_at=as_of,
+            source_url=observation.source_url,
+        )
+
+
 def write_configuration(tmp_path: Path) -> None:
     (tmp_path / "universe.yaml").write_text(
         """
@@ -192,6 +223,25 @@ def test_provider_exception_is_exported_as_unavailable_row(tmp_path: Path) -> No
     assert output.results[0].current_price is None
     assert output.results[0].is_candidate is False
     assert "TEST" in output.download_errors
+
+
+def test_pipeline_exports_dated_usd_and_eur_fx_equivalents(tmp_path: Path) -> None:
+    write_configuration(tmp_path)
+    settings = load_settings(tmp_path / "settings.yaml")
+    settings.fx.enabled = True
+    output = run_pipeline(
+        settings,
+        price_source=FakePriceSource(),
+        fx_source=FakeFxSource(),
+        fundamentals_as_of="2025-03-01T00:00:00Z",
+    )
+    result = output.results[0]
+    assert result.current_price == 60.0
+    assert result.current_price_usd == 72.0
+    assert result.current_price_eur == 60.0
+    assert result.fx_as_of == datetime(2025, 3, 1, tzinfo=UTC)
+    assert set(result.fx_metrics) == {"EUR/USD", "EUR/EUR"}
+    assert len(output.fx_exported_files) == 3
 
 
 def test_historical_cutoff_filters_price_scan_and_persisted_history(

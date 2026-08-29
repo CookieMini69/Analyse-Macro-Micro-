@@ -4,7 +4,7 @@ import pytest
 from pydantic import ValidationError
 
 from src.analysis.fundamentals import analyze_fundamentals
-from src.analysis.shock import analyze_shock
+from src.analysis.shock import analyze_shock, augment_shock_with_historical
 from src.macro_config import (
     MacroExposureDefinition,
     ShockTaxonomyConfig,
@@ -13,6 +13,9 @@ from src.macro_config import (
 from src.models import (
     DataQuality,
     DataStatus,
+    HistoricalAnalogue,
+    HistoricalAnalogueResult,
+    HistoricalEpisode,
     MacroSeriesAnalysis,
     MetricValue,
     NewsArticle,
@@ -161,6 +164,38 @@ def test_future_exposure_assumption_is_rejected() -> None:
     )
     assert result.macro_associations[0].status == DataStatus.DATA_UNAVAILABLE
     assert "not available at the cutoff" in result.macro_associations[0].reason
+
+
+def test_phase6_analogues_complete_historical_shock_criteria() -> None:
+    taxonomy = load_shock_taxonomy("config/shock_taxonomy.yaml")
+    result = analyze_shock(
+        Security(ticker="TEST", company="Synthetic Test Company"),
+        news_result([article("Temporary disruption resolved", "one.test", 1)]),
+        {}, [], taxonomy, fundamental=analyze_fundamentals(complete_data()),
+    )
+    episode = HistoricalEpisode(
+        peak_date=date(2023, 1, 1), peak_price=100,
+        trough_date=date(2023, 2, 1), trough_price=70,
+        recovery_date=date(2023, 8, 1), maximum_drawdown=-0.30,
+        decline_duration_days=31, recovery_duration_days=181,
+        total_recovery_days=212,
+    )
+    historical = HistoricalAnalogueResult(
+        ticker="TEST", as_of=result.as_of, status=DataStatus.AVAILABLE,
+        data_quality=DataQuality.MEDIUM,
+        analogues=[HistoricalAnalogue(
+            episode=episode, similarity_score=80, similarity_coverage=0.75
+        )],
+        detected_completed_episode_count=1, best_similarity_score=80,
+        source="synthetic test history", retrieved_at=result.retrieved_at,
+    )
+    augmented = augment_shock_with_historical(
+        result, historical, minimum_coverage=0.5
+    )
+    assert augmented.criterion_statuses["historical_shock_duration"] == DataStatus.AVAILABLE
+    assert augmented.criterion_statuses["historical_precedents"] == DataStatus.AVAILABLE
+    assert augmented.temporary_score.components["historical_duration"].score is not None
+    assert augmented.specification_criteria_coverage > result.specification_criteria_coverage
 
 
 def test_taxonomy_rejects_unknown_category_labels() -> None:

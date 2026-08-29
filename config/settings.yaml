@@ -12,6 +12,7 @@ paths:
   shock_taxonomy: "config/shock_taxonomy.yaml"
   macro_cache: "data/cache/macro"
   news_cache: "data/cache/news"
+  backtest_archive: "data/raw/backtest"
   reports: "reports"
 
 price:
@@ -49,6 +50,14 @@ macro:
   timeout_seconds: 30
   max_retries: 3
   history_years: 2
+
+fx:
+  enabled: true
+  provider: frankfurter_ecb
+  target_currencies: [USD, EUR]
+  cache_ttl_hours: 24
+  timeout_seconds: 30
+  max_retries: 3
 
 news:
   enabled: true
@@ -89,6 +98,18 @@ scoring:
   risk_weight: 0.10
   minimum_subscore_coverage: 0.25
   minimum_opportunity_coverage: 0.50
+
+backtest:
+  enabled: false
+  archive_live_runs: true
+  strict: true
+  start_year: 2018
+  end_year: 2025
+  holding_months: 12
+  minimum_score: 50
+  transaction_cost_bps_per_side: 10
+  annual_risk_free_rate: 0.0
+  minimum_trades: 5
 
 screening:
   drawdown_52w_threshold: -0.20

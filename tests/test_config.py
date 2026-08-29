@@ -14,6 +14,9 @@ def test_default_settings_resolve_paths_from_project_root() -> None:
     assert settings.paths.shock_taxonomy == (
         Path.cwd().resolve() / "config" / "shock_taxonomy.yaml"
     )
+    assert settings.paths.backtest_archive == (
+        Path.cwd().resolve() / "data" / "raw" / "backtest"
+    )
     assert settings.price.history_period == "max"
     assert settings.fundamentals.history_years == 5
     assert settings.valuation.historical_minimum_points == 3
@@ -26,6 +29,9 @@ def test_default_settings_resolve_paths_from_project_root() -> None:
     assert settings.scenario.target_horizon_months == 12
     assert settings.scoring.enabled is True
     assert settings.scoring.minimum_opportunity_coverage == 0.50
+    assert settings.fx.enabled is True
+    assert settings.fx.target_currencies == ["USD", "EUR"]
+    assert settings.backtest.archive_live_runs is True
 
 
 def test_project_env_file_is_loaded_without_overriding_shell(

@@ -1,6 +1,6 @@
 # Phase 8 compliance — coverage-aware scoring
 
-Version: 0.9.0
+Version: 1.0.0
 Audit date: 2026-08-29
 
 ## Implemented
@@ -38,11 +38,12 @@ Audit date: 2026-08-29
 - [ ] A HIGH_SCORE is a recommendation or investment verdict.
 - [ ] Catalyst absence in indexed headlines proves that no catalyst exists.
 - [ ] Historical similarity establishes causal equivalence.
-- [ ] Score weights are validated before the mandatory Phase 9 backtest.
+- [x] A strict Phase 9 engine exists to test the score weights once valid
+  historical archives are supplied.
 
 ## Verification result
 
-- Offline unit/integration/audit tests: 87 passed.
+- Offline unit/integration/audit tests: 103 passed.
 - Project environment dependency check: no broken requirements.
 - Real providers: SEC 15/15, FRED 6/6, price histories 16/16, valuation 14/15.
 - Real candidate outputs: historical analogues 3/3, scenarios 3/3, coverage-

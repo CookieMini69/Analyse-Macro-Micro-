@@ -52,7 +52,7 @@ Audit date: 2026-08-29 (post-implementation adversarial review)
 
 ## Verification result
 
-- Offline regression, audit, Phase 7, and Phase 8 tests: 87 passed.
+- Offline regression and audit suite through Phase 9: 103 passed.
 - Real providers: SEC 15/15, FRED 6/6, price histories 16/16, valuation 14/15.
 - Real candidate outputs: historical analogues 3/3, scenarios 3/3, 45 scenario
   horizon rows.

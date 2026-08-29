@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ai-stock-opportunity-scanner"
-version = "0.9.0"
+version = "1.0.0"
 description = "Traceable point-in-time equity scanner with evidence-aware scoring"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -26,6 +26,7 @@ dev = ["pytest>=8.2,<9.0"]
 
 [project.scripts]
 stock-scanner = "src.pipeline:main"
+stock-backtest = "src.backtest.engine:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

@@ -1,6 +1,6 @@
 # AI Stock Opportunity Scanner
 
-Version `0.9.0` implements the price/drawdown scanner, a **point-in-time
+Version `1.0.0` implements the price/drawdown scanner, a **point-in-time
 fundamental engine for SEC-reporting US issuers**, valuation, point-in-time
 FRED/ALFRED macro vintages, public GDELT news metadata, and conservative shock
 detection, same-security historical drawdown analogues, and evidence-derived
@@ -10,12 +10,16 @@ actual availability cutoff of SEC filings and macro
 vintages, calculates current/historical/peer multiples, and can run sourced
 bear/base/bull, normalized, and reverse DCFs. Fundamental Quality, Valuation,
 Temporary Shock, Normalization, Catalyst, Future Growth, Risk Resilience, and
-Opportunity scores are coverage-adjusted.
+Opportunity scores are coverage-adjusted. Phase 9 adds strict archived-snapshot
+backtesting, dated ECB/Frankfurter FX conversion, and write-once live signal
+archives with SHA-256 integrity checks.
 
 It still does **not** conclude that a decline is an investment opportunity or
 that a shock is temporary. A high Opportunity Score is not a probability,
-recommendation, or validated return forecast. AI analysis and backtesting are
-reserved for later phases. DCF and macro-exposure
+recommendation, probability, or validated return forecast. A real 2018–2025
+study remains unavailable until a survivorship-free historical universe and
+immutable historical signals are supplied. AI analysis remains reserved for a
+later phase. DCF and macro-exposure
 output remain null until the user adds real, dated, reviewable assumptions.
 
 ## Core data rule
@@ -62,7 +66,7 @@ The SEC requires automated clients to identify themselves. The application
 refuses an anonymous or unchanged placeholder User-Agent. `.env` is loaded
 without overriding variables already defined in the shell and is ignored by Git.
 FRED requires a free API key; the scanner never writes it to cache, provenance,
-or reports. GDELT and Yahoo require no key.
+or reports. GDELT, Yahoo, and ECB/Frankfurter FX require no key.
 
 ## Configure the universe
 
@@ -193,7 +197,7 @@ data or abort unrelated stages: the corresponding results are exported as
 
 ## Current interface
 
-Through Phase 8, the supported user interface is the generated Excel workbook,
+Through Phase 9, the supported scanner interface is the generated Excel workbook,
 not Streamlit. Open the newest workbook after a run with:
 
 ```powershell
@@ -204,15 +208,17 @@ Invoke-Item $report.FullName
 The workbook contains `Candidates`, `All Results`, and `Run Metadata`. Detailed
 audit trails are the JSON/CSV files described below. `dashboard/app.py` is an
 explicit Phase 11 boundary and is not a runnable dashboard yet; launching it
-would falsely imply that the later backtest, AI, and UI phases
-already exist.
+would falsely imply that the later AI and UI phases already exist. The Phase 9
+backtest has a separate command-line interface and produces JSON/CSV rather than
+pretending that the Phase 10 final reporting UI already exists.
 
-## Decision flow through Phase 8
+## Decision flow through Phase 9
 
 The current strategy is a sequence of evidence filters, not a BUY/SELL model:
 
 1. Load an explicit, dated universe and establish one shared `as_of` cutoff.
-2. Retrieve SEC facts and FRED/ALFRED vintages that were available at that time.
+2. Retrieve SEC facts, FRED/ALFRED vintages, and dated ECB reference FX rates
+   that were available at that time.
 3. Download price histories, remove every daily bar ineligible at the cutoff,
    and calculate drawdowns, returns, momentum, volatility, beta, and relative
    performance.
@@ -234,6 +240,9 @@ The current strategy is a sequence of evidence filters, not a BUY/SELL model:
 10. Calculate the seven configured scoring inputs, penalize missing evidence,
     require minimum coverage, and rank candidates by Opportunity Score with
     decline severity only as a tie/fallback signal.
+11. On a genuinely live run, freeze the complete result, signal rows, and dated
+    universe for future point-in-time research. Historical reconstructions made
+    today are never labeled as old live archives.
 
 Outputs are timestamped under `reports/`:
 
@@ -259,6 +268,10 @@ Outputs are timestamped under `reports/`:
 - `opportunity_scoring_*.csv` with every sub-score, coverage, confidence,
   score band, and methodology; full per-company audit JSON lives under
   `data/processed/scoring/`.
+- `fx_analysis_*.csv`, plus dated pair JSON under `data/processed/fx/`; scan rows
+  retain original values and add USD/EUR equivalents when rates are available.
+- write-once live archives under `data/raw/backtest/{source_archives,signals,universes}`.
+- Phase 9 backtests produce one full JSON, one metrics CSV, and one trades CSV.
 
 ## Historical analogue methodology
 
@@ -362,8 +375,56 @@ in a positive return. Data Quality remains LOW when coverage or source support
 is weak, even if the numerical score is high.
 
 Score bands (`LOW_SCORE` through `HIGH_SCORE`) are descriptive ranking labels,
-not BUY/SELL verdicts. The score has not yet been calibrated by the mandatory
-Phase 9 backtest and must never be displayed as a chance of profit.
+not BUY/SELL verdicts. The Phase 9 engine exists, but no real calibration result
+is claimed without the required archives; the score must never be displayed as
+a chance of profit.
+
+## Phase 9 backtest methodology
+
+The backtest consumes archived signal CSV files, outcome-price CSV files, and
+dated universe snapshots. It refuses output unless signal availability is no
+later than the signal date, the source JSON's SHA-256 matches the declared hash,
+the security belonged to that dated universe, and its regional benchmark has a
+valid history. Price dates and values must be valid, positive, and unique.
+
+Entry occurs at the first trading session strictly after the signal. Exit occurs
+at the first session on or after the configured holding horizon (12 months by
+default). Costs default to 10 basis points per side. The portfolio is equally
+weighted across active positions and earns zero while in cash; benchmark paths
+use matching windows without transaction costs.
+
+Results include 2018–2025 year slices where data exists; score buckets 50–59,
+60–69, 70–79, 80–89, and 90–100; CAGR, total return, hit rate, average and median
+return, maximum drawdown, volatility, Sharpe, Sortino, recovery time, win/loss
+ratio, and performance versus benchmark.
+
+Run it after supplying the required archives:
+
+```powershell
+python -m src.backtest.engine `
+  --signals data/raw/backtest/signals `
+  --prices path/to/point_in_time_prices `
+  --universes data/raw/backtest/universes `
+  --config config/settings.yaml `
+  --output reports/backtest_result.json
+```
+
+After editable installation, use `stock-backtest` with the same arguments. Both
+`--signals` and `--prices` accept either one CSV or a directory of CSV files.
+Each signal row requires:
+
+```text
+ticker,signal_date,opportunity_score,data_quality,signal_available_at,
+universe_snapshot_date,source_archive_id,source_archive_sha256,
+point_in_time_validated,benchmark_ticker
+```
+
+Universe snapshot filenames must be `YYYY-MM-DD.csv` and contain `ticker`.
+Prices require `ticker,observation_date,adjusted_close`. Set a region-appropriate
+benchmark in every signal (MSCI World, S&P 500, STOXX Europe 600, or CAC 40 as
+appropriate to the tested mandate). The scanner automatically creates usable
+live archives going forward, but it cannot recreate evidence that was never
+archived in 2018–2025.
 
 Normalized daily observations are cached under `data/cache/prices/` and persisted
 under `data/processed/prices/`. Raw SEC API responses are cached under
@@ -477,9 +538,11 @@ security, require the same point-in-time cutoff, require three positive peers by
 default, and never substitute a global median. These thresholds are configurable
 under `valuation` in `config/settings.yaml`.
 
-No FX conversion is currently implemented. A non-USD or unknown price currency
-cannot be combined with SEC USD facts, so the affected valuation methods remain
-null rather than silently mixing currencies.
+Dated FX conversion is implemented for scan prices and configured market caps,
+with original, USD, and EUR values exported together. Valuation still requires
+currency-consistent accounting inputs: it will not translate a historical SEC
+fact with one current FX rate or silently mix currencies, so an incompatible or
+unknown valuation currency leaves the affected method null.
 
 ## DCF, reverse DCF, and normalized value
 
@@ -657,14 +720,14 @@ in user-facing scan output.
 config/                 validated YAML settings and universe
 data/                   ignored raw/processed/cache/database runtime areas
 src/models.py           provenance, analysis, shock, and historical models
-src/data/               Yahoo, SEC EDGAR, FRED/ALFRED, and GDELT clients/caches
+src/data/               Yahoo, SEC EDGAR, FRED/ALFRED, GDELT, and ECB FX clients/caches
 src/screening/          universe, returns/drawdowns, momentum, filter/ranking
 src/reporting/          auditable price/fundamental/valuation/macro/shock/analogue exports
 src/pipeline.py         integrated point-in-time scanner CLI
 src/analysis/           fundamental, valuation, macro, shock, and analogue calculations
 src/forecasting/        assumption-driven DCF and reverse DCF
 src/scoring/            normalization/catalyst/risk/opportunity scoring
-src/backtest/           reserved point-in-time backtest boundary
+src/backtest/           strict validation, archives, engine, metrics, and loaders
 src/ai/                 reserved critical analyst boundary
 dashboard/              reserved Streamlit boundary
 tests/                  offline unit and integration tests
@@ -674,7 +737,7 @@ Remaining reserved modules contain no hidden placeholder calculations. This
 keeps the specified architecture visible without pretending later phases are
 implemented.
 The current checked/partial/deferred audits are maintained in
-`docs/PHASE_7_COMPLIANCE.md` and `docs/PHASE_8_COMPLIANCE.md`.
+`docs/INTERNAL_AUDIT_PHASES_1_9.md` and the phase-specific compliance files.
 
 ## Known V1 limitations
 
@@ -716,12 +779,14 @@ The current checked/partial/deferred audits are maintained in
   for a review of primary company disclosures and regulatory filings.
 - Macro exposures are empty by default and user-supplied when enabled. Their
   signed arithmetic is not an empirically estimated causal model.
-- The Temporary Shock Score currently covers only evidence that can be audited
-  from Phase 3 fundamentals, macro inputs, and public headline metadata. The
-  remaining specification criteria—historical shock duration/analogues,
-  detailed guidance and analyst expectations—stay missing rather than imputed.
-- No FX conversion, causal event catalogue, critical verdict,
-  dashboard, alerts, or backtest exists yet.
+- The Temporary Shock Score uses auditable Phase 3 fundamentals, macro inputs,
+  public headline metadata, and Phase 6 recovery duration/precedents when
+  available. Quantified causal revenue/margin/FCF/balance-sheet impacts, detailed
+  guidance, and analyst expectations stay missing rather than imputed.
+- FX conversion is available through dated ECB reference rates via Frankfurter;
+  it is a daily reference rate, not an executable intraday quote.
+- No causal multi-company event catalogue, critical AI verdict, dashboard, or
+  alerts exist yet.
 - Phase 6 compares episodes only within the same security. It does not yet search
   other companies or attach a causal crisis label. Old episodes can have price
   comparisons while fundamental/valuation context stays null because the live
@@ -736,26 +801,28 @@ The current checked/partial/deferred audits are maintained in
   are not statistically calibrated probabilities; Catalyst can remain null when
   dated resolution evidence is absent, and missing evidence lowers both score
   and confidence.
+- The Phase 9 engine is implemented, but a real 2018–2025 result is deliberately
+  unavailable until dated universes including delisted names and integrity-
+  checked historical signal archives are supplied. A current-survivor pilot is
+  rejected as evidence, not silently backtested.
 - A severe decline can be entirely rational. Ranking does not establish
   undervaluation or temporary mispricing.
 
 ## Next recommended phase
 
-Phase 9 should backtest the point-in-time scores by the specified score buckets
-and years, including delisted securities, benchmark comparisons, transaction
-assumptions, and revision-safe archived inputs. Before broad production use,
-also add sector-specific fundamental scorecards and daily archived SEC/GDELT
-snapshots.
+Phase 10 is the final professional Excel reporting layer. Before treating Phase
+9 as an empirical validation, supply the survivorship-free historical universes
+and immutable 2018–2025 inputs listed in
+`docs/INTERNAL_AUDIT_PHASES_1_9.md`.
 
 ## Backtesting status and required methodology
 
-Backtesting is Phase 9 and is not implemented in version 0.9.0. No current score
-should therefore be treated as statistically validated. The future engine must
-use point-in-time universe membership, unrevised provider snapshots, actual
-filing/news availability, delisted securities, region-appropriate benchmarks,
-and transaction assumptions. It must measure the return/risk statistics and
-score buckets specified in the master specification without look-ahead,
-survivorship, or revision leakage.
+The strict Phase 9 engine is implemented in version 1.0.0. It validates
+point-in-time universe membership, archive integrity, signal availability,
+benchmark coverage, future outcome separation, and transaction assumptions.
+No current score is statistically validated because the repository does not
+contain the necessary survivorship-free 2018–2025 archives. The engine returns
+`data_unavailable` instead of publishing a biased result.
 
 ## Financial disclaimer
 

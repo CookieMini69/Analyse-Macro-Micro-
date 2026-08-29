@@ -16,8 +16,9 @@ import pandas as pd
 from src.analysis.fundamentals import analyze_fundamentals
 from src.analysis.historical import analyze_historical_analogues
 from src.analysis.macro import analyze_macro_series
-from src.analysis.shock import analyze_shock
+from src.analysis.shock import analyze_shock, augment_shock_with_historical
 from src.analysis.valuation import analyze_valuations
+from src.backtest.archive import archive_live_run
 from src.config import AppSettings, load_settings
 from src.data.fundamentals import (
     SecEdgarFundamentalSource,
@@ -25,6 +26,7 @@ from src.data.fundamentals import (
     normalize_as_of,
     unavailable_fundamental_data,
 )
+from src.data.fx import FrankfurterFxSource, convert_currency
 from src.data.macro import FredMacroSource, unavailable_macro_series
 from src.data.news import (
     GDELT_DOC_URL,
@@ -40,6 +42,7 @@ from src.data.prices import (
 from src.data.sec_edgar import SecEdgarClient
 from src.data.sources import (
     FundamentalSource,
+    FxSource,
     MacroSource,
     NewsSource,
     PriceHistoryResult,
@@ -58,6 +61,7 @@ from src.models import (
     DataQuality,
     DataStatus,
     FundamentalAnalysisResult,
+    FxRateResult,
     HistoricalAnalogueResult,
     MacroSeriesAnalysis,
     MacroSeriesResult,
@@ -71,6 +75,7 @@ from src.models import (
 )
 from src.reporting.export import export_scan_results
 from src.reporting.fundamentals import persist_fundamental_results
+from src.reporting.fx import persist_fx_results
 from src.reporting.historical import persist_historical_results
 from src.reporting.macro_shock import persist_macro_results, persist_shock_results
 from src.reporting.scenarios import persist_scenario_results
@@ -92,6 +97,9 @@ class PipelineResult:
     fundamental_results: dict[str, FundamentalAnalysisResult]
     fundamental_exported_files: list[Path]
     fundamental_errors: dict[str, str]
+    fx_results: dict[str, FxRateResult]
+    fx_exported_files: list[Path]
+    fx_errors: dict[str, str]
     valuation_results: dict[str, ValuationAnalysisResult]
     valuation_exported_files: list[Path]
     valuation_errors: dict[str, str]
@@ -112,6 +120,8 @@ class PipelineResult:
     scoring_results: dict[str, ScoringAnalysisResult]
     scoring_exported_files: list[Path]
     scoring_errors: dict[str, str]
+    backtest_archive_files: list[Path]
+    backtest_archive_error: str | None
 
 
 def _configure_logging(level: str) -> None:
@@ -456,6 +466,65 @@ def _enrich_with_fundamentals(
     )
 
 
+def _enrich_with_fx(
+    result: OpportunityCandidate,
+    fx_results: dict[str, FxRateResult],
+) -> OpportunityCandidate:
+    """Add explicit USD/EUR equivalents without replacing source currencies."""
+
+    values: dict[str, float | datetime | dict | None] = {
+        "current_price_usd": None,
+        "current_price_eur": None,
+        "market_cap_usd": None,
+        "market_cap_eur": None,
+        "fx_as_of": None,
+    }
+    metrics: dict[str, dict] = {}
+    sources = list(result.sources)
+    pairs = (
+        ("current_price", result.current_price, result.currency),
+        ("market_cap", result.market_cap, result.market_cap_currency),
+    )
+    for field, amount, currency in pairs:
+        if amount is None or not currency:
+            continue
+        for target in ("USD", "EUR"):
+            pair = f"{currency.upper()}/{target}"
+            rate_result = fx_results.get(pair)
+            if rate_result is None:
+                continue
+            converted = convert_currency(amount, rate_result)
+            values[f"{field}_{target.lower()}"] = converted
+            observation = rate_result.observation
+            metrics[pair] = {
+                "status": rate_result.status.value,
+                "rate": observation.rate if observation else None,
+                "observation_date": (
+                    observation.observation_date.isoformat() if observation else None
+                ),
+                "source_url": rate_result.source_url,
+                "error": rate_result.error,
+            }
+            if observation is not None:
+                values["fx_as_of"] = rate_result.as_of
+                source = {
+                    "name": observation.source,
+                    "url": observation.source_url,
+                    "role": "fx_conversion",
+                    "observation_date": observation.observation_date.isoformat(),
+                    "retrieved_at": observation.retrieved_at.isoformat(),
+                    "currency": target,
+                    "unit": observation.unit,
+                    "confidence": observation.confidence,
+                }
+                if source not in sources:
+                    sources.append(source)
+    values["fx_metrics"] = metrics
+    return OpportunityCandidate.model_validate(
+        {**result.model_dump(), **values, "sources": sources}
+    )
+
+
 def _enrich_with_valuation(
     result: OpportunityCandidate,
     valuation: ValuationAnalysisResult | None,
@@ -721,6 +790,7 @@ def run_pipeline(
     price_source: PriceSource | None = None,
     fundamental_source: FundamentalSource | None = None,
     macro_source: MacroSource | None = None,
+    fx_source: FxSource | None = None,
     news_source: NewsSource | None = None,
     fundamentals_as_of: date | datetime | str | None = None,
 ) -> PipelineResult:
@@ -770,6 +840,38 @@ def run_pipeline(
         if fundamental_list
         else []
     )
+
+    fx_results: dict[str, FxRateResult] = {}
+    fx_exported: list[Path] = []
+    if app_settings.fx.enabled:
+        LOGGER.info("Updating dated ECB reference FX rates...")
+        provider_fx = fx_source or FrankfurterFxSource(
+            app_settings.paths.cache,
+            cache_ttl_hours=app_settings.fx.cache_ttl_hours,
+            timeout_seconds=app_settings.fx.timeout_seconds,
+            max_retries=app_settings.fx.max_retries,
+        )
+        original_currencies = sorted(
+            {
+                currency.upper()
+                for security in securities
+                for currency in (security.currency, security.market_cap_currency)
+                if currency
+            }
+        )
+        for base in original_currencies:
+            for quote in app_settings.fx.target_currencies:
+                pair = f"{base}/{quote}"
+                fx_results[pair] = provider_fx.fetch(base, quote, as_of=cutoff)
+        if fx_results:
+            fx_exported = persist_fx_results(
+                fx_results, app_settings.paths.processed_data, app_settings.paths.reports
+            )
+        LOGGER.info(
+            "%d/%d FX pairs available",
+            sum(item.status == DataStatus.AVAILABLE for item in fx_results.values()),
+            len(fx_results),
+        )
 
     LOGGER.info("Updating point-in-time macro vintages...")
     macro_results, macro_analysis = _run_macro(
@@ -838,6 +940,7 @@ def run_pipeline(
             )
         )
     ranked = rank_results(scan_results)
+    ranked = [_enrich_with_fx(result, fx_results) for result in ranked]
     ranked = [
         _enrich_with_fundamentals(
             result, fundamental_results.get(result.ticker.upper())
@@ -933,17 +1036,6 @@ def run_pipeline(
                 ),
                 minimum_score_coverage=app_settings.shock.minimum_score_coverage,
             )
-        if news_results or shock_results:
-            shock_exported = persist_shock_results(
-                news_results,
-                shock_results,
-                app_settings.paths.processed_data,
-                app_settings.paths.reports,
-            )
-        ranked = [
-            _enrich_with_shock(result, shock_results.get(result.ticker.upper()))
-            for result in ranked
-        ]
         LOGGER.info("%d candidate shocks analyzed", len(shock_results))
 
     historical_results: dict[str, HistoricalAnalogueResult] = {}
@@ -987,6 +1079,27 @@ def run_pipeline(
         )
     else:
         historical_available = 0
+
+    if shock_results:
+        shock_results = {
+            ticker: augment_shock_with_historical(
+                shock,
+                historical_results.get(ticker),
+                minimum_coverage=app_settings.shock.minimum_score_coverage,
+            )
+            for ticker, shock in shock_results.items()
+        }
+    if news_results or shock_results:
+        shock_exported = persist_shock_results(
+            news_results,
+            shock_results,
+            app_settings.paths.processed_data,
+            app_settings.paths.reports,
+        )
+    ranked = [
+        _enrich_with_shock(result, shock_results.get(result.ticker.upper()))
+        for result in ranked
+    ]
 
     scenario_results: dict[str, ScenarioAnalysisResult] = {}
     scenario_exported: list[Path] = []
@@ -1077,6 +1190,28 @@ def run_pipeline(
     else:
         scoring_available = 0
 
+    backtest_archive_files: list[Path] = []
+    backtest_archive_error: str | None = None
+    if app_settings.backtest.archive_live_runs:
+        try:
+            backtest_archive_files = archive_live_run(
+                ranked,
+                securities,
+                as_of=cutoff,
+                archive_root=(
+                    app_settings.paths.backtest_archive
+                    or app_settings.project_root / "data" / "raw" / "backtest"
+                ),
+            )
+            if backtest_archive_files:
+                LOGGER.info(
+                    "Archived live point-in-time signal bundle in %s",
+                    backtest_archive_files[0].parent.parent,
+                )
+        except Exception as exc:
+            backtest_archive_error = f"{type(exc).__name__}: {exc}"
+            LOGGER.error("Backtest live archive unavailable: %s", backtest_archive_error)
+
     LOGGER.info("Exporting scan results...")
     exported = export_scan_results(
         ranked,
@@ -1091,6 +1226,10 @@ def run_pipeline(
             "download_error_count": sum(bool(result.error) for result in price_results.values()),
             "fundamental_result_count": len(fundamental_results),
             "fundamental_available_count": fundamental_available,
+            "fx_pair_count": len(fx_results),
+            "fx_available_count": sum(
+                item.status == DataStatus.AVAILABLE for item in fx_results.values()
+            ),
             "valuation_result_count": len(valuation_results),
             "valuation_available_count": valuation_available,
             "macro_series_count": len(macro_results),
@@ -1103,6 +1242,8 @@ def run_pipeline(
             "scenario_available_count": scenario_available,
             "scoring_result_count": len(scoring_results),
             "scoring_available_count": scoring_available,
+            "backtest_archive_file_count": len(backtest_archive_files),
+            "backtest_archive_error": backtest_archive_error,
             "pipeline_as_of": cutoff.isoformat(),
             "fundamental_as_of": (
                 cutoff.isoformat() if app_settings.fundamentals.enabled else None
@@ -1121,6 +1262,9 @@ def run_pipeline(
         result.ticker: result.error
         for result in fundamental_list
         if result.error is not None
+    }
+    fx_errors = {
+        pair: result.error for pair, result in fx_results.items() if result.error is not None
     }
     valuation_errors = {
         result.ticker: result.error
@@ -1159,6 +1303,9 @@ def run_pipeline(
         fundamental_results=fundamental_results,
         fundamental_exported_files=fundamental_exported,
         fundamental_errors=fundamental_errors,
+        fx_results=fx_results,
+        fx_exported_files=fx_exported,
+        fx_errors=fx_errors,
         valuation_results=valuation_results,
         valuation_exported_files=valuation_exported,
         valuation_errors=valuation_errors,
@@ -1179,6 +1326,8 @@ def run_pipeline(
         scoring_results=scoring_results,
         scoring_exported_files=scoring_exported,
         scoring_errors=scoring_errors,
+        backtest_archive_files=backtest_archive_files,
+        backtest_archive_error=backtest_archive_error,
     )
 
 

@@ -23,8 +23,14 @@ EXPORT_COLUMNS = [
     "exchange",
     "current_price",
     "currency",
+    "current_price_usd",
+    "current_price_eur",
     "market_cap",
     "market_cap_currency",
+    "market_cap_usd",
+    "market_cap_eur",
+    "fx_as_of",
+    "fx_metrics",
     "observation_date",
     "price_basis",
     "drawdown_ath",
@@ -179,6 +185,9 @@ def results_to_frame(results: Iterable[OpportunityCandidate]) -> pd.DataFrame:
         row["valuation_metrics"] = json.dumps(
             row["valuation_metrics"], ensure_ascii=False, sort_keys=True
         )
+        row["fx_metrics"] = json.dumps(
+            row["fx_metrics"], ensure_ascii=False, sort_keys=True
+        )
         row["shock_metrics"] = json.dumps(
             row["shock_metrics"], ensure_ascii=False, sort_keys=True
         )
@@ -223,7 +232,11 @@ def _style_sheet(sheet: Worksheet) -> None:
                 cell.number_format = "0.00%"
     for name in (
         "current_price",
+        "current_price_usd",
+        "current_price_eur",
         "market_cap",
+        "market_cap_usd",
+        "market_cap_eur",
         "valuation_price",
         "pe_current",
         "ev_ebitda_current",

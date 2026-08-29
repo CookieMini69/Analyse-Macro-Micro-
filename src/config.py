@@ -24,6 +24,7 @@ class PathsSettings(BaseModel):
     shock_taxonomy: Path | None = None
     macro_cache: Path | None = None
     news_cache: Path | None = None
+    backtest_archive: Path | None = None
     reports: Path
 
 
@@ -112,6 +113,32 @@ class MacroSettings(BaseModel):
         if value.lower() != "fred":
             raise ValueError("this phase currently supports only the 'fred' macro provider")
         return value.lower()
+
+
+class FxSettings(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool = False
+    provider: str = "frankfurter_ecb"
+    target_currencies: list[str] = Field(default_factory=lambda: ["USD", "EUR"])
+    cache_ttl_hours: int = Field(default=24, ge=0)
+    timeout_seconds: int = Field(default=30, ge=1, le=120)
+    max_retries: int = Field(default=3, ge=0, le=8)
+
+    @field_validator("provider")
+    @classmethod
+    def provider_is_supported(cls, value: str) -> str:
+        if value.lower() != "frankfurter_ecb":
+            raise ValueError("FX provider must be frankfurter_ecb")
+        return value.lower()
+
+    @field_validator("target_currencies")
+    @classmethod
+    def validate_currencies(cls, values: list[str]) -> list[str]:
+        normalized = [value.strip().upper() for value in values]
+        if not normalized or any(len(value) != 3 for value in normalized):
+            raise ValueError("FX target currencies must be three-letter codes")
+        return list(dict.fromkeys(normalized))
 
 
 class NewsSettings(BaseModel):
@@ -214,6 +241,29 @@ class ScoringSettings(BaseModel):
         return self
 
 
+class BacktestSettings(BaseModel):
+    """Strict archived-snapshot backtest configuration."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool = False
+    archive_live_runs: bool = True
+    strict: bool = True
+    start_year: int = Field(default=2018, ge=1900, le=2100)
+    end_year: int = Field(default=2025, ge=1900, le=2100)
+    holding_months: int = Field(default=12, ge=1, le=60)
+    minimum_score: float = Field(default=50.0, ge=0.0, le=100.0)
+    transaction_cost_bps_per_side: float = Field(default=10.0, ge=0.0, le=500.0)
+    annual_risk_free_rate: float = Field(default=0.0, ge=-0.20, le=0.50)
+    minimum_trades: int = Field(default=5, ge=1)
+
+    @model_validator(mode="after")
+    def validate_years(self) -> "BacktestSettings":
+        if self.start_year > self.end_year:
+            raise ValueError("backtest start_year cannot exceed end_year")
+        return self
+
+
 class ExportSettings(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -243,11 +293,13 @@ class AppSettings(BaseModel):
     fundamentals: FundamentalsSettings = Field(default_factory=FundamentalsSettings)
     valuation: ValuationSettings = Field(default_factory=ValuationSettings)
     macro: MacroSettings = Field(default_factory=MacroSettings)
+    fx: FxSettings = Field(default_factory=FxSettings)
     news: NewsSettings = Field(default_factory=NewsSettings)
     shock: ShockSettings = Field(default_factory=ShockSettings)
     historical: HistoricalSettings = Field(default_factory=HistoricalSettings)
     scenario: ScenarioSettings = Field(default_factory=ScenarioSettings)
     scoring: ScoringSettings = Field(default_factory=ScoringSettings)
+    backtest: BacktestSettings = Field(default_factory=BacktestSettings)
     screening: ScreeningSettings = Field(default_factory=ScreeningSettings)
     export: ExportSettings = Field(default_factory=ExportSettings)
     logging: LoggingSettings = Field(default_factory=LoggingSettings)

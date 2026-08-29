@@ -433,6 +433,48 @@ class MacroObservation(BaseModel):
         return self
 
 
+class FxRateObservation(BaseModel):
+    """One dated reference exchange rate eligible at a shared cutoff."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    base_currency: str = Field(min_length=3, max_length=3)
+    quote_currency: str = Field(min_length=3, max_length=3)
+    rate: float = Field(gt=0.0)
+    observation_date: date
+    as_of: datetime
+    source: str
+    source_url: str
+    retrieved_at: datetime
+    unit: str
+    confidence: float = Field(default=0.90, ge=0.0, le=1.0)
+    status: DataStatus = DataStatus.AVAILABLE
+
+    @model_validator(mode="after")
+    def rate_respects_cutoff(self) -> "FxRateObservation":
+        if self.observation_date > self.as_of.date():
+            raise ValueError("FX observation cannot postdate its cutoff")
+        return self
+
+
+class FxRateResult(BaseModel):
+    """Available or explicit-unavailable FX pair result."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    pair: str
+    base_currency: str
+    quote_currency: str
+    as_of: datetime
+    status: DataStatus
+    data_quality: DataQuality
+    observation: FxRateObservation | None = None
+    retrieved_at: datetime
+    source_url: str
+    from_cache: bool = False
+    error: str | None = None
+
+
 class MacroSeriesResult(BaseModel):
     """Point-in-time history for one configured macro series."""
 
@@ -882,6 +924,82 @@ class ScoringAnalysisResult(BaseModel):
     error: str | None = None
 
 
+class BacktestValidationResult(BaseModel):
+    """Bias and provenance gates that must pass before performance is reported."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    valid: bool
+    look_ahead_free: bool
+    survivorship_free: bool
+    point_in_time_inputs: bool
+    future_prices_separated: bool
+    benchmark_data_complete: bool
+    errors: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+
+
+class BacktestTrade(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    ticker: str
+    signal_date: date
+    entry_date: date
+    exit_date: date
+    score: float = Field(ge=0.0, le=100.0)
+    score_bucket: str
+    data_quality: DataQuality
+    entry_price: float = Field(gt=0.0)
+    exit_price: float = Field(gt=0.0)
+    total_return: float
+    benchmark_ticker: str
+    benchmark_return: float | None = None
+    excess_return: float | None = None
+    recovery_time_days: int | None = Field(default=None, ge=0)
+    universe_snapshot_date: date
+    source_archive_id: str
+    source_archive_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+
+
+class BacktestPerformance(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    trade_count: int = Field(ge=0)
+    start_date: date | None = None
+    end_date: date | None = None
+    cagr: float | None = None
+    total_return: float | None = None
+    hit_rate: float | None = None
+    average_return: float | None = None
+    median_return: float | None = None
+    maximum_drawdown: float | None = None
+    volatility: float | None = None
+    sharpe: float | None = None
+    sortino: float | None = None
+    recovery_time_days: int | None = Field(default=None, ge=0)
+    win_loss_ratio: float | None = None
+    benchmark_return: float | None = None
+    performance_vs_benchmark: float | None = None
+
+
+class BacktestResult(BaseModel):
+    """Strict point-in-time Phase 9 result or an explicit unavailable result."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    as_of: datetime
+    status: DataStatus
+    data_quality: DataQuality
+    validation: BacktestValidationResult
+    overall: BacktestPerformance
+    score_buckets: dict[str, BacktestPerformance] = Field(default_factory=dict)
+    years: dict[int, BacktestPerformance] = Field(default_factory=dict)
+    trades: list[BacktestTrade] = Field(default_factory=list)
+    methodology_version: str = "strict-point-in-time-backtest-v1"
+    retrieved_at: datetime
+    error: str | None = None
+
+
 class OpportunityCandidate(BaseModel):
     """Price candidate enriched by point-in-time analysis stages."""
 
@@ -896,6 +1014,12 @@ class OpportunityCandidate(BaseModel):
     market_cap: float | None = None
     market_cap_currency: str | None = None
     current_price: float | None = None
+    current_price_usd: float | None = None
+    current_price_eur: float | None = None
+    market_cap_usd: float | None = None
+    market_cap_eur: float | None = None
+    fx_as_of: datetime | None = None
+    fx_metrics: dict[str, Any] = Field(default_factory=dict)
     price_basis: str | None = None
     observation_date: date | None = None
     drawdown_ath: float | None = None
