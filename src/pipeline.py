@@ -28,6 +28,7 @@ from src.data.fundamentals import (
     unavailable_fundamental_data,
 )
 from src.data.fx import FrankfurterFxSource, convert_currency
+from src.data.external_research import LocalExternalResearchSource, merge_news_results
 from src.data.macro import FredMacroSource, unavailable_macro_series
 from src.data.public_macro import CboePutCallSource, CftcCotSource, EcbMacroSource
 from src.data.news import (
@@ -624,6 +625,15 @@ def _run_news(
                 GDELT_DOC_URL,
                 f"{type(exc).__name__}: {exc}",
             )
+        external_directory = settings.paths.external_research
+        if external_directory is not None:
+            external = LocalExternalResearchSource(external_directory).fetch(
+                security,
+                as_of=cutoff,
+                lookback_days=settings.news.lookback_days,
+                max_articles=settings.news.max_articles,
+            )
+            result = merge_news_results(result, external)
         return security.ticker.upper(), result
 
     with ThreadPoolExecutor(max_workers=settings.news.max_workers) as executor:
@@ -1640,4 +1650,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

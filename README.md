@@ -1,6 +1,6 @@
 # AI Stock Opportunity Scanner
 
-Version `1.4.0` implements the price/drawdown scanner, a **point-in-time
+Version `1.5.0` implements the price/drawdown scanner, a **point-in-time
 fundamental engine for domestic and foreign SEC-reporting issuers**, valuation,
 point-in-time FRED/ALFRED and ECB macro vintages, official Cboe put/call and CFTC
 positioning context, public GDELT news metadata, and conservative shock
@@ -16,12 +16,15 @@ backtesting, dated ECB/Frankfurter FX conversion, and write-once live signal
 archives with SHA-256 integrity checks. Phase 10 provides the final styled Excel
 report, Phase 11 provides a working Streamlit dashboard, and Phase 12 adds
 deduplicated local alerts plus a guarded Windows daily-runner architecture.
+It also adds an auditable Bigdata.com/Aiera export bridge, a free official ESMA
+FIRDS acquisition path, and coverage-aware Top-5/PEA rankings in the dashboard.
 
 It still does **not** conclude that a decline is an investment opportunity or
 that a shock is temporary. A high Opportunity Score is not a probability,
 recommendation, probability, or validated return forecast. A real 2018–2025
-study remains unavailable until a survivorship-free historical universe and
-immutable historical signals are supplied. AI analysis remains reserved for a
+study remains unavailable until the downloaded survivorship-free instrument
+universe is joined to historical tickers, adjusted prices, fundamentals, and
+immutable reconstructed signals. AI analysis remains reserved for a
 later phase. DCF and macro-exposure
 output remain null until the user adds real, dated, reviewable assumptions.
 
@@ -252,9 +255,11 @@ market-cap, shock, risk and horizon filters, and provides price, fundamental,
 valuation, evidence and scenario tabs. Run the scanner again and refresh the
 page to display the new report. The table is paginated rather than silently
 limited to 50 rows; global search and an explicit filter reset prevent a retained
-country/index filter from masquerading as a small universe. The dashboard never generates a BUY verdict:
-before a valid Phase 9 calibration it displays an analytical priority or
-`Non classé`, and the inactive critical-AI panel is explicit.
+country/index filter from masquerading as a small universe. A dedicated Top 5
+and the `Meilleurs candidats PEA` sort are available. Confirmed PEA evidence is
+ranked before `review_required`; missing coverage remains visible. The dashboard
+never generates a BUY verdict: before a valid Phase 9 calibration it displays a
+qualified analytical signal, a below-threshold status, or `Données insuffisantes`.
 
 ## Phase 12 automation and local alerts
 
@@ -466,6 +471,27 @@ a chance of profit.
 
 ### Obtaining a real 2018–2025 dataset
 
+The free European instrument-universe layer now uses official ESMA FIRDS weekly
+full equity files. The following command discovers the last full snapshot in
+each quarter, downloads every part, validates ZIP signatures, hashes all 58
+archives, then builds 32 normalized gzip CSV snapshots (a CPU-intensive pass
+over several gigabytes of uncompressed XML):
+
+```powershell
+python -m src.backtest.free_history build
+```
+
+The 58 raw archives and their hash manifest have been acquired under
+`data/raw/historical/esma_firds`; `build` writes normalized outputs under
+`data/processed/historical/esma_firds`. The access audit is
+`reports/free_history_access_audit.json`. The official snapshots fix the
+current-survivor-list problem for the ISIN/MIC instrument layer. They do not provide historical index
+membership, a stable vendor ticker for delisted instruments, adjusted prices,
+IFRS point-in-time facts, or reconstructed historical signals. Therefore
+`strict_strategy_backtest_ready` correctly remains false.
+
+### Optional licensed US history
+
 The selected US source is Sharadar Direct Bundle with at least 10 years of
 history. The repository now includes a secret-safe access check, bulk downloader,
 schema validation, and SHA-256 manifests for the active/delisted security master,
@@ -485,6 +511,26 @@ signals have been rebuilt from the verified archives and the strict Phase 9
 engine has completed. Full subscription guidance and the selected global,
 consensus/guidance, historical-news, and AI sources are documented in
 `docs/HISTORICAL_DATA_ACCESS.md`.
+
+### Bigdata.com and Aiera point-in-time bridge
+
+Both Codex apps can complement headlines, filings, transcripts, earnings events,
+consensus and guidance. A standalone scanner process cannot invoke a Codex app,
+so version 1.5.0 accepts a strict JSONL hand-off instead of hiding an implicit
+network dependency. Every record requires `provider`, `ticker`, `title`, `url`,
+`published_at`, `available_at`, `retrieved_at`, and `document_type`. Future
+leakage and malformed URLs are rejected; normalized exports receive a SHA-256
+manifest.
+
+```powershell
+python -m src.data.external_research path\to\plugin-export.jsonl
+python -m src.pipeline
+```
+
+Validated files are stored under `data/raw/external_research` and automatically
+merged with GDELT at the same cutoff. The scanner only uses metadata/title
+evidence and never invents missing transcript content. A sample schema is in
+`config/external_research.example.jsonl`.
 
 The backtest consumes archived signal CSV files, outcome-price CSV files, and
 dated universe snapshots. It refuses output unless signal availability is no
@@ -895,8 +941,9 @@ current checked/partial/deferred audits are maintained in
   it is a daily reference rate, not an executable intraday quote.
 - No causal multi-company event catalogue or critical AI verdict exists yet.
   Bigdata.com and Aiera can complement filings, transcripts, events and
-  consensus only when their connector tools are exposed to the active Codex
-  task; missing connector evidence remains unavailable. Local alerts exist,
+  consensus through the validated JSONL bridge; their live connector tools must
+  still be exposed to a Codex task to create those records. Missing connector
+  evidence remains unavailable. Local alerts exist,
   while email, Telegram and Discord delivery stays deliberately disabled.
 - Phase 6 compares episodes only within the same security. It does not yet search
   other companies or attach a causal crisis label. Old episodes can have price
@@ -912,9 +959,10 @@ current checked/partial/deferred audits are maintained in
   are not statistically calibrated probabilities; Catalyst can remain null when
   dated resolution evidence is absent, and missing evidence lowers both score
   and confidence.
-- The Phase 9 engine is implemented, but a real 2018–2025 result is deliberately
-  unavailable until dated universes including delisted names and integrity-
-  checked historical signal archives are supplied. A current-survivor pilot is
+- The Phase 9 engine and 32 official quarter-end ISIN/MIC universes are now
+  present. A real 2018–2025 strategy result remains deliberately unavailable
+  until delisted ticker mapping, adjusted prices, fundamentals and integrity-
+  checked reconstructed signals are supplied. A current-survivor pilot is still
   rejected as evidence, not silently backtested.
 - A severe decline can be entirely rational. Ranking does not establish
   undervaluation or temporary mispricing.
@@ -923,8 +971,8 @@ current checked/partial/deferred audits are maintained in
 
 Phase 12 is the final phase named in the master specification. The next work is
 hardening rather than an invented Phase 13: confirm individual PEA eligibility,
-expose the Bigdata.com/Aiera connector tools to the task, and supply the
-survivorship-free historical inputs required to calibrate the score. See
+use the Bigdata.com/Aiera export bridge, and join the downloaded FIRDS universes
+to the remaining historical inputs required to calibrate the score. See
 `docs/INTERNAL_AUDIT_PHASES_1_12.md`.
 
 ## Backtesting status and required methodology
@@ -941,4 +989,3 @@ contain the necessary survivorship-free 2018–2025 archives. The engine returns
 This software is for research and education. It is not investment advice, does
 not guarantee data accuracy or future returns, and does not replace independent
 due diligence or a qualified financial adviser.
-

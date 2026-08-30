@@ -1,6 +1,6 @@
 # Audit interne des phases 1 à 12
 
-Version : 1.4.0  
+Version : 1.5.0
 Date : 2026-08-30
 
 ## Conclusion exécutive
@@ -27,9 +27,9 @@ de l'EEE. Elles sont des **candidates géographiques PEA à confirmer**, jamais 
 | 6 Analogues | Conforme sur le même titre | épisodes peak/trough/recovery et contexte point-in-time | pas de catalogue causal multi-sociétés |
 | 7 Scénarios/targets | Conforme selon données | bear/base/bull, 3–24 mois, TP1–TP3, invalidations fondamentales | pas de consensus/guidance datés complets |
 | 8 Scoring | Conforme, non calibré | sept sous-scores, couverture et confiance distinctes | poids heuristiques, donc aucune probabilité de gain |
-| 9 Backtest | Moteur conforme | contrôles anti-look-ahead/survivorship/leakage et métriques | aucune conclusion 2018–2025 sans archives historiques valides |
+| 9 Backtest | Moteur conforme, couche univers européen acquise | 32 snapshots trimestriels officiels ESMA FIRDS, 58 archives hachées, contrôles anti-look-ahead/survivorship/leakage | mapping historique ISIN/MIC→ticker, prix ajustés, fondamentaux et signaux datés manquants |
 | 10 Excel | Conforme | `Candidates`, `All Results`, `Run Metadata`, champs requis | narratifs IA/catalyseurs restent explicitement indisponibles |
-| 11 Streamlit | Conforme | pagination, recherche, filtres PEA, détail et graphiques | analyse IA critique inactive |
+| 11 Streamlit | Conforme | Top 5 avec statut décisionnel, tri PEA, pagination, recherche, détail et graphiques | analyse IA critique inactive et aucun achat validé avec la couverture courante |
 | 12 Automatisation/alertes | Conforme au périmètre gratuit | runner verrouillé, tâche Windows optionnelle, alertes JSON/CSV/Markdown dédupliquées | email/Telegram/Discord non configurés par choix |
 
 Le run réel post-audit a aussi isolé la nouvelle composition PEA dans
@@ -93,9 +93,28 @@ du titre, exclusions (notamment SIIC) et acceptation opérationnelle du courtier
 - Dans la tâche ayant produit cet audit, aucun outil de données Bigdata.com ou
   Aiera n'était exposé au modèle. Aucune donnée de ces fournisseurs n'a donc été
   prétendue, copiée ou injectée dans les scores.
-- Dès qu'une nouvelle tâche expose leurs outils, ils peuvent compléter les
-  transcripts, événements, filings, consensus, guidance et catalyseurs. Ces
-  contenus doivent rester datés, cités et séparés des faits SEC/FRED.
+- Le pont `src/data/external_research.py` permet désormais d'importer leurs
+  exports JSONL après validation stricte de `published_at`, `available_at`,
+  `retrieved_at`, URL, fournisseur et ticker. L'archive normalisée et son
+  manifeste SHA-256 sont ensuite fusionnés avec le flux news au même cutoff.
+- Dès qu'une nouvelle tâche expose leurs outils, ils peuvent donc compléter les
+  transcripts, événements, filings, consensus, guidance et catalyseurs sans
+  casser le point-in-time. Aucun export réel n'était disponible dans cette tâche.
+
+## Historique gratuit 2018–2025
+
+- Le catalogue officiel ESMA a livré 32/32 fins de trimestre entre 2018 et 2025.
+- 58 fichiers `FULINS_E` ont été téléchargés sous
+  `data/raw/historical/esma_firds`, contrôlés puis hachés.
+- Le constructeur de snapshots normalisés ISIN/MIC est disponible via
+  `python -m src.backtest.free_history build`. Il conserve une disponibilité
+  conservatrice à 09:00 Europe/Paris le jour de publication. La passe complète
+  de normalisation XML, coûteuse en CPU, reste une étape locale reproductible ;
+  les archives brutes officielles et leurs hashes sont déjà acquis.
+- Cette couche corrige le biais de survivance de la liste d'instruments actifs.
+  Elle ne contient ni historique d'indice, ni ticker fournisseur stable, ni prix
+  ajusté, ni état financier IFRS, ni signal reconstruit. Le backtest strict reste
+  donc bloqué par conception et aucun résultat 2018–2025 n'est inventé.
 
 ## Éléments empêchant encore une analyse « complète »
 
@@ -106,7 +125,7 @@ du titre, exclusions (notamment SIIC) et acceptation opérationnelle du courtier
 5. actualités/transcripts historiques exhaustifs avec dates de disponibilité ;
 6. catalogue causal multi-sociétés pour les analogues ;
 7. analyste IA critique activé et alimenté uniquement par preuves citées ;
-8. univers historiques sans biais de survivance et titres radiés pour 2018–2025 ;
+8. jointure des univers FIRDS aux tickers historiques/radiés et aux prix ajustés ;
 9. calibration empirique des scores et seuils ;
 10. deuxième source de prix et calendriers de marché complets.
 
@@ -116,4 +135,3 @@ La phase 12 peut être considérée terminée pour le périmètre gratuit/local 
 par la spécification. Il n'existe pas de phase 13 dans le document maître. La
 suite recommandée est un cycle de durcissement des données et de calibration,
 pas l'invention d'une nouvelle phase.
-

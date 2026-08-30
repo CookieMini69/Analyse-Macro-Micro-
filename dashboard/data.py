@@ -23,6 +23,21 @@ LIST_COLUMNS = {
     "missing_metrics", "sources",
 }
 
+SORT_LABELS = {
+    "Score d'opportunité": "opportunity",
+    "Meilleurs candidats PEA": "pea",
+    "Qualité fondamentale": "fundamental",
+    "Valorisation": "valuation",
+    "Baisse la plus marquée": "drawdown",
+}
+PEA_PRIORITY = {
+    "confirmed_eligible": 0,
+    "review_required": 1,
+    "unknown": 2,
+    "not_eligible": 3,
+    "Non renseigné": 4,
+}
+
 
 class DashboardDataError(ValueError):
     """Raised when a generated scan artifact is unreadable or incomplete."""
@@ -143,6 +158,88 @@ def filter_scan(
     return frame.loc[selected].copy()
 
 
+def rank_scan(frame: pd.DataFrame, mode: str = "opportunity") -> pd.DataFrame:
+    """Return a stable, missing-data-aware ranking for the dashboard.
+
+    The ranking never replaces a missing score by zero: availability and
+    coverage remain explicit tie-breakers so an incomplete title cannot look
+    like a measured low score.
+    """
+
+    ranked = frame.copy()
+    ranked["_row_order"] = range(len(ranked))
+    numeric_columns = (
+        "opportunity_score", "opportunity_score_coverage",
+        "fundamental_quality_score", "fundamental_quality_coverage",
+        "valuation_score", "valuation_coverage", "decline_severity_score",
+        "drawdown_52w",
+    )
+    for column in numeric_columns:
+        ranked[f"_{column}"] = pd.to_numeric(
+            ranked.get(column, pd.Series(index=ranked.index, dtype=float)),
+            errors="coerce",
+        )
+    ranked["_score_available"] = ranked["_opportunity_score"].notna().astype(int)
+    ranked["_pea_priority"] = ranked.get(
+        "pea_eligibility_status", pd.Series("Non renseigné", index=ranked.index)
+    ).map(PEA_PRIORITY).fillna(4)
+
+    if mode == "pea":
+        by = [
+            "_pea_priority", "_score_available", "_opportunity_score_coverage",
+            "_opportunity_score", "_decline_severity_score", "_row_order",
+        ]
+        ascending = [True, False, False, False, False, True]
+    elif mode == "fundamental":
+        by = [
+            "_fundamental_quality_score", "_fundamental_quality_coverage",
+            "_opportunity_score", "_row_order",
+        ]
+        ascending = [False, False, False, True]
+    elif mode == "valuation":
+        by = [
+            "_valuation_score", "_valuation_coverage", "_opportunity_score",
+            "_row_order",
+        ]
+        ascending = [False, False, False, True]
+    elif mode == "drawdown":
+        by = ["_drawdown_52w", "_opportunity_score", "_row_order"]
+        ascending = [True, False, True]
+    else:
+        by = [
+            "_score_available", "_opportunity_score", "_opportunity_score_coverage",
+            "_decline_severity_score", "_row_order",
+        ]
+        ascending = [False, False, False, False, True]
+    helper_columns = [column for column in ranked if column.startswith("_")]
+    return ranked.sort_values(by, ascending=ascending, na_position="last").drop(
+        columns=helper_columns
+    )
+
+
+def top_five_candidates(
+    frame: pd.DataFrame,
+    *,
+    mode: str = "opportunity",
+    minimum_score: float = 50.0,
+    minimum_coverage: float = 0.50,
+) -> pd.DataFrame:
+    """Rank five current candidates and expose whether each is decision-ready."""
+
+    top = rank_scan(frame, mode).head(5).copy()
+    score = pd.to_numeric(top.get("opportunity_score"), errors="coerce")
+    coverage = pd.to_numeric(top.get("opportunity_score_coverage"), errors="coerce")
+    technical = top.get("is_candidate", pd.Series(False, index=top.index)).fillna(False)
+    ready = technical.astype(bool) & score.ge(minimum_score) & coverage.ge(minimum_coverage)
+    top["decision_ready"] = ready
+    top["decision_status"] = "Sous le seuil analytique"
+    top.loc[score.isna() | coverage.lt(minimum_coverage) | coverage.isna(), "decision_status"] = (
+        "Données insuffisantes"
+    )
+    top.loc[ready, "decision_status"] = "Signal analytique qualifié"
+    return top
+
+
 def index_choices(frame: pd.DataFrame) -> list[str]:
     choices: set[str] = set()
     if "index_memberships" in frame:
@@ -194,4 +291,3 @@ def scenario_rows(payload: dict[str, Any], horizon: int) -> list[dict[str, Any]]
             "Couverture": case.get("assumption_coverage"),
         })
     return rows
-

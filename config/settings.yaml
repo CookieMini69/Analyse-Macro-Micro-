@@ -12,6 +12,8 @@ paths:
   shock_taxonomy: "config/shock_taxonomy.yaml"
   macro_cache: "data/cache/macro"
   news_cache: "data/cache/news"
+  # Validated point-in-time exports from the installed Bigdata.com/Aiera apps.
+  external_research: "data/raw/external_research"
   # Immutable lineage for the PEA-focused v1.4.0 methodology. The prior global
   # archive remains untouched because membership is immutable per observation
   # date and must never be overwritten by a different universe.
@@ -176,4 +178,3 @@ alerts:
 
 logging:
   level: "INFO"
-

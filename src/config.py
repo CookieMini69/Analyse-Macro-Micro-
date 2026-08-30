@@ -24,6 +24,7 @@ class PathsSettings(BaseModel):
     shock_taxonomy: Path | None = None
     macro_cache: Path | None = None
     news_cache: Path | None = None
+    external_research: Path | None = None
     backtest_archive: Path | None = None
     alerts: Path | None = None
     alert_state: Path | None = None
@@ -440,4 +441,3 @@ def load_settings(path: str | Path = "config/settings.yaml") -> AppSettings:
         for key, value in path_values.items()
     }
     return AppSettings.model_validate(raw)
-

@@ -12,7 +12,9 @@ from dashboard.data import (
     load_latest_fundamental,
     load_price_history,
     load_scan_report,
+    rank_scan,
     scenario_rows,
+    top_five_candidates,
 )
 
 
@@ -72,11 +74,24 @@ def test_price_fundamental_and_scenario_artifacts(tmp_path: Path) -> None:
     assert rows[0]["Objectif"] == 123
 
 
+def test_rank_scan_prioritizes_pea_and_top_five_never_hides_coverage() -> None:
+    frame = pd.DataFrame([
+        {"ticker": "NO", "pea_eligibility_status": "not_eligible", "opportunity_score": 90, "opportunity_score_coverage": .9, "is_candidate": True},
+        {"ticker": "REVIEW", "pea_eligibility_status": "review_required", "opportunity_score": 75, "opportunity_score_coverage": .7, "is_candidate": True},
+        {"ticker": "YES", "pea_eligibility_status": "confirmed_eligible", "opportunity_score": 55, "opportunity_score_coverage": .6, "is_candidate": True},
+        {"ticker": "MISSING", "pea_eligibility_status": "confirmed_eligible", "opportunity_score": None, "opportunity_score_coverage": .2, "is_candidate": True},
+    ])
+    assert rank_scan(frame, "pea")["ticker"].tolist() == ["YES", "MISSING", "REVIEW", "NO"]
+    top = top_five_candidates(frame, mode="pea")
+    assert top.loc[top["ticker"] == "YES", "decision_ready"].item() is True
+    assert top.loc[top["ticker"] == "MISSING", "decision_status"].item() == "Données insuffisantes"
+
+
 def test_streamlit_dashboard_renders_without_exception() -> None:
     app = AppTest.from_file("dashboard/app.py", default_timeout=30).run()
     assert not app.exception
     assert [title.value for title in app.title] == ["AI Stock Opportunity Scanner"]
     assert len(app.multiselect) == 5
+    assert any(selectbox.label == "Tri principal" for selectbox in app.selectbox)
     assert any(button.label == "Réinitialiser tous les filtres" for button in app.button)
     assert len(app.tabs) == 7
-

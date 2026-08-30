@@ -17,7 +17,10 @@ from dashboard.data import (
     load_latest_fundamental,
     load_price_history,
     load_scan_report,
+    rank_scan,
     scenario_rows,
+    SORT_LABELS,
+    top_five_candidates,
 )
 from src.screening.universe import load_universe
 
@@ -26,7 +29,7 @@ FILTER_KEYS = (
     "global_query", "countries", "sectors", "indices", "minimum_score",
     "maximum_drawdown", "minimum_market_cap", "shock_natures", "minimum_risk",
     "horizon", "candidates_only", "pea_statuses", "table_page", "table_page_size",
-    "detail_query",
+    "detail_query", "sort_mode",
 )
 
 
@@ -36,7 +39,7 @@ def _reset_filter_state() -> None:
         "minimum_score": 0, "maximum_drawdown": 0,
         "minimum_market_cap": 0.0, "shock_natures": [], "minimum_risk": 0,
         "horizon": 12, "candidates_only": False, "pea_statuses": [], "table_page": 1,
-        "table_page_size": 50, "detail_query": "",
+        "table_page_size": 50, "detail_query": "", "sort_mode": "Score d'opportunité",
     }
     for key in FILTER_KEYS:
         if key in st.session_state:
@@ -103,7 +106,7 @@ def _analytical_verdict(row: pd.Series) -> str:
     return "Priorité analytique faible"
 
 
-def _sidebar(frame: pd.DataFrame) -> tuple[pd.DataFrame, int]:
+def _sidebar(frame: pd.DataFrame) -> tuple[pd.DataFrame, int, str]:
     st.sidebar.header("Filtres")
     st.sidebar.caption(f"Aucun filtre = {len(frame):,} titres analysés".replace(",", " "))
     st.sidebar.button(
@@ -168,6 +171,13 @@ def _sidebar(frame: pd.DataFrame) -> tuple[pd.DataFrame, int]:
         "Horizon", options=HORIZONS, value=12,
         format_func=lambda value: f"{value} mois", key="horizon"
     )
+    sort_label = st.sidebar.selectbox(
+        "Tri principal", list(SORT_LABELS), key="sort_mode",
+        help=(
+            "Le tri PEA place d'abord l'éligibilité confirmée, puis les titres "
+            "à confirmer. Il ne transforme pas une présélection géographique en preuve."
+        ),
+    )
     return filter_scan(
         frame, countries=countries, sectors=sectors, indices=indices,
         minimum_score=float(minimum_score), maximum_drawdown=maximum_drawdown_pct / 100,
@@ -176,10 +186,10 @@ def _sidebar(frame: pd.DataFrame) -> tuple[pd.DataFrame, int]:
         minimum_risk_score=float(minimum_risk),
         query=query, candidates_only=candidates_only,
         pea_statuses=[pea_labels[value] for value in selected_pea],
-    ), horizon
+    ), horizon, SORT_LABELS[sort_label]
 
 
-def _top_table(frame: pd.DataFrame) -> None:
+def _top_table(frame: pd.DataFrame, sort_mode: str) -> None:
     columns = [
         "ticker", "company", "listing_country", "pea_eligibility_status",
         "sector", "index_memberships",
@@ -187,9 +197,7 @@ def _top_table(frame: pd.DataFrame) -> None:
         "fair_value", "base_target", "risk_reward", "data_quality",
     ]
     available = [column for column in columns if column in frame]
-    ordered = frame.sort_values(
-        ["opportunity_score", "decline_severity_score"], ascending=[False, False], na_position="last"
-    )
+    ordered = rank_scan(frame, sort_mode)
     controls = st.columns([1, 1, 4])
     page_size = controls[0].selectbox(
         "Lignes par page", [25, 50, 100, 250], index=1, key="table_page_size"
@@ -201,7 +209,7 @@ def _top_table(frame: pd.DataFrame) -> None:
     start = (page - 1) * page_size
     stop = min(start + page_size, len(ordered))
     controls[2].caption(
-        f"Résultats {start + 1}–{stop} sur {len(ordered):,} · triés par score puis sévérité".replace(",", " ")
+        f"Résultats {start + 1}–{stop} sur {len(ordered):,} · tri contrôlé depuis la barre latérale".replace(",", " ")
     )
     table = ordered.iloc[start:stop][available].rename(columns={
         "ticker": "Ticker", "company": "Société", "listing_country": "Pays",
@@ -210,6 +218,35 @@ def _top_table(frame: pd.DataFrame) -> None:
         "opportunity_score_coverage": "Couverture", "drawdown_52w": "Drawdown 52s",
         "fair_value": "Juste valeur", "base_target": "Objectif Base",
         "risk_reward": "Risque/rendement", "data_quality": "Qualité",
+    })
+
+
+def _top_five_panel(frame: pd.DataFrame, sort_mode: str) -> None:
+    top = top_five_candidates(frame, mode=sort_mode)
+    qualified = int(top["decision_ready"].sum()) if not top.empty else 0
+    st.subheader("Top 5 à étudier maintenant")
+    if qualified < 5:
+        st.warning(
+            f"{qualified}/5 seulement satisfont actuellement score ≥ 50, couverture ≥ 50 % "
+            "et filtre technique. Les autres lignes restent visibles pour transparence, mais "
+            "ne constituent pas un signal d'achat validé."
+        )
+    columns = [
+        "ticker", "company", "pea_eligibility_status", "decision_status",
+        "opportunity_score", "opportunity_score_coverage", "drawdown_52w",
+        "fundamental_quality_score", "valuation_score",
+    ]
+    table = top[[column for column in columns if column in top]].rename(columns={
+        "ticker": "Ticker", "company": "Société", "pea_eligibility_status": "PEA",
+        "decision_status": "Statut décisionnel", "opportunity_score": "Score",
+        "opportunity_score_coverage": "Couverture", "drawdown_52w": "Drawdown 52s",
+        "fundamental_quality_score": "Qualité fondamentale",
+        "valuation_score": "Valorisation",
+    })
+    st.dataframe(table, width="stretch", hide_index=True, column_config={
+        "Score": st.column_config.ProgressColumn(min_value=0, max_value=100, format="%.1f"),
+        "Couverture": st.column_config.ProgressColumn(min_value=0, max_value=1, format="%.0f%%"),
+        "Drawdown 52s": st.column_config.NumberColumn(format="percent"),
     })
     st.dataframe(table, width="stretch", hide_index=True, column_config={
         "Score": st.column_config.ProgressColumn(min_value=0, max_value=100, format="%.1f"),
@@ -392,7 +429,7 @@ def main() -> None:
             f"Le rapport affiché analyse {len(frame):,} titres, alors que l'univers actuel en configure "
             f"{configured_count:,}. Le scan mondial est donc ancien ou incomplet ; relancez `python -m src.pipeline`.".replace(",", " ")
         )
-    filtered, horizon = _sidebar(frame)
+    filtered, horizon, sort_mode = _sidebar(frame)
     head = st.columns(6)
     head[0].metric("Titres visibles", len(filtered))
     head[1].metric("Univers configuré", configured_count)
@@ -407,8 +444,9 @@ def main() -> None:
     if filtered.empty:
         st.warning("Aucun titre ne satisfait l'ensemble des filtres.")
         return
-    st.subheader("Meilleures opportunités mesurées")
-    _top_table(filtered)
+    _top_five_panel(filtered, sort_mode)
+    st.subheader("Classement complet")
+    _top_table(filtered, sort_mode)
     st.divider()
     st.subheader("Fiche société")
     _detail(filtered, horizon)
@@ -417,4 +455,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
