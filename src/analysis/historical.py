@@ -152,14 +152,15 @@ def detect_drawdown_episodes(
     )
     if path.empty:
         return [], None
+    price_values = pd.to_numeric(path["price"], errors="coerce").to_numpy(dtype=float)
     peak_index = 0
     active = False
     trough_index = 0
     completed: list[HistoricalEpisode] = []
 
     for index in range(1, len(path)):
-        price = float(path.iloc[index]["price"])
-        peak_price = float(path.iloc[peak_index]["price"])
+        price = float(price_values[index])
+        peak_price = float(price_values[peak_index])
         if not active:
             if price >= peak_price:
                 peak_index = index
@@ -168,7 +169,7 @@ def detect_drawdown_episodes(
                 active = True
                 trough_index = index
             continue
-        if price < float(path.iloc[trough_index]["price"]):
+        if price < float(price_values[trough_index]):
             trough_index = index
         if price >= peak_price * (1 - recovery_tolerance):
             completed.append(_episode(path, peak_index, trough_index, index))
@@ -486,3 +487,4 @@ def _empty_result(
 
 
 __all__ = ["analyze_historical_analogues", "detect_drawdown_episodes"]
+

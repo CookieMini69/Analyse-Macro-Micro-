@@ -1,8 +1,10 @@
 version: 1
 
-# Univers mondial liquide et configurable, pas indice exhaustif. Les titres
-# etrangers sont des ADR/actions cotes aux Etats-Unis : prix en USD, CIK SEC et
-# formulaires 20-F/40-F exploitables sans fournisseur fondamental payant.
+# Univers par défaut recentré sur les actions européennes candidates au PEA.
+# La cotation native dans l'EEE constitue seulement un filtre de présélection :
+# le statut juridique du titre doit être confirmé auprès de l'émetteur et du
+# courtier avant tout achat. Un snapshot US optionnel peut être régénéré avec
+# scripts/update_us_universe.py, mais n'est plus versionné ni chargé par défaut.
 # Tickers, noms, CIK et places de cotation verifies le 2026-08-29 dans le fichier officiel SEC
 # https://www.sec.gov/files/company_tickers_exchange.json.
 # Les secteurs sont des classifications operationnelles configurees au
@@ -10,17 +12,16 @@ version: 1
 # avant tout futur backtest d'appartenance sectorielle.
 # Les capitalisations sont volontairement absentes : elles doivent etre datees et
 # sourcees, et ne sont jamais inventees par le scanner.
-csv_path: universe_europe.csv
+csv_paths:
+  - universe_europe.csv
 
 filters:
   minimum_market_cap: null
+  pea_focus_only: true
+  include_pea_review_required: true
   allowed_countries:
-    - United States
-    - Canada
-    - United Kingdom
     - France
     - Germany
-    - Switzerland
     - Netherlands
     - Belgium
     - Denmark
@@ -31,23 +32,13 @@ filters:
     - Spain
     - Italy
     - Portugal
-    - Australia
-    - Japan
-    - Hong Kong
-    - Singapore
-    - South Africa
-    - Israel
-    - Taiwan
-    - China
-    - India
-    - Brazil
-    - Argentina
 
 # Supported fields:
 # ticker (required), cik, company, country, sector, exchange, currency,
 # benchmark, sector_benchmark, market_cap, market_cap_currency,
 # market_cap_source, market_cap_source_url, market_cap_observation_date,
-# market_cap_retrieved_at, market_cap_confidence.
+# market_cap_retrieved_at, market_cap_confidence, pea_eligibility_status,
+# pea_eligibility_basis, pea_eligibility_source_url, pea_eligibility_checked_at.
 securities:
   - ticker: AAPL
     cik: "320193"
@@ -401,3 +392,4 @@ securities:
     exchange: NYSE
     currency: USD
     benchmark: EIS
+

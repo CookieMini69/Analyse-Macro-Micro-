@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from bisect import bisect_left
+from collections import defaultdict
 from datetime import UTC, date, datetime
 from statistics import median
 from typing import Iterable
@@ -81,9 +83,10 @@ def analyze_valuation(
     """Calculate a single issuer strictly with information available at ``as_of``."""
 
     retrieved_at = datetime.now(UTC)
-    price_row = _latest_price_on_or_before(
-        prices.frame if prices is not None else pd.DataFrame(), fundamental.as_of.date()
+    price_lookup = _prepare_price_lookup(
+        prices.frame if prices is not None else pd.DataFrame()
     )
+    price_row = _latest_price_on_or_before(price_lookup, fundamental.as_of.date())
     valuation_price = _row_price(price_row)
     valuation_price_date = _row_date(price_row)
     currency = _row_text(price_row, "currency") or security.currency
@@ -122,7 +125,7 @@ def analyze_valuation(
         currency_error = None
     multiples = _build_multiples(
         fundamental,
-        prices.frame if prices is not None else pd.DataFrame(),
+        price_lookup,
         valuation_price,
         market_cap,
         market_cap_basis,
@@ -474,30 +477,57 @@ def _build_dcf(
 def _attach_sector_medians(
     results: dict[str, ValuationAnalysisResult], settings: ValuationSettings
 ) -> dict[str, ValuationAnalysisResult]:
+    peer_values: dict[tuple[str, datetime, str], list[float]] = defaultdict(list)
+    for result in results.values():
+        if result.sector is None:
+            continue
+        for name, multiple in result.multiples.items():
+            value = multiple.current.value
+            if value is not None and value > 0:
+                peer_values[(result.sector, result.as_of, name)].append(value)
+    sorted_peer_values = {key: sorted(values) for key, values in peer_values.items()}
+
+    def peer_median(
+        values: list[float], own_value: float | None
+    ) -> tuple[float | None, int]:
+        own_is_eligible = own_value is not None and own_value > 0
+        count = len(values) - int(own_is_eligible)
+        if count <= 0:
+            return None, count
+        if not own_is_eligible:
+            return float(median(values)), count
+        own_index = bisect_left(values, own_value)
+
+        def value_without_own(position: int) -> float:
+            return values[position if position < own_index else position + 1]
+
+        midpoint = count // 2
+        if count % 2:
+            return float(value_without_own(midpoint)), count
+        return float(
+            (value_without_own(midpoint - 1) + value_without_own(midpoint)) / 2
+        ), count
+
     completed: dict[str, ValuationAnalysisResult] = {}
     for ticker, result in results.items():
         updated_multiples: dict[str, ValuationMultiple] = {}
         for name, multiple in result.multiples.items():
-            peers = [
-                other.multiples[name].current.value
-                for other_ticker, other in results.items()
-                if other_ticker != ticker
-                and result.sector is not None
-                and other.sector == result.sector
-                and other.as_of == result.as_of
-                and name in other.multiples
-                and other.multiples[name].current.value is not None
-                and other.multiples[name].current.value > 0
-            ]
+            values = (
+                sorted_peer_values.get((result.sector, result.as_of, name), [])
+                if result.sector is not None
+                else []
+            )
+            median_value, peer_count = peer_median(values, multiple.current.value)
             sector = (
-                MetricValue.available(median(peers))
-                if len(peers) >= settings.sector_minimum_peers
+                MetricValue.available(median_value)
+                if peer_count >= settings.sector_minimum_peers
+                and median_value is not None
                 else MetricValue.unavailable(
-                    f"{len(peers)} eligible peers; {settings.sector_minimum_peers} required"
+                    f"{peer_count} eligible peers; {settings.sector_minimum_peers} required"
                 )
             )
             updated_multiples[name] = multiple.model_copy(
-                update={"sector_median": sector, "sector_peer_count": len(peers)}
+                update={"sector_median": sector, "sector_peer_count": peer_count}
             )
         with_peers = result.model_copy(update={"multiples": updated_multiples})
         score = score_valuation(
@@ -560,33 +590,47 @@ def _current_market_cap(
     return price * shares, basis
 
 
-def _latest_price_on_or_before(frame: pd.DataFrame, cutoff: date):
+def _prepare_price_lookup(frame: pd.DataFrame) -> pd.DataFrame:
+    """Normalize and sort a price frame once for logarithmic date lookups."""
+
     if frame.empty or "observation_date" not in frame or "close" not in frame:
-        return None
+        return pd.DataFrame()
     dates = pd.to_datetime(frame["observation_date"], errors="coerce")
     closes = pd.to_numeric(frame["close"], errors="coerce")
-    eligible = frame.loc[
-        dates.notna() & (dates.dt.date <= cutoff) & closes.notna() & (closes > 0)
-    ].copy()
+    eligible = frame.loc[dates.notna() & closes.notna() & (closes > 0)].copy()
     if eligible.empty:
+        return eligible
+    eligible["_valuation_date"] = dates.loc[eligible.index]
+    return eligible.sort_values("_valuation_date").reset_index(drop=True)
+
+
+def _latest_price_on_or_before(frame: pd.DataFrame, cutoff: date):
+    if frame.empty:
         return None
-    eligible["_date"] = pd.to_datetime(eligible["observation_date"], errors="coerce")
-    return eligible.sort_values("_date").iloc[-1]
+    prepared = frame if "_valuation_date" in frame else _prepare_price_lookup(frame)
+    if prepared.empty:
+        return None
+    position = prepared["_valuation_date"].searchsorted(
+        pd.Timestamp(cutoff), side="right"
+    ) - 1
+    return prepared.iloc[position] if position >= 0 else None
 
 
 def _first_price_strictly_after(
     frame: pd.DataFrame, cutoff: date, upper_cutoff: date
 ):
-    if frame.empty or "observation_date" not in frame:
+    if frame.empty:
         return None
-    dates = pd.to_datetime(frame["observation_date"], errors="coerce")
-    eligible = frame.loc[
-        (dates.dt.date > cutoff) & (dates.dt.date <= upper_cutoff)
-    ].copy()
-    if eligible.empty:
+    prepared = frame if "_valuation_date" in frame else _prepare_price_lookup(frame)
+    if prepared.empty:
         return None
-    eligible["_date"] = pd.to_datetime(eligible["observation_date"], errors="coerce")
-    return eligible.sort_values("_date").iloc[0]
+    position = prepared["_valuation_date"].searchsorted(
+        pd.Timestamp(cutoff), side="right"
+    )
+    if position >= len(prepared):
+        return None
+    row = prepared.iloc[position]
+    return row if row["_valuation_date"].date() <= upper_cutoff else None
 
 
 def _row_price(row) -> float | None:
@@ -816,3 +860,4 @@ def _valuation_sources(
             }
         )
     return sources
+

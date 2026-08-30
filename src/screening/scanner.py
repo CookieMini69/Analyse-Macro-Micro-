@@ -122,6 +122,10 @@ def build_scan_result(
         exchange=security.exchange or _last_non_null(price_result.frame, "exchange"),
         currency=security.currency or _last_non_null(price_result.frame, "currency"),
         index_memberships=security.index_memberships,
+        pea_eligibility_status=security.pea_eligibility_status,
+        pea_eligibility_basis=security.pea_eligibility_basis,
+        pea_eligibility_source_url=security.pea_eligibility_source_url,
+        pea_eligibility_checked_at=security.pea_eligibility_checked_at,
         market_cap=security.market_cap,
         market_cap_currency=security.market_cap_currency,
         current_price=calculated.current_price,
@@ -155,3 +159,4 @@ def rank_results(results: list[OpportunityCandidate]) -> list[OpportunityCandida
             result = result.model_copy(update={"rank": rank})
         ranked.append(result)
     return ranked
+

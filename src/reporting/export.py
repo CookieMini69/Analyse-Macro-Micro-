@@ -25,6 +25,10 @@ EXPORT_COLUMNS = [
     "sector",
     "exchange",
     "index_memberships",
+    "pea_eligibility_status",
+    "pea_eligibility_basis",
+    "pea_eligibility_source_url",
+    "pea_eligibility_checked_at",
     "current_price",
     "currency",
     "current_price_usd",
@@ -409,3 +413,4 @@ def export_scan_results(
         paths.append(excel_path)
 
     return paths
+

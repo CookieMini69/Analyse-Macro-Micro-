@@ -10,6 +10,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from dashboard.data import (
+    DashboardDataError,
     filter_scan,
     index_choices,
     latest_scan_report,
@@ -18,8 +19,50 @@ from dashboard.data import (
     load_scan_report,
     scenario_rows,
 )
+from src.screening.universe import load_universe
 
 HORIZONS = [3, 6, 12, 18, 24]
+FILTER_KEYS = (
+    "global_query", "countries", "sectors", "indices", "minimum_score",
+    "maximum_drawdown", "minimum_market_cap", "shock_natures", "minimum_risk",
+    "horizon", "candidates_only", "pea_statuses", "table_page", "table_page_size",
+    "detail_query",
+)
+
+
+def _reset_filter_state() -> None:
+    defaults: dict[str, Any] = {
+        "global_query": "", "countries": [], "sectors": [], "indices": [],
+        "minimum_score": 0, "maximum_drawdown": 0,
+        "minimum_market_cap": 0.0, "shock_natures": [], "minimum_risk": 0,
+        "horizon": 12, "candidates_only": False, "pea_statuses": [], "table_page": 1,
+        "table_page_size": 50, "detail_query": "",
+    }
+    for key in FILTER_KEYS:
+        if key in st.session_state:
+            st.session_state[key] = defaults[key]
+
+
+@st.cache_data(show_spinner=False)
+def _cached_scan_report(path: str, modified_ns: int) -> pd.DataFrame:
+    del modified_ns
+    return load_scan_report(path)
+
+
+@st.cache_data(show_spinner=False, ttl=300)
+def _cached_price_history(ticker: str) -> pd.DataFrame:
+    return load_price_history(ticker)
+
+
+@st.cache_data(show_spinner=False, ttl=300)
+def _cached_fundamental(ticker: str) -> dict[str, Any] | None:
+    return load_latest_fundamental(ticker)
+
+
+@st.cache_data(show_spinner=False)
+def _configured_universe_count(path: str, modified_ns: int) -> int:
+    del modified_ns
+    return len(load_universe(path))
 
 
 def _number(value: Any, suffix: str = "", digits: int = 2) -> str:
@@ -62,29 +105,68 @@ def _analytical_verdict(row: pd.Series) -> str:
 
 def _sidebar(frame: pd.DataFrame) -> tuple[pd.DataFrame, int]:
     st.sidebar.header("Filtres")
+    st.sidebar.caption(f"Aucun filtre = {len(frame):,} titres analysés".replace(",", " "))
+    st.sidebar.button(
+        "Réinitialiser tous les filtres", width="stretch", on_click=_reset_filter_state
+    )
+    query = st.sidebar.text_input(
+        "Recherche globale", placeholder="Ticker, société, pays, indice…", key="global_query"
+    )
+    candidates_only = st.sidebar.checkbox(
+        "Candidats techniques uniquement", value=False, key="candidates_only"
+    )
+    pea_labels = {
+        "À confirmer avant achat": "review_required",
+        "Éligibilité confirmée": "confirmed_eligible",
+        "Non éligible": "not_eligible",
+        "Inconnue": "unknown",
+    }
+    selected_pea = st.sidebar.multiselect(
+        "Statut PEA",
+        [label for label, value in pea_labels.items() if value in set(frame.get(
+            "pea_eligibility_status", pd.Series(dtype=str)
+        ).dropna())],
+        key="pea_statuses",
+        help=(
+            "Le filtre géographique EEE ne suffit pas à confirmer juridiquement un titre. "
+            "Vérifiez toujours l'émetteur et votre courtier avant l'achat."
+        ),
+    )
     country_column = "listing_country" if "listing_country" in frame else "country"
-    countries = st.sidebar.multiselect("Pays de cotation", sorted(frame[country_column].dropna().unique()))
-    sectors = st.sidebar.multiselect("Secteur", sorted(frame["sector"].dropna().unique()))
-    indices = st.sidebar.multiselect("Indice", index_choices(frame))
-    minimum_score = st.sidebar.slider("Score d'opportunité minimum", 0, 100, 0)
+    countries = st.sidebar.multiselect(
+        "Pays de cotation", sorted(frame[country_column].dropna().unique()), key="countries"
+    )
+    sectors = st.sidebar.multiselect(
+        "Secteur", sorted(frame["sector"].dropna().unique()), key="sectors"
+    )
+    indices = st.sidebar.multiselect("Indice", index_choices(frame), key="indices")
+    minimum_score = st.sidebar.slider(
+        "Score d'opportunité minimum", 0, 100, 0, key="minimum_score"
+    )
     maximum_drawdown_pct = st.sidebar.slider(
         "Drawdown 52 semaines maximal", -100, 0, 0,
         help="-20 % conserve les titres à -20 % ou moins par rapport au plus haut 52 semaines.",
+        key="maximum_drawdown",
     )
     minimum_market_cap_bn = st.sidebar.number_input(
-        "Capitalisation minimale (Md EUR)", min_value=0.0, value=0.0, step=1.0
+        "Capitalisation minimale (Md EUR)", min_value=0.0, value=0.0, step=1.0,
+        key="minimum_market_cap",
     )
     shock_labels = {
         "Temporaire": "temporary", "Structurel": "structural",
         "Mixte": "mixed", "Indisponible": "data_unavailable",
     }
-    selected_shocks = st.sidebar.multiselect("Nature du choc", list(shock_labels))
+    selected_shocks = st.sidebar.multiselect(
+        "Nature du choc", list(shock_labels), key="shock_natures"
+    )
     minimum_risk = st.sidebar.slider(
         "Résilience minimale", 0, 100, 0,
         help="Le Risk Score mesure la résilience : plus haut signifie un risque mesuré plus faible.",
+        key="minimum_risk",
     )
     horizon = st.sidebar.select_slider(
-        "Horizon", options=HORIZONS, value=12, format_func=lambda value: f"{value} mois"
+        "Horizon", options=HORIZONS, value=12,
+        format_func=lambda value: f"{value} mois", key="horizon"
     )
     return filter_scan(
         frame, countries=countries, sectors=sectors, indices=indices,
@@ -92,20 +174,38 @@ def _sidebar(frame: pd.DataFrame) -> tuple[pd.DataFrame, int]:
         minimum_market_cap_eur=minimum_market_cap_bn * 1_000_000_000,
         shock_natures=[shock_labels[value] for value in selected_shocks],
         minimum_risk_score=float(minimum_risk),
+        query=query, candidates_only=candidates_only,
+        pea_statuses=[pea_labels[value] for value in selected_pea],
     ), horizon
 
 
 def _top_table(frame: pd.DataFrame) -> None:
     columns = [
-        "ticker", "company", "listing_country", "sector", "index_memberships",
+        "ticker", "company", "listing_country", "pea_eligibility_status",
+        "sector", "index_memberships",
         "opportunity_score", "opportunity_score_coverage", "drawdown_52w",
         "fair_value", "base_target", "risk_reward", "data_quality",
     ]
     available = [column for column in columns if column in frame]
-    table = frame.sort_values(
+    ordered = frame.sort_values(
         ["opportunity_score", "decline_severity_score"], ascending=[False, False], na_position="last"
-    )[available].head(50).rename(columns={
+    )
+    controls = st.columns([1, 1, 4])
+    page_size = controls[0].selectbox(
+        "Lignes par page", [25, 50, 100, 250], index=1, key="table_page_size"
+    )
+    page_count = max(1, (len(ordered) + page_size - 1) // page_size)
+    page = controls[1].selectbox(
+        "Page", list(range(1, page_count + 1)), key="table_page"
+    )
+    start = (page - 1) * page_size
+    stop = min(start + page_size, len(ordered))
+    controls[2].caption(
+        f"Résultats {start + 1}–{stop} sur {len(ordered):,} · triés par score puis sévérité".replace(",", " ")
+    )
+    table = ordered.iloc[start:stop][available].rename(columns={
         "ticker": "Ticker", "company": "Société", "listing_country": "Pays",
+        "pea_eligibility_status": "PEA",
         "sector": "Secteur", "index_memberships": "Indice", "opportunity_score": "Score",
         "opportunity_score_coverage": "Couverture", "drawdown_52w": "Drawdown 52s",
         "fair_value": "Juste valeur", "base_target": "Objectif Base",
@@ -121,7 +221,7 @@ def _top_table(frame: pd.DataFrame) -> None:
 
 
 def _price_panel(ticker: str) -> None:
-    prices = load_price_history(ticker)
+    prices = _cached_price_history(ticker)
     if prices.empty:
         st.info("Historique de prix normalisé indisponible pour ce titre.")
         return
@@ -134,7 +234,7 @@ def _price_panel(ticker: str) -> None:
 
 
 def _fundamental_panel(ticker: str) -> None:
-    payload = load_latest_fundamental(ticker)
+    payload = _cached_fundamental(ticker)
     if not payload or not payload.get("annual_observations"):
         st.info("Fondamentaux annuels point-in-time indisponibles. Les sociétés européennes sans dépôt SEC nécessitent encore une source ESEF/IFRS.")
         return
@@ -179,7 +279,28 @@ def _evidence_panel(row: pd.Series) -> None:
 
 
 def _detail(frame: pd.DataFrame, horizon: int) -> None:
-    reset = frame.reset_index(drop=True)
+    ordered = frame.sort_values(
+        ["opportunity_score", "decline_severity_score"],
+        ascending=[False, False], na_position="last",
+    )
+    detail_query = st.text_input(
+        "Recherche dans les fiches", placeholder="Ticker ou nom de société", key="detail_query"
+    ).strip().casefold()
+    if detail_query:
+        ticker_match = ordered["ticker"].fillna("").astype(str).str.casefold().str.contains(
+            detail_query, regex=False
+        )
+        company_match = ordered.get("company", pd.Series("", index=ordered.index)).fillna("").astype(str).str.casefold().str.contains(
+            detail_query, regex=False
+        )
+        ordered = ordered[ticker_match | company_match]
+    elif len(ordered) > 500:
+        st.caption("La liste de fiches affiche les 500 premières lignes classées. Utilisez la recherche pour atteindre tout autre titre.")
+        ordered = ordered.head(500)
+    if ordered.empty:
+        st.info("Aucune société ne correspond à cette recherche de fiche.")
+        return
+    reset = ordered.reset_index(drop=True)
     labels = {f"{row.ticker} · {row.company if pd.notna(row.company) else 'Société non renseignée'}": index for index, row in reset.iterrows()}
     selected_label = st.selectbox("Société analysée", list(labels))
     row = reset.iloc[labels[selected_label]]
@@ -193,6 +314,11 @@ def _detail(frame: pd.DataFrame, horizon: int) -> None:
     metrics[4].metric("Objectif Base", _number(row.get("base_target")))
     metrics[5].metric("Risque/rendement", _number(row.get("risk_reward")))
     st.info(_analytical_verdict(row) + " — ce classement n'est pas une recommandation d'investissement.")
+    if row.get("pea_eligibility_status") == "review_required":
+        st.warning(
+            "PEA : présélection géographique uniquement. Confirmez l'éligibilité "
+            "du titre auprès de l'émetteur et de votre courtier avant tout achat."
+        )
     overview, price, fundamentals, valuation, evidence, scenarios, analyst = st.tabs([
         "Synthèse", "Prix", "Fondamentaux", "Valorisation", "Choc & preuves", "Scénarios", "Analyste IA",
     ])
@@ -248,16 +374,36 @@ def main() -> None:
     if report is None:
         st.error("Aucun scan disponible. Lancez d'abord `python -m src.pipeline` depuis la racine du projet.")
         return
-    frame = load_scan_report(report)
+    try:
+        frame = _cached_scan_report(str(report), report.stat().st_mtime_ns)
+    except DashboardDataError as exc:
+        st.error(f"Le dernier rapport est inutilisable : {exc}")
+        return
     modified = datetime.fromtimestamp(report.stat().st_mtime).astimezone()
     st.caption(f"Dernière mise à jour : {modified:%d/%m/%Y %H:%M %Z} · fichier {report.name} · {len(frame)} titres")
+    universe_path = report.parents[1] / "config" / "universe.yaml"
+    configured_count = (
+        _configured_universe_count(str(universe_path), universe_path.stat().st_mtime_ns)
+        if universe_path.exists()
+        else len(frame)
+    )
+    if configured_count != len(frame):
+        st.warning(
+            f"Le rapport affiché analyse {len(frame):,} titres, alors que l'univers actuel en configure "
+            f"{configured_count:,}. Le scan mondial est donc ancien ou incomplet ; relancez `python -m src.pipeline`.".replace(",", " ")
+        )
     filtered, horizon = _sidebar(frame)
-    head = st.columns(4)
+    head = st.columns(6)
     head[0].metric("Titres visibles", len(filtered))
-    head[1].metric("Candidats", int(filtered.get("is_candidate", pd.Series(dtype=bool)).fillna(False).sum()))
-    head[2].metric("Pays", filtered.get("listing_country", filtered.get("country", pd.Series(dtype=str))).nunique())
+    head[1].metric("Univers configuré", configured_count)
+    head[2].metric("Candidats", int(filtered.get("is_candidate", pd.Series(dtype=bool)).fillna(False).sum()))
+    head[3].metric("Pays", filtered.get("listing_country", filtered.get("country", pd.Series(dtype=str))).nunique())
+    classifiable = pd.to_numeric(
+        filtered.get("opportunity_score_coverage", pd.Series(dtype=float)), errors="coerce"
+    ) >= 0.50
+    head[4].metric("Scores complets ≥50 %", int(classifiable.sum()))
     coverage = pd.to_numeric(filtered.get("opportunity_score_coverage", pd.Series(dtype=float)), errors="coerce").mean()
-    head[3].metric("Couverture moyenne", _coverage(coverage))
+    head[5].metric("Couverture moyenne", _coverage(coverage))
     if filtered.empty:
         st.warning("Aucun titre ne satisfait l'ensemble des filtres.")
         return
@@ -271,3 +417,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

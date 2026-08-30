@@ -2,6 +2,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from yfinance.exceptions import YFInvalidPeriodError
 
 from src.data.prices import PRICE_COLUMNS, YahooFinancePriceSource, assess_price_quality, validate_price_frame
 from src.models import DataQuality, DataStatus, Security
@@ -23,6 +24,34 @@ class StubYahooSource(YahooFinancePriceSource):
             index=dates,
         )
         return frame, {"currency": "EUR", "exchangeName": "Paris"}
+
+
+def test_new_listing_falls_back_to_longest_provider_period(
+    tmp_path: Path, monkeypatch
+) -> None:
+    class NewListing:
+        history_metadata = {"currency": "USD"}
+
+        def __init__(self) -> None:
+            self.periods: list[str] = []
+
+        def history(self, *, period: str, **kwargs):
+            self.periods.append(period)
+            if period == "max":
+                raise YFInvalidPeriodError("NEW", "max", "1d, 5d")
+            return pd.DataFrame(
+                {"Close": [10.0], "Adj Close": [10.0]},
+                index=pd.DatetimeIndex(["2026-08-28"]),
+            )
+
+    instrument = NewListing()
+    monkeypatch.setattr("src.data.prices.yf.Ticker", lambda ticker: instrument)
+    frame, metadata = YahooFinancePriceSource(tmp_path)._download_history(
+        "NEW", period="max"
+    )
+    assert instrument.periods == ["max", "5d"]
+    assert not frame.empty
+    assert metadata["currency"] == "USD"
 
 
 def test_provider_normalizes_provenance_and_uses_cache(tmp_path: Path) -> None:
@@ -91,3 +120,4 @@ def test_validation_rejects_non_positive_prices() -> None:
 def test_short_history_is_low_quality() -> None:
     frame = pd.DataFrame({"adjusted_close": [10.0, 11.0], "close": [10.0, 11.0]})
     assert assess_price_quality(frame) == DataQuality.LOW
+

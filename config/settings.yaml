@@ -12,18 +12,21 @@ paths:
   shock_taxonomy: "config/shock_taxonomy.yaml"
   macro_cache: "data/cache/macro"
   news_cache: "data/cache/news"
-  # Immutable lineage for the expanded global-universe methodology.
-  # The prior 15-security archive remains untouched in data/raw/backtest.
-  # Universe membership is immutable per observation date. Expansion to the
-  # European indices therefore starts a distinct archive lineage.
-  backtest_archive: "data/raw/backtest_global_v1_2_0"
+  # Immutable lineage for the PEA-focused v1.4.0 methodology. The prior global
+  # archive remains untouched because membership is immutable per observation
+  # date and must never be overwritten by a different universe.
+  backtest_archive: "data/raw/backtest_pea_v1_4_0"
+  alerts: "data/processed/alerts"
+  alert_state: "data/cache/alerts/state.json"
   reports: "reports"
 
 price:
   provider: "yahoo"
   history_period: "max"
   cache_ttl_hours: 18
-  max_workers: 4
+  # Yahoo is an unofficial best-effort source. Conservative concurrency plus
+  # the pipeline circuit breaker makes 6k+ title scans safely resumable.
+  max_workers: 2
   confidence: 0.80
 
 fundamentals:
@@ -31,9 +34,12 @@ fundamentals:
   provider: "sec_edgar"
   user_agent_env: "SEC_USER_AGENT"
   cache_ttl_hours: 24
-  requests_per_second: 5.0
+  requests_per_second: 8.0
   timeout_seconds: 30
   max_retries: 3
+  # Parsing runs in parallel; SecEdgarClient still serializes all HTTP calls
+  # and enforces requests_per_second globally.
+  max_workers: 8
   history_years: 5
   as_of: null
   minimum_score_coverage: 0.50
@@ -67,15 +73,19 @@ news:
   enabled: true
   provider: "gdelt"
   cache_ttl_hours: 6
-  # GDELT is best-effort. A failed candidate must not stall a 483-title scan;
+  # GDELT is best-effort. A failed candidate must not stall a 6,289-title scan;
   # the result remains explicitly data_unavailable and can be refreshed later.
   timeout_seconds: 6
   max_retries: 0
   lookback_days: 30
   max_articles: 75
-  # Bounded parallelism keeps a 483-title global scan practical without
+  # Bounded parallelism keeps a large global scan practical without
   # overwhelming the public GDELT endpoint.
   max_workers: 4
+  # All titles receive the price screen and every price candidate receives the
+  # fundamental/valuation pass. Public-news calls are reserved for this
+  # auditable preliminary shortlist so a free endpoint remains usable.
+  deep_analysis_limit: 250
 
 shock:
   enabled: true
@@ -156,5 +166,14 @@ export:
   excel: true
   filename_prefix: "stock_opportunity_scan"
 
+alerts:
+  enabled: true
+  channels: [local]
+  minimum_opportunity_score: 50
+  minimum_score_coverage: 0.50
+  require_pea_focus: true
+  send_only_new: true
+
 logging:
   level: "INFO"
+

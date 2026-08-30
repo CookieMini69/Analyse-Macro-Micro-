@@ -25,6 +25,8 @@ class PathsSettings(BaseModel):
     macro_cache: Path | None = None
     news_cache: Path | None = None
     backtest_archive: Path | None = None
+    alerts: Path | None = None
+    alert_state: Path | None = None
     reports: Path
 
 
@@ -67,6 +69,7 @@ class FundamentalsSettings(BaseModel):
     requests_per_second: float = Field(default=5.0, gt=0.0, le=10.0)
     timeout_seconds: int = Field(default=30, ge=1, le=120)
     max_retries: int = Field(default=3, ge=0, le=8)
+    max_workers: int = Field(default=4, ge=1, le=8)
     history_years: int = Field(default=5, ge=2, le=20)
     as_of: date | datetime | None = None
     minimum_score_coverage: float = Field(default=0.50, ge=0.0, le=1.0)
@@ -153,6 +156,7 @@ class NewsSettings(BaseModel):
     lookback_days: int = Field(default=30, ge=1, le=90)
     max_articles: int = Field(default=75, ge=1, le=250)
     max_workers: int = Field(default=4, ge=1, le=16)
+    deep_analysis_limit: int = Field(default=250, ge=1, le=5000)
 
     @field_validator("provider")
     @classmethod
@@ -360,6 +364,30 @@ class LoggingSettings(BaseModel):
     level: str = "INFO"
 
 
+class AlertSettings(BaseModel):
+    """Phase 12 local alert rules; external delivery remains opt-in."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool = True
+    channels: list[str] = Field(default_factory=lambda: ["local"])
+    minimum_opportunity_score: float = Field(default=50.0, ge=0.0, le=100.0)
+    minimum_score_coverage: float = Field(default=0.50, ge=0.0, le=1.0)
+    require_pea_focus: bool = True
+    send_only_new: bool = True
+
+    @field_validator("channels")
+    @classmethod
+    def local_channels_only(cls, values: list[str]) -> list[str]:
+        normalized = list(dict.fromkeys(value.strip().lower() for value in values))
+        if not normalized or any(value != "local" for value in normalized):
+            raise ValueError(
+                "only the free local alert channel is enabled; email, Telegram, "
+                "and Discord require an explicit later configuration"
+            )
+        return normalized
+
+
 class AppSettings(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -382,6 +410,7 @@ class AppSettings(BaseModel):
     ai_analyst: AiAnalystSettings = Field(default_factory=AiAnalystSettings)
     screening: ScreeningSettings = Field(default_factory=ScreeningSettings)
     export: ExportSettings = Field(default_factory=ExportSettings)
+    alerts: AlertSettings = Field(default_factory=AlertSettings)
     logging: LoggingSettings = Field(default_factory=LoggingSettings)
 
 
@@ -411,3 +440,4 @@ def load_settings(path: str | Path = "config/settings.yaml") -> AppSettings:
         for key, value in path_values.items()
     }
     return AppSettings.model_validate(raw)
+

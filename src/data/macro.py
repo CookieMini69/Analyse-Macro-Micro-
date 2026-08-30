@@ -6,6 +6,7 @@ import re
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from urllib.parse import quote
+from zoneinfo import ZoneInfo
 
 import requests
 
@@ -68,7 +69,15 @@ class FredMacroSource:
         history_years: int = 2,
     ) -> MacroSeriesResult:
         cutoff = normalize_as_of(as_of)
-        cutoff_date = cutoff.date()
+        if isinstance(as_of, date) and not isinstance(as_of, datetime):
+            cutoff_date = as_of
+        elif isinstance(as_of, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", as_of.strip()):
+            cutoff_date = date.fromisoformat(as_of.strip())
+        else:
+            # FRED rejects a real-time date that is already tomorrow in UTC or
+            # Europe but not yet in St. Louis. Preserve timestamp semantics by
+            # evaluating the cutoff in FRED's local civil date.
+            cutoff_date = cutoff.astimezone(ZoneInfo("America/Chicago")).date()
         series_url = (
             "https://fred.stlouisfed.org/series/"
             + quote(definition.series_id, safe="")
@@ -113,6 +122,7 @@ class FredMacroSource:
                 cutoff,
                 series_url,
                 observations_response.retrieved_at,
+                cutoff_date,
             )
             retrieved_at = max(
                 metadata_response.retrieved_at, observations_response.retrieved_at
@@ -158,6 +168,7 @@ class FredMacroSource:
         cutoff: datetime,
         source_url: str,
         retrieved_at: datetime,
+        eligibility_date: date,
     ) -> list[MacroObservation]:
         rows = payload.get("observations", [])
         observations: list[MacroObservation] = []
@@ -172,9 +183,9 @@ class FredMacroSource:
             except (KeyError, TypeError, ValueError):
                 continue
             if (
-                observation_date > cutoff.date()
-                or realtime_start > cutoff.date()
-                or realtime_end < cutoff.date()
+                observation_date > eligibility_date
+                or realtime_start > eligibility_date
+                or realtime_end < eligibility_date
             ):
                 continue
             observations.append(
@@ -218,3 +229,4 @@ def unavailable_macro_series(
         source_url=source_url,
         error=error,
     )
+

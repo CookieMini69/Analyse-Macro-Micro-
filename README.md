@@ -1,6 +1,6 @@
 # AI Stock Opportunity Scanner
 
-Version `1.2.0` implements the price/drawdown scanner, a **point-in-time
+Version `1.4.0` implements the price/drawdown scanner, a **point-in-time
 fundamental engine for domestic and foreign SEC-reporting issuers**, valuation,
 point-in-time FRED/ALFRED and ECB macro vintages, official Cboe put/call and CFTC
 positioning context, public GDELT news metadata, and conservative shock
@@ -14,7 +14,8 @@ Temporary Shock, Normalization, Catalyst, Future Growth, Risk Resilience, and
 Opportunity scores are coverage-adjusted. Phase 9 adds strict archived-snapshot
 backtesting, dated ECB/Frankfurter FX conversion, and write-once live signal
 archives with SHA-256 integrity checks. Phase 10 provides the final styled Excel
-report and Phase 11 provides a working Streamlit dashboard.
+report, Phase 11 provides a working Streamlit dashboard, and Phase 12 adds
+deduplicated local alerts plus a guarded Windows daily-runner architecture.
 
 It still does **not** conclude that a decline is an investment opportunity or
 that a shock is temporary. A high Opportunity Score is not a probability,
@@ -69,16 +70,26 @@ refuses an anonymous or unchanged placeholder User-Agent. `.env` is loaded
 without overriding variables already defined in the shell and is ignored by Git.
 FRED requires a free API key; the scanner never writes it to cache, provenance,
 or reports. ECB, Cboe, CFTC, GDELT, Yahoo, and ECB/Frankfurter FX require no key.
+The free-source coverage map and the exact optional keys the user can create are
+documented in `docs/FREE_WORLDWIDE_ACCESS_PLAN.md`.
 
 ## Configure the universe
 
-`config/universe.yaml` merges 44 liquid US-listed securities with 439 native
-European listings from 13 flagship indices: CAC 40, DAX 40, FTSE 100, AEX 25,
-BEL 20, SMI 20, IBEX 35, FTSE MIB 40, OMX Stockholm 30, OMX Copenhagen 25,
-OMX Helsinki 25, OBX 25 and PSI. Duplicate memberships are merged, producing
-483 unique primary listings across 25 listing countries. The generated snapshot
-retains its observation date and source URLs. It is a live research universe,
-not a survivorship-free historical index. You can edit or replace its entries:
+`config/universe.yaml` now loads 319 native listings from 11 flagship EEA
+indices: CAC 40, DAX 40, AEX 25, BEL 20, IBEX 35, FTSE MIB 40, OMX Stockholm
+30, OMX Copenhagen 25, OMX Helsinki 25, OBX 25 and PSI. The former US snapshot
+is no longer versioned or loaded by default; `scripts/update_us_universe.py`
+can regenerate one explicitly. This deliberately focuses the scanner on
+potential PEA holdings instead of maximizing the number of assets.
+
+Every retained security is marked `review_required`, not
+`confirmed_eligible`. An EEA listing is only a geographic screen: before an
+order, confirm the issuer's registered office, equivalent corporate-tax status,
+security type (notably SIIC exclusions), and the title's eligibility with the
+PEA broker. The rule source and check date are exported with each row. Every
+universe row also retains its observation date and constituent source URL. This
+is a current research snapshot, not a survivorship-free historical index. You
+can edit or replace its entries:
 
 ```yaml
 securities:
@@ -96,12 +107,15 @@ securities:
 The labels above only illustrate the schema; they are not shipped as market data
 and should be replaced with verified identifiers.
 
-For a large universe, set `csv_path` in `config/universe.yaml`. The CSV supports:
+For a large universe, set `csv_path` or `csv_paths` in `config/universe.yaml`.
+The CSV supports:
 
 ```text
 ticker,cik,company,country,listing_country,country_basis,region,sector,exchange,
 currency,benchmark,sector_benchmark,index_memberships,universe_source_urls,
 universe_observation_date,price_scale,price_scale_reason,
+pea_eligibility_status,pea_eligibility_basis,pea_eligibility_source_url,
+pea_eligibility_checked_at,
 market_cap,market_cap_currency,market_cap_source,market_cap_source_url,
 market_cap_observation_date,market_cap_retrieved_at,market_cap_confidence
 ```
@@ -236,24 +250,55 @@ Then open `http://localhost:8501`. The dashboard automatically reads the newest
 `stock_opportunity_scan_*.csv`, exposes country, sector, index, score, drawdown,
 market-cap, shock, risk and horizon filters, and provides price, fundamental,
 valuation, evidence and scenario tabs. Run the scanner again and refresh the
-page to display the new report. The dashboard never generates a BUY verdict:
+page to display the new report. The table is paginated rather than silently
+limited to 50 rows; global search and an explicit filter reset prevent a retained
+country/index filter from masquerading as a small universe. The dashboard never generates a BUY verdict:
 before a valid Phase 9 calibration it displays an analytical priority or
 `Non classé`, and the inactive critical-AI panel is explicit.
 
-## Decision flow through Phase 11
+## Phase 12 automation and local alerts
+
+The normal pipeline applies the thresholds under `alerts` in
+`config/settings.yaml`. A row can alert only when it is a technical candidate,
+has a non-null Opportunity Score with sufficient coverage, and belongs to the
+PEA focus when `require_pea_focus` is enabled. New alerts are written as JSON,
+CSV and Markdown under `data/processed/alerts/`; a durable state file prevents
+the same ticker/date/score signal from being emitted twice.
+
+Run one guarded daily job manually:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_daily.ps1
+```
+
+Optionally install a Windows daily task at a time you choose:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File `
+  scripts/install_windows_daily_task.ps1 -At "07:00"
+```
+
+No scheduled task is installed automatically. The runner prevents overlapping
+executions and writes logs under `logs/`. The delivery boundary is ready for
+email, Telegram, and Discord adapters, but only the free local channel is
+enabled until an external destination is explicitly configured.
+
+## Decision flow through Phase 12
 
 The current strategy is a sequence of evidence filters, not a BUY/SELL model:
 
 1. Load an explicit, dated universe and establish one shared `as_of` cutoff.
-2. Retrieve SEC facts, FRED/ALFRED vintages, and dated ECB reference FX rates
-   that were available at that time.
-3. Download price histories, remove every daily bar ineligible at the cutoff,
+2. Retrieve FRED/ALFRED vintages and dated ECB reference FX rates that were
+   available at that time.
+3. Download every price history, remove every daily bar ineligible at the cutoff,
    and calculate drawdowns, returns, momentum, volatility, beta, and relative
    performance.
 4. Mark a security as a decline candidate only when a configured drawdown or
    sector-relative threshold is crossed with enough observations.
-5. Calculate point-in-time quality and valuation indicators. Missing inputs
-   reduce coverage instead of being estimated.
+5. Retrieve SEC facts and calculate point-in-time quality and valuation only
+   for the decline candidates. Missing inputs reduce coverage instead of being
+   estimated; non-candidates remain in the report without triggering this
+   expensive stage.
 6. Retrieve GDELT metadata only for decline candidates, match the configured
    shock taxonomy, require independent-source corroboration, and attach any
    dated macro-exposure assumptions.
@@ -275,6 +320,8 @@ The current strategy is a sequence of evidence filters, not a BUY/SELL model:
     `data_unavailable` instead of invented verdicts, catalysts, or risks.
 13. Let Phase 11 read the latest immutable output and expose the evidence and
     coverage interactively without recalculating or mutating the scan.
+14. Select threshold-qualified PEA-focus signals, persist auditable local alert
+    artifacts, and suppress duplicates through durable alert IDs.
 
 Outputs are timestamped under `reports/`:
 
@@ -302,8 +349,12 @@ Outputs are timestamped under `reports/`:
   `data/processed/scoring/`.
 - `fx_analysis_*.csv`, plus dated pair JSON under `data/processed/fx/`; scan rows
   retain original values and add USD/EUR equivalents when rates are available.
-- write-once live archives under `data/raw/backtest/{source_archives,signals,universes}`.
+- write-once live archives under the configured PEA lineage
+  `data/raw/backtest_pea_v1_4_0/{source_archives,signals,universes}`.
 - Phase 9 backtests produce one full JSON, one metrics CSV, and one trades CSV.
+- Phase 12 emits new-alert JSON, CSV and Markdown under
+  `data/processed/alerts/`; deduplication state lives in
+  `data/cache/alerts/state.json`.
 
 ## Historical analogue methodology
 
@@ -842,8 +893,11 @@ current checked/partial/deferred audits are maintained in
   guidance, and analyst expectations stay missing rather than imputed.
 - FX conversion is available through dated ECB reference rates via Frankfurter;
   it is a daily reference rate, not an executable intraday quote.
-- No causal multi-company event catalogue, critical AI verdict, or alerts exist
-  yet. The dashboard exists, but faithfully displays those fields as unavailable.
+- No causal multi-company event catalogue or critical AI verdict exists yet.
+  Bigdata.com and Aiera can complement filings, transcripts, events and
+  consensus only when their connector tools are exposed to the active Codex
+  task; missing connector evidence remains unavailable. Local alerts exist,
+  while email, Telegram and Discord delivery stays deliberately disabled.
 - Phase 6 compares episodes only within the same security. It does not yet search
   other companies or attach a causal crisis label. Old episodes can have price
   comparisons while fundamental/valuation context stays null because the live
@@ -865,12 +919,13 @@ current checked/partial/deferred audits are maintained in
 - A severe decline can be entirely rational. Ranking does not establish
   undervaluation or temporary mispricing.
 
-## Next recommended phase
+## Next recommended work
 
-Phase 12 is automation and alerts. It should only be started after choosing the
-desired schedule and notification destination. Before treating Phase 9 as an
-empirical validation, supply the survivorship-free historical universes and
-immutable 2018–2025 inputs listed in `docs/INTERNAL_AUDIT_PHASES_1_11.md`.
+Phase 12 is the final phase named in the master specification. The next work is
+hardening rather than an invented Phase 13: confirm individual PEA eligibility,
+expose the Bigdata.com/Aiera connector tools to the task, and supply the
+survivorship-free historical inputs required to calibrate the score. See
+`docs/INTERNAL_AUDIT_PHASES_1_12.md`.
 
 ## Backtesting status and required methodology
 
@@ -886,3 +941,4 @@ contain the necessary survivorship-free 2018–2025 archives. The engine returns
 This software is for research and education. It is not investment advice, does
 not guarantee data accuracy or future returns, and does not replace independent
 due diligence or a qualified financial adviser.
+

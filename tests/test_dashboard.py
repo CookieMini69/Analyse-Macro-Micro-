@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 
 import pandas as pd
@@ -21,13 +22,17 @@ def test_latest_scan_report_and_json_decoding(tmp_path: Path) -> None:
     row = {
         "ticker": "AAA", "listing_country": "France", "sector": "Industrials",
         "index_memberships": "CAC 40", "candidate_reasons": json.dumps(["drawdown"]),
-        "scenario_metrics": json.dumps({"cases": {}}),
+        "scenario_metrics": json.dumps({"cases": {}}), "is_candidate": True,
+        "drawdown_52w": -0.25,
     }
     pd.DataFrame([row]).to_csv(older, index=False)
     pd.DataFrame([row]).to_csv(newer, index=False)
+    incomplete = tmp_path / "stock_opportunity_scan_20260103T000000Z.csv"
+    incomplete.write_text("ticker,is_candidate,drawdown_52w\n", encoding="utf-8")
     # Selection is based on real modification time, not on a filename guess.
     older.touch()
     newer.touch()
+    os.utime(incomplete, (newer.stat().st_mtime + 1, newer.stat().st_mtime + 1))
     assert latest_scan_report(tmp_path) == newer
     loaded = load_scan_report(newer)
     assert loaded.loc[0, "candidate_reasons"] == ["drawdown"]
@@ -46,6 +51,9 @@ def test_filters_country_index_scores_drawdown_and_risk() -> None:
     )
     assert result["ticker"].tolist() == ["AAA"]
     assert index_choices(frame) == ["AEX 25", "CAC 40", "DAX 40"]
+    assert filter_scan(frame, query="alpha", candidates_only=False).empty
+    searchable = frame.assign(company=["Alpha", "Beta"], is_candidate=[True, False])
+    assert filter_scan(searchable, query="alpha", candidates_only=True)["ticker"].tolist() == ["AAA"]
 
 
 def test_price_fundamental_and_scenario_artifacts(tmp_path: Path) -> None:
@@ -68,5 +76,7 @@ def test_streamlit_dashboard_renders_without_exception() -> None:
     app = AppTest.from_file("dashboard/app.py", default_timeout=30).run()
     assert not app.exception
     assert [title.value for title in app.title] == ["AI Stock Opportunity Scanner"]
-    assert len(app.multiselect) == 4
+    assert len(app.multiselect) == 5
+    assert any(button.label == "Réinitialiser tous les filtres" for button in app.button)
     assert len(app.tabs) == 7
+

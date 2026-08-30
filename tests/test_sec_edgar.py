@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+import requests
 
 from src.data.sec_edgar import SecEdgarClient, SecEdgarError, normalize_cik
 
@@ -12,21 +13,24 @@ class FakeResponse:
 
     def raise_for_status(self) -> None:
         if self.status_code >= 400:
-            raise RuntimeError(f"HTTP {self.status_code}")
+            raise requests.HTTPError(
+                f"HTTP {self.status_code}", response=self
+            )
 
     def json(self):
         return self._payload
 
 
 class FakeSession:
-    def __init__(self, payload) -> None:
+    def __init__(self, payload, status_code: int = 200) -> None:
         self.payload = payload
+        self.status_code = status_code
         self.headers = {}
         self.calls = 0
 
     def get(self, url: str, timeout: int):
         self.calls += 1
-        return FakeResponse(self.payload)
+        return FakeResponse(self.payload, self.status_code)
 
 
 def test_cik_is_zero_padded_and_validated() -> None:
@@ -58,6 +62,20 @@ def test_json_response_is_cached_with_retrieval_metadata(tmp_path: Path) -> None
     assert first.from_cache is False
     assert second.from_cache is True
     assert second.retrieved_at == first.retrieved_at
+    assert session.calls == 1
+
+
+def test_non_retryable_sec_404_is_not_retried(tmp_path: Path) -> None:
+    session = FakeSession({}, status_code=404)
+    client = SecEdgarClient(
+        tmp_path,
+        user_agent="Research Unit contact@example.invalid",
+        session=session,
+        requests_per_second=10,
+        max_retries=3,
+    )
+    with pytest.raises(SecEdgarError, match="404"):
+        client.get_json("https://data.sec.gov/missing.json")
     assert session.calls == 1
 
 

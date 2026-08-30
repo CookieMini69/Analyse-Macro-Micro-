@@ -17,7 +17,9 @@ data/raw/*
 data/processed/*
 data/cache/*
 data/database/*
+data/runtime/*
 reports/*
+logs/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 !data/cache/.gitkeep

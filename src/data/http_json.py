@@ -88,7 +88,11 @@ class CachedJsonClient:
                 )
             except (requests.RequestException, ValueError, ExternalDataError) as exc:
                 last_error = exc
-                if attempt >= self.max_retries:
+                retryable = True
+                if isinstance(exc, requests.HTTPError) and exc.response is not None:
+                    status = exc.response.status_code
+                    retryable = status in {408, 425, 429} or status >= 500
+                if attempt >= self.max_retries or not retryable:
                     break
                 delay = min(2**attempt, 8)
                 LOGGER.warning(
@@ -97,8 +101,17 @@ class CachedJsonClient:
                     delay,
                 )
                 time.sleep(delay)
+        if isinstance(last_error, requests.RequestException):
+            status = (
+                last_error.response.status_code
+                if last_error.response is not None
+                else None
+            )
+            safe_detail = f"HTTP {status}" if status is not None else type(last_error).__name__
+        else:
+            safe_detail = f"{type(last_error).__name__}: {last_error}"
         raise ExternalDataError(
-            f"external JSON request failed for {public_source_url}: {last_error}"
+            f"external JSON request failed for {public_source_url}: {safe_detail}"
         ) from last_error
 
     def _read_cache(
@@ -141,3 +154,4 @@ class CachedJsonClient:
             encoding="utf-8",
         )
         temporary.replace(path)
+

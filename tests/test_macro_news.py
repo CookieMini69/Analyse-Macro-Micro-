@@ -2,9 +2,11 @@ import json
 from datetime import UTC, datetime, timedelta
 
 import pytest
+import requests
 
 from src.analysis.macro import analyze_macro_series
 from src.data.macro import FredMacroError, FredMacroSource
+from src.data.http_json import CachedJsonClient, ExternalDataError
 from src.data.news import GdeltNewsSource
 from src.data.public_macro import CboePutCallSource, CftcCotSource, EcbMacroSource
 from src.macro_config import MacroSeriesDefinition
@@ -121,6 +123,64 @@ def test_fred_uses_real_time_cutoff_and_never_persists_api_key(tmp_path) -> None
 def test_fred_rejects_placeholder_or_malformed_keys(tmp_path) -> None:
     with pytest.raises(FredMacroError):
         FredMacroSource(tmp_path, api_key="demo")
+
+
+def test_fred_uses_st_louis_date_around_european_midnight(tmp_path) -> None:
+    session = FakeSession([
+        {"seriess": [{"id": "SYNTH", "title": "Synthetic"}]},
+        {"observations": [{
+            "date": "2025-02-28", "value": "1",
+            "realtime_start": "2025-02-28", "realtime_end": "9999-12-31",
+        }]},
+    ])
+    source = FredMacroSource(
+        tmp_path, api_key="a" * 32, max_retries=0, session=session
+    )
+    result = source.fetch(
+        "synthetic",
+        MacroSeriesDefinition(series_id="SYNTH", name="Synthetic"),
+        as_of="2025-03-01T00:30:00Z",
+    )
+    assert result.status == DataStatus.AVAILABLE
+    assert all(call[1]["realtime_start"] == "2025-02-28" for call in session.calls)
+
+
+def test_external_http_error_never_echoes_secret_query_params(tmp_path) -> None:
+    secret = "s" * 32
+
+    class RejectedResponse:
+        status_code = 400
+        url = f"https://api.example.invalid/data?api_key={secret}"
+
+        def raise_for_status(self) -> None:
+            raise requests.HTTPError(
+                f"400 Client Error for url: {self.url}", response=self
+            )
+
+    class RejectedSession:
+        def __init__(self) -> None:
+            self.headers: dict[str, str] = {}
+            self.calls = 0
+
+        def get(self, url: str, *, params: dict, timeout: int):
+            self.calls += 1
+            return RejectedResponse()
+
+    session = RejectedSession()
+    client = CachedJsonClient(
+        tmp_path, user_agent="test", cache_ttl_hours=1,
+        timeout_seconds=1, max_retries=3, session=session,
+    )
+    with pytest.raises(ExternalDataError) as captured:
+        client.get_json(
+            "https://api.example.invalid/data",
+            params={"api_key": secret},
+            public_source_url="https://example.invalid/public",
+            cache_namespace="test",
+        )
+    assert secret not in str(captured.value)
+    assert "HTTP 400" in str(captured.value)
+    assert session.calls == 1
 
 
 def test_macro_model_rejects_a_vintage_unavailable_at_cutoff() -> None:
@@ -256,3 +316,4 @@ def test_gdelt_historical_limit_is_explicit_without_network_call(tmp_path) -> No
     assert result.status == DataStatus.DATA_UNAVAILABLE
     assert "three-month" in result.error
     assert session.calls == []
+

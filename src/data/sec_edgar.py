@@ -160,7 +160,11 @@ class SecEdgarClient:
                 return SecJsonResponse(payload, url, retrieved_at, False)
             except (requests.RequestException, ValueError, SecEdgarError) as exc:
                 last_error = exc
-                if attempt >= self.max_retries:
+                retryable = True
+                if isinstance(exc, requests.HTTPError) and exc.response is not None:
+                    status = exc.response.status_code
+                    retryable = status in {408, 425, 429} or status >= 500
+                if attempt >= self.max_retries or not retryable:
                     break
                 delay = min(2**attempt, 8)
                 LOGGER.warning(

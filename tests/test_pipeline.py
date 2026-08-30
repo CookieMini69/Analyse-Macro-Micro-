@@ -15,11 +15,17 @@ from src.models import (
     MacroSeriesResult,
     NewsArticle,
     NewsSearchResult,
+    OpportunityCandidate,
     Security,
     ShockCategory,
     ShockNature,
 )
-from src.pipeline import run_pipeline
+from src.pipeline import (
+    _compact_price_frames,
+    _download_prices,
+    _select_deep_analysis_securities,
+    run_pipeline,
+)
 from tests.factories import price_frame
 from tests.test_fundamental_analysis import complete_data
 
@@ -42,8 +48,83 @@ class BrokenPriceSource:
         raise RuntimeError("synthetic provider failure")
 
 
+class RateLimitedPriceSource:
+    def __init__(self) -> None:
+        self.calls: list[str] = []
+
+    def fetch(self, security: Security, *, period: str = "max") -> PriceHistoryResult:
+        self.calls.append(security.ticker)
+        return PriceHistoryResult(
+            security=security,
+            frame=pd.DataFrame(),
+            status=DataStatus.DATA_UNAVAILABLE,
+            data_quality=DataQuality.UNAVAILABLE,
+            source="synthetic_rate_limit_fixture",
+            source_url=None,
+            error="YFRateLimitError: Too Many Requests",
+        )
+
+
+def test_price_download_opens_quota_circuit_and_defers_unsubmitted_symbols() -> None:
+    securities = [
+        Security(ticker=f"TEST{i}", company=f"Test {i}") for i in range(10)
+    ]
+    source = RateLimitedPriceSource()
+
+    results = _download_prices(securities, source, period="max", max_workers=2)
+
+    assert len(results) == 10
+    assert len(source.calls) == 4
+    assert results["TEST4"].error == (
+        "rate_limit_circuit_open: deferred to the next cached run"
+    )
+
+
+def test_compact_price_frames_retains_analysis_fields_only() -> None:
+    security = Security(ticker="TEST", company="Test")
+    result = FakePriceSource().fetch(security)
+
+    _compact_price_frames({"TEST": result})
+
+    assert list(result.frame.columns) == [
+        "observation_date",
+        "close",
+        "adjusted_close",
+        "exchange",
+        "currency",
+        "retrieved_at",
+    ]
+
+
+def test_deep_analysis_shortlist_reserves_extreme_decline() -> None:
+    securities = [Security(ticker=f"TEST{i}", company=f"Test {i}") for i in range(6)]
+    ranked = [
+        OpportunityCandidate(
+            ticker=security.ticker,
+            decline_severity_score=100.0 if index == 5 else float(20 + index),
+            is_candidate=True,
+            data_quality=DataQuality.MEDIUM,
+            retrieved_at=datetime(2026, 1, 1, tzinfo=UTC),
+            fundamental_quality_score=90.0 if index < 4 else None,
+            fundamental_quality_coverage=1.0 if index < 4 else None,
+            valuation_score=80.0 if index < 4 else None,
+            valuation_coverage=1.0 if index < 4 else None,
+        )
+        for index, security in enumerate(securities)
+    ]
+
+    selected = _select_deep_analysis_securities(ranked, securities, limit=5)
+
+    assert len(selected) == 5
+    assert "TEST5" in {security.ticker for security in selected}
+
+
 class FakeFundamentalSource:
+    def __init__(self) -> None:
+        self.calls: list[str] = []
+
     def fetch(self, security: Security, *, as_of=None):
+        self.calls.append(security.ticker)
         data = complete_data()
         data.security = security
         data.cik = "0000000001"
@@ -223,6 +304,18 @@ def test_provider_exception_is_exported_as_unavailable_row(tmp_path: Path) -> No
     assert output.results[0].current_price is None
     assert output.results[0].is_candidate is False
     assert "TEST" in output.download_errors
+
+
+def test_non_candidate_does_not_trigger_expensive_fundamental_stage(tmp_path: Path) -> None:
+    write_configuration(tmp_path)
+    settings = load_settings(tmp_path / "settings.yaml")
+    source = FakeFundamentalSource()
+    run_pipeline(
+        settings,
+        price_source=BrokenPriceSource(),
+        fundamental_source=source,
+    )
+    assert source.calls == []
 
 
 def test_pipeline_exports_dated_usd_and_eur_fx_equivalents(tmp_path: Path) -> None:
@@ -448,3 +541,4 @@ severe_structural_terms: []
     assert result.risk_score is not None
     assert result.opportunity_score is not None
     assert 0 < result.confidence_score <= result.opportunity_score_coverage * 100
+

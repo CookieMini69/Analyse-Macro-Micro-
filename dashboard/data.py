@@ -11,6 +11,7 @@ import pandas as pd
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+REQUIRED_SCAN_COLUMNS = {"ticker", "is_candidate", "drawdown_52w"}
 JSON_COLUMNS = {
     "fx_metrics", "fundamental_metrics", "valuation_metrics", "shock_metrics",
     "historical_metrics", "scenario_metrics", "scoring_metrics",
@@ -23,10 +24,28 @@ LIST_COLUMNS = {
 }
 
 
+class DashboardDataError(ValueError):
+    """Raised when a generated scan artifact is unreadable or incomplete."""
+
+
 def latest_scan_report(reports_dir: str | Path | None = None) -> Path | None:
     directory = Path(reports_dir) if reports_dir else PROJECT_ROOT / "reports"
-    matches = list(directory.glob("stock_opportunity_scan_*.csv"))
-    return max(matches, key=lambda path: (path.stat().st_mtime, path.name)) if matches else None
+    matches = sorted(
+        directory.glob("stock_opportunity_scan_*.csv"),
+        key=lambda path: (path.stat().st_mtime, path.name),
+        reverse=True,
+    )
+    # A pipeline interruption can leave a truncated newest CSV. Do not make the
+    # whole dashboard unusable when an earlier complete immutable report exists.
+    for path in matches:
+        try:
+            preview = pd.read_csv(path, nrows=1)
+            columns = set(preview.columns)
+        except (OSError, UnicodeError, pd.errors.ParserError):
+            continue
+        if REQUIRED_SCAN_COLUMNS <= columns and not preview.empty:
+            return path
+    return None
 
 
 def _decode_json(value: Any, fallback: Any) -> Any:
@@ -41,13 +60,26 @@ def _decode_json(value: Any, fallback: Any) -> Any:
 
 
 def load_scan_report(path: str | Path) -> pd.DataFrame:
-    frame = pd.read_csv(path)
+    try:
+        frame = pd.read_csv(path, low_memory=False)
+    except (OSError, UnicodeError, pd.errors.ParserError) as exc:
+        raise DashboardDataError(f"rapport illisible: {exc}") from exc
+    missing = REQUIRED_SCAN_COLUMNS - set(frame.columns)
+    if missing:
+        raise DashboardDataError(
+            "rapport incomplet, colonnes absentes: " + ", ".join(sorted(missing))
+        )
+    if frame.empty:
+        raise DashboardDataError("rapport vide")
     for column in JSON_COLUMNS & set(frame.columns):
         fallback: list[Any] | dict[str, Any] = [] if column in LIST_COLUMNS else {}
         frame[column] = frame[column].map(lambda value, default=fallback: _decode_json(value, default))
     if "listing_country" in frame and "country" in frame:
         frame["listing_country"] = frame["listing_country"].fillna(frame["country"])
-    for column in ("country", "listing_country", "sector", "index_memberships"):
+    for column in (
+        "country", "listing_country", "sector", "index_memberships",
+        "pea_eligibility_status",
+    ):
         if column in frame:
             frame[column] = frame[column].fillna("Non renseigné")
     return frame
@@ -64,6 +96,9 @@ def filter_scan(
     minimum_market_cap_eur: float = 0.0,
     shock_natures: list[str] | None = None,
     minimum_risk_score: float = 0.0,
+    query: str | None = None,
+    candidates_only: bool = False,
+    pea_statuses: list[str] | None = None,
 ) -> pd.DataFrame:
     selected = pd.Series(True, index=frame.index)
     country_column = "listing_country" if "listing_country" in frame else "country"
@@ -85,6 +120,26 @@ def filter_scan(
         selected &= frame["shock_nature"].fillna("data_unavailable").isin(shock_natures)
     if minimum_risk_score > 0 and "risk_score" in frame:
         selected &= pd.to_numeric(frame["risk_score"], errors="coerce").fillna(-1) >= minimum_risk_score
+    if candidates_only and "is_candidate" in frame:
+        selected &= frame["is_candidate"].fillna(False).astype(bool)
+    if pea_statuses and "pea_eligibility_status" in frame:
+        selected &= frame["pea_eligibility_status"].isin(pea_statuses)
+    normalized_query = (query or "").strip().casefold()
+    if normalized_query:
+        searchable = [
+            column for column in (
+                "ticker", "company", "country", "listing_country", "region",
+                "sector", "exchange", "index_memberships",
+                "pea_eligibility_status",
+            )
+            if column in frame
+        ]
+        matches = pd.Series(False, index=frame.index)
+        for column in searchable:
+            matches |= frame[column].fillna("").astype(str).str.casefold().str.contains(
+                normalized_query, regex=False
+            )
+        selected &= matches
     return frame.loc[selected].copy()
 
 
@@ -139,3 +194,4 @@ def scenario_rows(payload: dict[str, Any], horizon: int) -> list[dict[str, Any]]
             "Couverture": case.get("assumption_coverage"),
         })
     return rows
+

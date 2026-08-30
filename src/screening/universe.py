@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -9,7 +10,25 @@ import pandas as pd
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.models import Security
+from src.models import PeaEligibilityStatus, Security
+
+
+PEA_RULE_SOURCE_URL = (
+    "https://www.amf-france.org/fr/espace-epargnants/comprendre-les-produits-financiers/"
+    "supports-dinvestissement/pea-tout-savoir-sur-le-plan-depargne-en-actions"
+)
+PEA_RULE_CHECKED_AT = date(2026, 8, 30)
+EEA_COUNTRIES = frozenset(
+    {
+        "Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czechia",
+        "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany",
+        "Greece", "Hungary", "Iceland", "Ireland", "Italy", "Latvia",
+        "Liechtenstein", "Lithuania", "Luxembourg", "Malta", "Netherlands",
+        "Norway", "Poland", "Portugal", "Romania", "Slovakia", "Slovenia",
+        "Spain", "Sweden",
+    }
+)
+US_EXCHANGES = frozenset({"NASDAQ", "NYSE", "NYSE AMERICAN", "NYSE ARCA"})
 
 
 class UniverseFilters(BaseModel):
@@ -17,6 +36,8 @@ class UniverseFilters(BaseModel):
 
     minimum_market_cap: float | None = Field(default=None, ge=0)
     allowed_countries: list[str] = Field(default_factory=list)
+    pea_focus_only: bool = False
+    include_pea_review_required: bool = True
 
 
 class UniverseConfig(BaseModel):
@@ -24,6 +45,7 @@ class UniverseConfig(BaseModel):
 
     version: int = 1
     csv_path: Path | None = None
+    csv_paths: list[Path] = Field(default_factory=list)
     filters: UniverseFilters = Field(default_factory=UniverseFilters)
     securities: list[Security] = Field(default_factory=list)
 
@@ -57,12 +79,50 @@ def _load_csv(path: Path) -> list[Security]:
     return records
 
 
+def assess_pea_eligibility(security: Security) -> Security:
+    """Attach a conservative, auditable PEA status without claiming broker eligibility.
+
+    A native EEA listing is only a review candidate because listing country is
+    not proof of the issuer's registered office, corporate-tax status, security
+    type, or the broker's operational eligibility. Explicitly supplied statuses
+    are preserved.
+    """
+
+    if security.pea_eligibility_status != PeaEligibilityStatus.UNKNOWN:
+        return security
+    listing_country = security.listing_country
+    exchange = (security.exchange or "").strip().upper()
+    native_eea_listing = bool(
+        listing_country in EEA_COUNTRIES and exchange not in US_EXCHANGES
+    )
+    if not native_eea_listing:
+        return security
+    return security.model_copy(
+        update={
+            "pea_eligibility_status": PeaEligibilityStatus.REVIEW_REQUIRED,
+            "pea_eligibility_basis": (
+                "native EEA listing screen only; confirm issuer registered office, "
+                "tax status, security type, and broker eligibility before purchase"
+            ),
+            "pea_eligibility_source_url": PEA_RULE_SOURCE_URL,
+            "pea_eligibility_checked_at": PEA_RULE_CHECKED_AT,
+        }
+    )
+
+
 def _apply_filters(securities: list[Security], filters: UniverseFilters) -> list[Security]:
     allowed = {country.casefold() for country in filters.allowed_countries}
     selected: list[Security] = []
     for security in securities:
+        security = assess_pea_eligibility(security)
         if allowed and security.country and security.country.casefold() not in allowed:
             continue
+        if filters.pea_focus_only:
+            accepted = {PeaEligibilityStatus.CONFIRMED_ELIGIBLE}
+            if filters.include_pea_review_required:
+                accepted.add(PeaEligibilityStatus.REVIEW_REQUIRED)
+            if security.pea_eligibility_status not in accepted:
+                continue
         if filters.minimum_market_cap is not None:
             if security.market_cap is None or security.market_cap < filters.minimum_market_cap:
                 continue
@@ -79,11 +139,12 @@ def load_universe(path: str | Path) -> list[Security]:
     config = UniverseConfig.model_validate(raw)
 
     securities = list(config.securities)
-    if config.csv_path is not None:
+    csv_inputs = ([config.csv_path] if config.csv_path is not None else []) + config.csv_paths
+    for configured_csv in csv_inputs:
         csv_path = (
-            config.csv_path
-            if config.csv_path.is_absolute()
-            else (universe_path.parent / config.csv_path).resolve()
+            configured_csv
+            if configured_csv.is_absolute()
+            else (universe_path.parent / configured_csv).resolve()
         )
         securities.extend(_load_csv(csv_path))
 

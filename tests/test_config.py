@@ -15,7 +15,7 @@ def test_default_settings_resolve_paths_from_project_root() -> None:
         Path.cwd().resolve() / "config" / "shock_taxonomy.yaml"
     )
     assert settings.paths.backtest_archive == (
-        Path.cwd().resolve() / "data" / "raw" / "backtest_global_v1_2_0"
+        Path.cwd().resolve() / "data" / "raw" / "backtest_global_v1_3_0"
     )
     assert settings.macro.provider == "mixed_official"
     assert settings.price.history_period == "max"
@@ -63,3 +63,4 @@ paths:
     monkeypatch.setenv("STOCK_SCANNER_TEST_VALUE", "from_shell")
     load_settings(tmp_path / "settings.yaml")
     assert os.environ["STOCK_SCANNER_TEST_VALUE"] == "from_shell"
+

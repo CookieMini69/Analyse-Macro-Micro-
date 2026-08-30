@@ -8,7 +8,7 @@ import os
 import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
-from datetime import date, datetime, time, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from pathlib import Path
 
 import pandas as pd
@@ -18,6 +18,7 @@ from src.analysis.historical import analyze_historical_analogues
 from src.analysis.macro import analyze_macro_series
 from src.analysis.shock import analyze_shock, augment_shock_with_historical
 from src.analysis.valuation import analyze_valuations
+from src.alerts.engine import build_alerts, persist_local_alerts
 from src.backtest.archive import archive_live_run
 from src.config import AppSettings, load_settings
 from src.data.fundamentals import (
@@ -69,6 +70,7 @@ from src.models import (
     MacroSeriesResult,
     NewsSearchResult,
     OpportunityCandidate,
+    OpportunityAlert,
     ScenarioAnalysisResult,
     ScoringAnalysisResult,
     Security,
@@ -124,6 +126,9 @@ class PipelineResult:
     scoring_errors: dict[str, str]
     backtest_archive_files: list[Path]
     backtest_archive_error: str | None
+    alerts: list[OpportunityAlert]
+    alert_exported_files: list[Path]
+    alert_error: str | None
 
 
 def _configure_logging(level: str) -> None:
@@ -141,45 +146,190 @@ def _download_prices(
     *,
     period: str,
     max_workers: int,
+    cutoff: datetime | None = None,
+    normalized_output_dir: Path | None = None,
 ) -> dict[str, PriceHistoryResult]:
+    """Download prices in bounded batches and stop cleanly on provider quotas.
+
+    Submitting the whole universe at once makes a transient Yahoo quota consume
+    thousands of requests that are guaranteed to fail.  Small batches let a
+    later run resume from the valid cache without turning the rest of the
+    alphabet into a misleading provider-absence result.
+    """
+
     downloaded: dict[str, PriceHistoryResult] = {}
     if not securities:
         return downloaded
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        futures = {
-            executor.submit(source.fetch, security, period=period): security
-            for security in securities
-        }
-        for future in as_completed(futures):
-            security = futures[future]
-            try:
-                result = future.result()
-            except Exception as exc:  # custom provider errors cannot abort the whole universe
-                LOGGER.exception("Unhandled provider error for %s", security.ticker)
-                result = PriceHistoryResult(
-                    security=security,
-                    frame=empty_price_frame(),
-                    status=DataStatus.DATA_UNAVAILABLE,
-                    data_quality=DataQuality.UNAVAILABLE,
-                    source=type(source).__name__,
-                    source_url=None,
-                    error=f"{type(exc).__name__}: {exc}",
+
+    def unavailable(security: Security, error: str) -> PriceHistoryResult:
+        return PriceHistoryResult(
+            security=security,
+            frame=empty_price_frame(),
+            status=DataStatus.DATA_UNAVAILABLE,
+            data_quality=DataQuality.UNAVAILABLE,
+            source=type(source).__name__,
+            source_url=None,
+            error=error,
+        )
+
+    batch_size = max(1, max_workers * 2)
+    for start in range(0, len(securities), batch_size):
+        batch = securities[start : start + batch_size]
+        rate_limited = 0
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = {
+                executor.submit(source.fetch, security, period=period): security
+                for security in batch
+            }
+            for future in as_completed(futures):
+                security = futures[future]
+                try:
+                    result = future.result()
+                except Exception as exc:  # custom provider errors cannot abort the whole universe
+                    LOGGER.exception("Unhandled provider error for %s", security.ticker)
+                    result = unavailable(security, f"{type(exc).__name__}: {exc}")
+                ticker = security.ticker.upper()
+                if cutoff is not None:
+                    result = _filter_prices_as_of({ticker: result}, cutoff)[ticker]
+                if normalized_output_dir is not None:
+                    cutoff_for_age = (
+                        cutoff
+                        if cutoff is not None and cutoff.tzinfo is not None
+                        else cutoff.replace(tzinfo=UTC) if cutoff is not None else None
+                    )
+                    is_live_cutoff = (
+                        cutoff_for_age is not None
+                        and abs((datetime.now(UTC) - cutoff_for_age).total_seconds())
+                        < 6 * 60 * 60
+                    )
+                    _persist_normalized_prices(
+                        {ticker: result},
+                        normalized_output_dir,
+                        skip_existing_cache=is_live_cutoff,
+                    )
+                    _compact_price_frames({ticker: result})
+                downloaded[ticker] = result
+                if result.error:
+                    LOGGER.warning("%s: %s", security.ticker, result.error)
+                    normalized_error = result.error.lower()
+                    if "ratelimit" in normalized_error or "too many requests" in normalized_error:
+                        rate_limited += 1
+
+        quota_threshold = min(len(batch), max(2, max_workers))
+        if rate_limited >= quota_threshold:
+            remaining = securities[start + len(batch) :]
+            LOGGER.error(
+                "Price-provider quota circuit opened after %d rate-limited "
+                "responses; deferring %d instruments to the next cached run",
+                rate_limited,
+                len(remaining),
+            )
+            for security in remaining:
+                downloaded[security.ticker.upper()] = unavailable(
+                    security,
+                    "rate_limit_circuit_open: deferred to the next cached run",
                 )
-            downloaded[security.ticker.upper()] = result
-            if result.error:
-                LOGGER.warning("%s: %s", security.ticker, result.error)
+            break
     return downloaded
 
 
 def _persist_normalized_prices(
-    results: dict[str, PriceHistoryResult], output_dir: Path
+    results: dict[str, PriceHistoryResult],
+    output_dir: Path,
+    *,
+    skip_existing_cache: bool = False,
 ) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     for result in results.values():
         if result.frame.empty:
             continue
         safe_name = re.sub(r"[^A-Za-z0-9._-]+", "_", result.security.ticker)
-        result.frame.to_csv(output_dir / f"{safe_name}.csv", index=False)
+        output_path = output_dir / f"{safe_name}.csv"
+        if skip_existing_cache and result.from_cache and output_path.exists():
+            continue
+        result.frame.to_csv(output_path, index=False)
+
+
+def _compact_price_frames(results: dict[str, PriceHistoryResult]) -> None:
+    """Release columns not used by in-memory analysis after normalized persistence.
+
+    Provenance and OHLCV remain in the normalized CSV files.  Keeping repeated
+    source/status strings for decades of daily rows across a 6k-title universe
+    otherwise consumes several gigabytes while the scanner only needs dates,
+    close prices, retrieval metadata, and listing labels.
+    """
+
+    analysis_columns = (
+        "observation_date",
+        "close",
+        "adjusted_close",
+        "exchange",
+        "currency",
+        "retrieved_at",
+    )
+    for result in results.values():
+        if result.frame.empty:
+            continue
+        retained = [column for column in analysis_columns if column in result.frame.columns]
+        result.frame = result.frame.loc[:, retained].copy()
+
+
+def _select_deep_analysis_securities(
+    ranked: list[OpportunityCandidate],
+    securities: list[Security],
+    limit: int,
+) -> list[Security]:
+    """Select a reproducible external-data shortlist from all price candidates.
+
+    Four fifths are selected by a disclosed preliminary composite using only
+    already-computed fields.  One fifth is reserved for the most severe price
+    declines so regions without SEC coverage are not automatically eliminated.
+    This is a cost/rate-limit gate, not the final opportunity ranking.
+    """
+
+    candidates = [result for result in ranked if result.is_candidate]
+    if len(candidates) <= limit:
+        selected_tickers = {result.ticker.upper() for result in candidates}
+    else:
+        severity_reserve = max(1, limit // 5)
+        by_severity = sorted(
+            candidates,
+            key=lambda item: item.decline_severity_score,
+            reverse=True,
+        )
+        reserved = by_severity[:severity_reserve]
+        reserved_tickers = {item.ticker.upper() for item in reserved}
+
+        def covered_score(value: float | None, coverage: float | None) -> float:
+            if value is None or coverage is None:
+                return 0.0
+            return value * coverage
+
+        def preliminary_score(item: OpportunityCandidate) -> float:
+            return (
+                0.45
+                * covered_score(
+                    item.fundamental_quality_score,
+                    item.fundamental_quality_coverage,
+                )
+                + 0.25
+                * covered_score(item.valuation_score, item.valuation_coverage)
+                + 0.30 * item.decline_severity_score
+            )
+
+        by_composite = sorted(
+            (item for item in candidates if item.ticker.upper() not in reserved_tickers),
+            key=lambda item: (preliminary_score(item), item.decline_severity_score),
+            reverse=True,
+        )
+        selected = reserved + by_composite[: limit - len(reserved)]
+        selected_tickers = {item.ticker.upper() for item in selected}
+
+    return [
+        security
+        for security in securities
+        if security.ticker.upper() in selected_tickers
+    ]
 
 
 def _filter_prices_as_of(
@@ -280,8 +430,7 @@ def _run_fundamentals(
     cutoff = normalize_as_of(
         as_of if as_of is not None else settings.fundamentals.as_of
     )
-    results: list[FundamentalAnalysisResult] = []
-    for security in securities:
+    def process_security(security: Security) -> FundamentalAnalysisResult:
         if not is_sec_eligible(security):
             data = unavailable_fundamental_data(
                 security,
@@ -307,12 +456,22 @@ def _run_fundamentals(
                     DataStatus.DATA_UNAVAILABLE,
                     f"{type(exc).__name__}: {exc}",
                 )
-        results.append(
-            analyze_fundamentals(
-                data,
-                minimum_score_coverage=settings.fundamentals.minimum_score_coverage,
-            )
+        return analyze_fundamentals(
+            data,
+            minimum_score_coverage=settings.fundamentals.minimum_score_coverage,
         )
+
+    results: list[FundamentalAnalysisResult] = []
+    total = len(securities)
+    if not securities:
+        return results
+    # HTTP calls remain serialized and rate-limited inside SecEdgarClient. The
+    # pool overlaps only local JSON/XBRL decoding and per-company calculations.
+    with ThreadPoolExecutor(max_workers=settings.fundamentals.max_workers) as executor:
+        for position, result in enumerate(executor.map(process_security, securities), start=1):
+            results.append(result)
+            if position % 250 == 0 or position == total:
+                LOGGER.info("Fundamentals progress: %d/%d", position, total)
     return results
 
 
@@ -867,33 +1026,13 @@ def run_pipeline(
             "Universe is empty. Add securities to config/universe.yaml or configure csv_path."
         )
 
-    LOGGER.info("Updating point-in-time fundamentals...")
-    fundamental_list = _run_fundamentals(
-        securities,
-        app_settings,
-        source=fundamental_source,
-        as_of=cutoff,
-    )
-    fundamental_results = {
-        result.ticker.upper(): result for result in fundamental_list
-    }
-    fundamental_available = sum(
-        result.status == DataStatus.AVAILABLE for result in fundamental_list
-    )
-    LOGGER.info(
-        "%d/%d fundamental histories available",
-        fundamental_available,
-        len(fundamental_list),
-    )
-    fundamental_exported = (
-        persist_fundamental_results(
-            fundamental_list,
-            app_settings.paths.processed_data,
-            app_settings.paths.reports,
-        )
-        if fundamental_list
-        else []
-    )
+    # Fundamentals are deliberately deferred until after the inexpensive price
+    # screen. Every security is screened, while SEC/XBRL analysis is focused on
+    # the large-decline candidates for which the strategy can act.
+    fundamental_list: list[FundamentalAnalysisResult] = []
+    fundamental_results: dict[str, FundamentalAnalysisResult] = {}
+    fundamental_available = 0
+    fundamental_exported: list[Path] = []
 
     fx_results: dict[str, FxRateResult] = {}
     fx_exported: list[Path] = []
@@ -964,15 +1103,16 @@ def run_pipeline(
         provider,
         period=app_settings.price.history_period,
         max_workers=app_settings.price.max_workers,
+        cutoff=cutoff,
+        normalized_output_dir=app_settings.paths.processed_data / "prices",
     )
-    price_results = _filter_prices_as_of(downloaded_price_results, cutoff)
+    price_results = downloaded_price_results
     updated = sum(
         1
         for result in price_results.values()
         if result.status == DataStatus.AVAILABLE and not result.frame.empty
     )
     LOGGER.info("%d/%d price histories available", updated, len(all_downloads))
-    _persist_normalized_prices(price_results, app_settings.paths.processed_data / "prices")
 
     LOGGER.info("Calculating drawdowns and technical metrics...")
     scan_results: list[OpportunityCandidate] = []
@@ -999,6 +1139,41 @@ def run_pipeline(
         )
     ranked = rank_results(scan_results)
     ranked = [_enrich_with_fx(result, fx_results) for result in ranked]
+    candidate_tickers = {
+        result.ticker.upper() for result in ranked if result.is_candidate
+    }
+    candidate_securities = [
+        security for security in securities
+        if security.ticker.upper() in candidate_tickers
+    ]
+    LOGGER.info(
+        "Updating point-in-time fundamentals for %d/%d price-screen candidates...",
+        len(candidate_securities),
+        len(securities),
+    )
+    fundamental_list = _run_fundamentals(
+        candidate_securities,
+        app_settings,
+        source=fundamental_source,
+        as_of=cutoff,
+    )
+    fundamental_results = {
+        result.ticker.upper(): result for result in fundamental_list
+    }
+    fundamental_available = sum(
+        result.status == DataStatus.AVAILABLE for result in fundamental_list
+    )
+    LOGGER.info(
+        "%d/%d candidate fundamental histories available",
+        fundamental_available,
+        len(fundamental_list),
+    )
+    if fundamental_list:
+        fundamental_exported = persist_fundamental_results(
+            fundamental_list,
+            app_settings.paths.processed_data,
+            app_settings.paths.reports,
+        )
     ranked = [
         _enrich_with_fundamentals(
             result, fundamental_results.get(result.ticker.upper())
@@ -1052,15 +1227,16 @@ def run_pipeline(
     shock_results: dict[str, ShockAnalysisResult] = {}
     shock_exported: list[Path] = []
     if app_settings.shock.enabled:
-        candidate_tickers = {
-            result.ticker.upper() for result in ranked if result.is_candidate
-        }
-        candidate_securities = [
-            security
-            for security in securities
-            if security.ticker.upper() in candidate_tickers
-        ]
-        LOGGER.info("Retrieving public news metadata for %d candidates...", len(candidate_securities))
+        candidate_securities = _select_deep_analysis_securities(
+            ranked,
+            securities,
+            app_settings.news.deep_analysis_limit,
+        )
+        LOGGER.info(
+            "Retrieving public news metadata for %d/%d preliminary deep-analysis candidates...",
+            len(candidate_securities),
+            candidate_count,
+        )
         news_results = _run_news(
             candidate_securities,
             app_settings,
@@ -1102,6 +1278,7 @@ def run_pipeline(
         candidate_tickers = {
             result.ticker.upper() for result in ranked if result.is_candidate
         }
+        historical_completed = 0
         for security in securities:
             ticker = security.ticker.upper()
             if ticker not in candidate_tickers or ticker not in price_results:
@@ -1114,6 +1291,13 @@ def run_pipeline(
                 fundamental=fundamental_results.get(ticker),
                 valuation=valuation_results.get(ticker),
             )
+            historical_completed += 1
+            if historical_completed % 250 == 0:
+                LOGGER.info(
+                    "Historical analogue progress: %d/%d",
+                    historical_completed,
+                    len(candidate_tickers),
+                )
         if historical_results:
             historical_exported = persist_historical_results(
                 list(historical_results.values()),
@@ -1311,6 +1495,33 @@ def run_pipeline(
     for path in exported:
         LOGGER.info("Created %s", path)
 
+    alerts = build_alerts(ranked, app_settings.alerts)
+    delivered_alerts: list[OpportunityAlert] = []
+    alert_exported: list[Path] = []
+    alert_error: str | None = None
+    if app_settings.alerts.enabled:
+        alert_dir = app_settings.paths.alerts or (
+            app_settings.paths.processed_data / "alerts"
+        )
+        alert_state = app_settings.paths.alert_state or (
+            app_settings.paths.cache.parent / "alerts" / "state.json"
+        )
+        try:
+            delivered_alerts, alert_exported = persist_local_alerts(
+                alerts,
+                alert_dir,
+                alert_state,
+                send_only_new=app_settings.alerts.send_only_new,
+            )
+        except (OSError, ValueError) as exc:
+            alert_error = str(exc)
+            LOGGER.error("Local alert delivery failed: %s", exc)
+        LOGGER.info(
+            "%d threshold-qualified alerts; %d new local alerts emitted",
+            len(alerts),
+            len(delivered_alerts),
+        )
+
     errors = {
         result.security.ticker: result.error
         for result in price_results.values()
@@ -1386,6 +1597,9 @@ def run_pipeline(
         scoring_errors=scoring_errors,
         backtest_archive_files=backtest_archive_files,
         backtest_archive_error=backtest_archive_error,
+        alerts=delivered_alerts,
+        alert_exported_files=alert_exported,
+        alert_error=alert_error,
     )
 
 
@@ -1426,3 +1640,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

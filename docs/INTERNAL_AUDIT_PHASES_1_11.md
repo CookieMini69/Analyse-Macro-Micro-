@@ -1,7 +1,7 @@
 # Audit interne des phases 1 à 11
 
-Version : 1.2.0  
-Date : 2026-08-29
+Version : 1.3.0
+Date : 2026-08-30
 
 ## Conclusion
 
@@ -22,7 +22,7 @@ sa couverture, jamais une probabilité de gain ou un conseil d'achat.
 | 8 Scoring | Conforme, non calibré | poids heuristiques |
 | 9 Backtest | Moteur conforme | vraie étude 2018–2025 impossible sans univers historiques |
 | 10 Excel | Conforme | verdict volontairement `NOT_CALIBRATED` |
-| 11 Streamlit | Conforme | analyste IA explicitement désactivé |
+| 11 Streamlit | Conforme et renforcé | analyste IA explicitement désactivé |
 
 ## Corrections issues de l'audit
 
@@ -33,6 +33,21 @@ sa couverture, jamais une probabilité de gain ou un conseil d'achat.
 5. parallélisme GDELT borné pour l'univers élargi ;
 6. champs Phase 10 complets, sans inventer les narratifs IA ;
 7. remplacement du placeholder Phase 11 par une application testable.
+8. suppression de la limite d'affichage silencieuse à 50 lignes, pagination,
+   recherche globale et remise à zéro des filtres persistants ;
+9. extension à 6 289 titres configurés via les répertoires Nasdaq Trader et le
+   mapping SEC, avec snapshot daté et exclusions instrumentales explicites.
+10. reprise des prix par petits lots avec coupe-circuit de quota, sans mise en
+    cache des erreurs temporaires ;
+11. persistance et compaction des historiques titre par titre, faisant passer
+    le pic mémoire observé de plus de 6 Go à environ 3,3 Go sur le scan complet ;
+12. valorisation accélérée par index de dates et médianes sectorielles exactes
+    prégroupées, sans auto-inclusion ;
+13. boucle d'analogues historiques vectorisée et progression journalisée ;
+14. entonnoir GDELT borné à 250 titres après fondamentaux et valorisation, avec
+    réserve de 20 % pour les baisses extrêmes ;
+15. rapport réel final : 6 289 lignes, 6 288 cours, 3 000 fondamentaux,
+    1 183 valorisations et 1 427 scores de couverture suffisante.
 
 ## Ce qui empêche encore une analyse complète
 
@@ -53,3 +68,4 @@ sa couverture, jamais une probabilité de gain ou un conseil d'achat.
 SEC et FRED sont configurés ; ECB/Frankfurter, BCE, Cboe, CFTC et GDELT ne
 nécessitent pas de nouvelle clé. Ces limites réduisent la couverture, elles ne
 bloquent pas le scan prix mondial ni le dashboard.
+

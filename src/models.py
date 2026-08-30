@@ -32,6 +32,15 @@ class DataQuality(StrEnum):
     UNAVAILABLE = "UNAVAILABLE"
 
 
+class PeaEligibilityStatus(StrEnum):
+    """Conservative PEA classification; only explicit evidence may confirm a title."""
+
+    CONFIRMED_ELIGIBLE = "confirmed_eligible"
+    REVIEW_REQUIRED = "review_required"
+    NOT_ELIGIBLE = "not_eligible"
+    UNKNOWN = "unknown"
+
+
 class ObservationMetadata(BaseModel):
     """Provenance attached to every external financial observation."""
 
@@ -90,6 +99,10 @@ class Security(BaseModel):
     benchmark: str | None = None
     sector_benchmark: str | None = None
     index_memberships: str | None = None
+    pea_eligibility_status: PeaEligibilityStatus = PeaEligibilityStatus.UNKNOWN
+    pea_eligibility_basis: str | None = None
+    pea_eligibility_source_url: str | None = None
+    pea_eligibility_checked_at: date | None = None
     universe_source_urls: str | None = None
     universe_observation_date: date | None = None
     price_scale: float = Field(default=1.0, gt=0.0, le=100.0)
@@ -1025,6 +1038,10 @@ class OpportunityCandidate(BaseModel):
     exchange: str | None = None
     currency: str | None = None
     index_memberships: str | None = None
+    pea_eligibility_status: PeaEligibilityStatus = PeaEligibilityStatus.UNKNOWN
+    pea_eligibility_basis: str | None = None
+    pea_eligibility_source_url: str | None = None
+    pea_eligibility_checked_at: date | None = None
     market_cap: float | None = None
     market_cap_currency: str | None = None
     current_price: float | None = None
@@ -1151,3 +1168,30 @@ class OpportunityCandidate(BaseModel):
     missing_metrics: list[str] = Field(default_factory=list)
     sources: list[dict[str, Any]] = Field(default_factory=list)
     retrieved_at: datetime
+
+
+class OpportunityAlert(BaseModel):
+    """One immutable Phase 12 alert derived only from exported scan fields."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    alert_id: str = Field(pattern=r"^[0-9a-f]{24}$")
+    ticker: str
+    company: str | None = None
+    generated_at: datetime
+    observation_date: date
+    pea_eligibility_status: PeaEligibilityStatus
+    opportunity_score: float = Field(ge=0.0, le=100.0)
+    opportunity_score_coverage: float = Field(ge=0.0, le=1.0)
+    drawdown_52w: float | None = None
+    temporary_shock_score: float | None = Field(default=None, ge=0.0, le=100.0)
+    upside_base: float | None = None
+    risk_reward: float | None = None
+    candidate_reasons: list[str] = Field(default_factory=list)
+    score_band: str | None = None
+    source_count: int = Field(default=0, ge=0)
+    disclaimer: str = (
+        "Signal de recherche non calibré; vérifier l'éligibilité PEA, les sources "
+        "et la thèse avant toute décision d'investissement."
+    )
+

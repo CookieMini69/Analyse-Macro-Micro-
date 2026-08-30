@@ -12,6 +12,7 @@ from urllib.parse import quote
 
 import pandas as pd
 import yfinance as yf
+from yfinance.exceptions import YFInvalidPeriodError
 
 from src.data.sources import PriceHistoryResult
 from src.models import DataQuality, DataStatus, Security
@@ -168,14 +169,42 @@ class YahooFinancePriceSource:
 
     def _download_history(self, ticker: str, *, period: str) -> tuple[pd.DataFrame, dict[str, Any]]:
         instrument = yf.Ticker(ticker)
-        history = instrument.history(
-            period=period,
-            interval="1d",
-            auto_adjust=False,
-            actions=False,
-            repair=False,
-            raise_errors=True,
-        )
+        try:
+            history = instrument.history(
+                period=period,
+                interval="1d",
+                auto_adjust=False,
+                actions=False,
+                repair=False,
+                raise_errors=True,
+            )
+        except YFInvalidPeriodError as exc:
+            if period != "max" or not exc.valid_ranges:
+                raise
+            valid_ranges = (
+                [item.strip() for item in exc.valid_ranges.split(",") if item.strip()]
+                if isinstance(exc.valid_ranges, str)
+                else list(exc.valid_ranges)
+            )
+            rank = {
+                "1d": 1, "5d": 5, "1mo": 30, "3mo": 90, "6mo": 180,
+                "ytd": 366, "1y": 365, "2y": 730, "5y": 1825,
+                "10y": 3650, "max": 10_000,
+            }
+            fallback = max(valid_ranges, key=lambda item: rank.get(item, 0))
+            LOGGER.info(
+                "%s does not expose period=max yet; retrying with provider range %s",
+                ticker,
+                fallback,
+            )
+            history = instrument.history(
+                period=fallback,
+                interval="1d",
+                auto_adjust=False,
+                actions=False,
+                repair=False,
+                raise_errors=True,
+            )
         metadata = getattr(instrument, "history_metadata", {}) or {}
         return history, metadata
 
@@ -261,3 +290,4 @@ class YahooFinancePriceSource:
             source_url=source_url,
             from_cache=from_cache,
         )
+
