@@ -1,6 +1,6 @@
 # Audit interne des phases 1 à 12
 
-Version : 1.5.0
+Version : 2.0.0 (addendum univers mondial)
 Date : 2026-08-30
 
 ## Conclusion exécutive
@@ -11,7 +11,8 @@ spécification est disponible pour chaque société : le système respecte la r�
 `data_unavailable` lorsque les sources point-in-time nécessaires manquent.
 
 Le changement de périmètre demandé par l'utilisateur est appliqué : l'univers
-par défaut n'est plus mondial. Il contient 319 cotations natives de 11 indices
+par défaut contient désormais 17 041 cotations vérifiées sur les annuaires US,
+européens, JPX, NSE, ASX et HKEX. Son sous-ensemble contient 319 cotations natives
 de l'EEE. Elles sont des **candidates géographiques PEA à confirmer**, jamais des
 éligibilités juridiques affirmées automatiquement.
 
@@ -32,35 +33,60 @@ de l'EEE. Elles sont des **candidates géographiques PEA à confirmer**, jamais 
 | 11 Streamlit | Conforme | Top 5 avec statut décisionnel, tri PEA, pagination, recherche, détail et graphiques | analyse IA critique inactive et aucun achat validé avec la couverture courante |
 | 12 Automatisation/alertes | Conforme au périmètre gratuit | runner verrouillé, tâche Windows optionnelle, alertes JSON/CSV/Markdown dédupliquées | email/Telegram/Discord non configurés par choix |
 
-Le run réel post-audit a aussi isolé la nouvelle composition PEA dans
-`data/raw/backtest_pea_v1_4_0`, afin de ne jamais écraser la lignée mondiale
-v1.3.0 avec une appartenance différente à la même date.
+La composition mondiale v2 est isolée dans
+`data/raw/backtest_global_v2_0_0`, afin de ne jamais écraser les lignées PEA
+v1.4.0 et mondiale v1.3.0 avec une appartenance différente à la même date.
 
-## Validation réelle du 2026-08-30
+## Validation réelle mondiale du 2026-08-30
 
-- 319 titres PEA présélectionnés et 11 benchmarks ;
-- 330/330 historiques de prix disponibles ;
-- 8/8 paires FX et 9/9 séries macro disponibles ;
-- 73 candidats de baisse ;
-- 1/73 historique fondamental SEC et 1/73 valorisation disponibles ;
-- 73 analyses de choc et 71/73 analogues historiques terminés ;
-- 0/73 scénario suffisamment documenté ;
-- 1/73 score à couverture suffisante, SAP à 26,05/100 ;
-- 0 alerte, puisque le seuil local est 50/100 ;
-- archive point-in-time PEA écrite sans collision ;
-- rapports créés : `stock_opportunity_scan_20260830T140553Z.csv` et `.xlsx`.
+- 17 041 titres uniques et 35 benchmarks ;
+- 17 016/17 076 historiques de prix disponibles, dont 16 981 titres primaires ;
+- 22/22 paires FX et 9/9 séries macro disponibles ;
+- 8 871 candidats de baisse, tous traités par les étapes prix/fondamentaux ;
+- 3 001 historiques fondamentaux SEC et 1 185 valorisations exploitables ;
+- 250 dossiers d'actualité/choc présélectionnés ; GDELT indisponible sur ce run ;
+- 7 021 candidats avec analogues historiques terminés ;
+- 1 256 candidats avec scénarios dérivés des données ;
+- 1 427 scores à couverture suffisante ;
+- 319 présélections PEA, 73 candidats techniques PEA et un seul score PEA
+  couvert (SAP.DE, 26,10/100, sous le seuil de 50) ;
+- 0 alerte PEA émise ;
+- archive point-in-time mondiale v2 écrite sans collision ;
+- rapports : `stock_opportunity_scan_20260830T203518Z.csv` et `.xlsx` ;
+- 150 tests automatisés réussis ;
+- test Streamlit réel : 17 041 lignes visibles, Top 5 de 5 lignes, pagination de
+  50 lignes, passage PEA à 319 lignes et réinitialisation à 17 041.
 
-Ces résultats confirment le comportement attendu : le scanner ne transforme pas
-les 72 absences de fondamentaux européens en scores artificiels.
+Le Top 5 analytique calculé est PTC, INTU, ADBE, META et IDXX, avec des scores
+entre 53,52 et 56,36 et une couverture de 75 %. Ce sont des priorités de
+recherche non calibrées, pas des recommandations d'achat. Le scanner ne
+transforme pas les absences de fondamentaux mondiaux en scores artificiels.
+
+## Correctifs de passage à l'échelle
+
+- prix de présélection sur deux ans par lots de 100, historique maximal réservé
+  aux candidats par lots de 250 ;
+- lecture parallèle des caches et absence de recopie normalisée inutile ;
+- provenance héritée explicitement pour les 44 lignes enrichies du YAML ;
+- tableau complet restauré (le Top 5 était auparavant affiché deux fois) ;
+- titres sans prix visibles lorsqu'aucun filtre n'est appliqué ;
+- chargement dashboard limité aux colonnes utilisées : 76,5 Mo en mémoire pour
+  le rapport de 404 Mo, chargé en environ huit secondes lors du contrôle ;
+- serveur Streamlit redémarré pour charger les nouveaux modèles de configuration.
+
+Le contrôle navigateur a identifié le serveur ancien. Après son redémarrage,
+le navigateur intégré a bloqué localhost par sa politique de sécurité : aucun
+contournement n'a été tenté. Le contrôle final des interactions a utilisé
+`streamlit.testing.v1.AppTest` avec succès.
 
 ## Audit transversal des sections 1 à 40
 
 - Sections 1, 6, 17, 24, 30, 31, 32, 33, 37, 38 et 39 : conformes.
 - Sections 8 à 11, 13, 16, 18, 19 et 21 : moteurs implémentés, résultats
   conditionnés à la disponibilité des données réelles.
-- Section 7 : écart volontaire demandé après la spécification initiale ; le
-  moteur reste configurable et le snapshot mondial est conservé, mais le
-  défaut est désormais PEA/EEE.
+- Section 7 : l'univers par défaut est mondial sur les places vérifiées, avec
+  un filtre PEA distinct. L'exhaustivité littérale de toutes les bourses reste
+  non démontrée et est marquée fausse dans le manifeste de couverture.
 - Sections 2, 12, 14, 15, 20, 22, 23, 25 et 27 : partielles au sens du résultat
   final complet. Les champs manquants sont signalés, pas inventés.
 - Section 28 : architecture locale complète ; les canaux externes sont laissés

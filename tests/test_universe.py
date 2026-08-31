@@ -43,6 +43,18 @@ def test_loads_multiple_csv_inputs(tmp_path: Path) -> None:
     assert [item.ticker for item in load_universe(tmp_path / "universe.yaml")] == ["AAA", "BBB"]
 
 
+def test_inline_rows_inherit_explicit_snapshot_provenance(tmp_path: Path) -> None:
+    (tmp_path / "universe.yaml").write_text(
+        "version: 1\ninline_universe_source_urls: https://example.test/list\n"
+        "inline_universe_observation_date: 2026-08-29\nfilters: {}\n"
+        "securities: [{ticker: AAA}]\n",
+        encoding="utf-8",
+    )
+    security = load_universe(tmp_path / "universe.yaml")[0]
+    assert security.universe_source_urls == "https://example.test/list"
+    assert security.universe_observation_date.isoformat() == "2026-08-29"
+
+
 def test_duplicate_ticker_is_rejected(tmp_path: Path) -> None:
     path = tmp_path / "universe.yaml"
     path.write_text(
@@ -69,26 +81,32 @@ def test_auxiliary_benchmarks_are_unique() -> None:
     assert {item.ticker for item in auxiliary_benchmarks(securities)} == {"WORLD", "INDUSTRY"}
 
 
-def test_default_universe_is_a_conservative_pea_focus() -> None:
+def test_default_universe_is_global_with_a_conservative_pea_subset() -> None:
     universe = load_universe(Path("config/universe.yaml"))
     countries = {security.country for security in universe}
     european = [security for security in universe if security.index_memberships]
-    assert len(universe) == 319
-    assert len(european) == 319
+    assert len(universe) > 16_000
+    assert len(european) == 439
     assert {"France", "Germany", "Italy", "Spain", "Norway"} <= countries
-    assert "United Kingdom" not in countries
-    assert "Switzerland" not in countries
-    assert {"EUR", "SEK", "DKK", "NOK"} <= {
+    assert {"United States", "Japan", "India", "Australia", "Hong Kong"} <= countries
+    assert {"EUR", "SEK", "DKK", "NOK", "USD", "JPY", "INR", "AUD", "HKD"} <= {
         security.currency for security in universe
     }
     assert all(security.universe_source_urls for security in european)
     assert all(security.universe_observation_date for security in european)
     assert all(security.country_basis == "listing_market" for security in european)
+    pea_candidates = [
+        security for security in european
+        if security.listing_country in {
+            "France", "Germany", "Italy", "Spain", "Netherlands", "Belgium",
+            "Denmark", "Finland", "Norway", "Sweden", "Portugal",
+        }
+    ]
     assert all(
         security.pea_eligibility_status == PeaEligibilityStatus.REVIEW_REQUIRED
         and security.pea_eligibility_source_url
         and security.pea_eligibility_checked_at
-        for security in european
+        for security in pea_candidates
     )
     memberships = {
         index
@@ -98,7 +116,7 @@ def test_default_universe_is_a_conservative_pea_focus() -> None:
     assert memberships == {
         "AEX 25", "BEL 20", "CAC 40", "DAX 40", "FTSE MIB 40",
         "IBEX 35", "OBX 25", "OMX Copenhagen 25", "OMX Helsinki 25",
-        "OMX Stockholm 30", "PSI",
+        "OMX Stockholm 30", "PSI", "FTSE 100", "SMI 20",
     }
 
 
@@ -107,4 +125,3 @@ def test_pea_screen_does_not_treat_an_adr_as_a_native_eea_candidate() -> None:
         ticker="EXAMPLE", country="France", exchange="NYSE", currency="USD"
     )
     assert assess_pea_eligibility(adr).pea_eligibility_status == PeaEligibilityStatus.UNKNOWN
-

@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import json
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
@@ -29,21 +31,15 @@ FILTER_KEYS = (
     "global_query", "countries", "sectors", "indices", "minimum_score",
     "maximum_drawdown", "minimum_market_cap", "shock_natures", "minimum_risk",
     "horizon", "candidates_only", "pea_statuses", "table_page", "table_page_size",
-    "detail_query", "sort_mode",
+    "detail_query", "sort_mode", "ranking_scope",
 )
 
 
 def _reset_filter_state() -> None:
-    defaults: dict[str, Any] = {
-        "global_query": "", "countries": [], "sectors": [], "indices": [],
-        "minimum_score": 0, "maximum_drawdown": 0,
-        "minimum_market_cap": 0.0, "shock_natures": [], "minimum_risk": 0,
-        "horizon": 12, "candidates_only": False, "pea_statuses": [], "table_page": 1,
-        "table_page_size": 50, "detail_query": "", "sort_mode": "Score d'opportunité",
-    }
+    # Let each widget reapply its declared default. Assigning the same default
+    # through Session State as well emits Streamlit's duplicate-default warning.
     for key in FILTER_KEYS:
-        if key in st.session_state:
-            st.session_state[key] = defaults[key]
+        st.session_state.pop(key, None)
 
 
 @st.cache_data(show_spinner=False)
@@ -118,6 +114,17 @@ def _sidebar(frame: pd.DataFrame) -> tuple[pd.DataFrame, int, str]:
     candidates_only = st.sidebar.checkbox(
         "Candidats techniques uniquement", value=False, key="candidates_only"
     )
+    scope_label = st.sidebar.selectbox(
+        "Portée du classement",
+        ["Monde — places vérifiées", "PEA — confirmé ou à confirmer"],
+        key="ranking_scope",
+        help=(
+            "Le mode Monde classe toutes les cotations du rapport. Le mode PEA conserve "
+            "les titres confirmés ou géographiquement présélectionnés, sans remplacer la "
+            "validation juridique auprès du courtier."
+        ),
+    )
+    scope = "pea" if scope_label.startswith("PEA") else "world"
     pea_labels = {
         "À confirmer avant achat": "review_required",
         "Éligibilité confirmée": "confirmed_eligible",
@@ -186,6 +193,7 @@ def _sidebar(frame: pd.DataFrame) -> tuple[pd.DataFrame, int, str]:
         minimum_risk_score=float(minimum_risk),
         query=query, candidates_only=candidates_only,
         pea_statuses=[pea_labels[value] for value in selected_pea],
+        scope=scope,
     ), horizon, SORT_LABELS[sort_label]
 
 
@@ -219,6 +227,13 @@ def _top_table(frame: pd.DataFrame, sort_mode: str) -> None:
         "fair_value": "Juste valeur", "base_target": "Objectif Base",
         "risk_reward": "Risque/rendement", "data_quality": "Qualité",
     })
+    st.dataframe(table, width="stretch", hide_index=True, column_config={
+        "Score": st.column_config.ProgressColumn(min_value=0, max_value=100, format="%.1f"),
+        "Couverture": st.column_config.ProgressColumn(min_value=0, max_value=1, format="%.0f%%"),
+        "Drawdown 52s": st.column_config.NumberColumn(format="percent"),
+        "Juste valeur": st.column_config.NumberColumn(format="%.2f"),
+        "Objectif Base": st.column_config.NumberColumn(format="%.2f"),
+    })
 
 
 def _top_five_panel(frame: pd.DataFrame, sort_mode: str) -> None:
@@ -247,13 +262,6 @@ def _top_five_panel(frame: pd.DataFrame, sort_mode: str) -> None:
         "Score": st.column_config.ProgressColumn(min_value=0, max_value=100, format="%.1f"),
         "Couverture": st.column_config.ProgressColumn(min_value=0, max_value=1, format="%.0f%%"),
         "Drawdown 52s": st.column_config.NumberColumn(format="percent"),
-    })
-    st.dataframe(table, width="stretch", hide_index=True, column_config={
-        "Score": st.column_config.ProgressColumn(min_value=0, max_value=100, format="%.1f"),
-        "Couverture": st.column_config.ProgressColumn(min_value=0, max_value=1, format="%.0f%%"),
-        "Drawdown 52s": st.column_config.NumberColumn(format="percent"),
-        "Juste valeur": st.column_config.NumberColumn(format="%.2f"),
-        "Objectif Base": st.column_config.NumberColumn(format="%.2f"),
     })
 
 
@@ -418,6 +426,20 @@ def main() -> None:
         return
     modified = datetime.fromtimestamp(report.stat().st_mtime).astimezone()
     st.caption(f"Dernière mise à jour : {modified:%d/%m/%Y %H:%M %Z} · fichier {report.name} · {len(frame)} titres")
+    manifest_path = Path(__file__).resolve().parents[1] / "config" / "universe_world_native.manifest.json"
+    if manifest_path.exists():
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            covered_markets = ", ".join(
+                str(item.get("listing_country")) for item in manifest.get("sources", [])
+            )
+            st.info(
+                f"Couverture native vérifiée : {covered_markets} ({manifest.get('rows', 0):,} lignes), "
+                "complétée par les annuaires US et les indices européens. Elle n'est pas présentée "
+                "comme l'intégralité de toutes les places mondiales.".replace(",", " ")
+            )
+        except (OSError, json.JSONDecodeError):
+            st.warning("Le manifeste de couverture mondiale est illisible ; l'étendue ne peut pas être auditée.")
     universe_path = report.parents[1] / "config" / "universe.yaml"
     configured_count = (
         _configured_universe_count(str(universe_path), universe_path.stat().st_mtime_ns)

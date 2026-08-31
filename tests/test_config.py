@@ -15,7 +15,7 @@ def test_default_settings_resolve_paths_from_project_root() -> None:
         Path.cwd().resolve() / "config" / "shock_taxonomy.yaml"
     )
     assert settings.paths.backtest_archive == (
-        Path.cwd().resolve() / "data" / "raw" / "backtest_pea_v1_4_0"
+        Path.cwd().resolve() / "data" / "raw" / "backtest_global_v2_0_0"
     )
     assert settings.paths.external_research == (
         Path.cwd().resolve() / "data" / "raw" / "external_research"

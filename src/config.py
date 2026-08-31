@@ -36,6 +36,9 @@ class PriceSettings(BaseModel):
 
     provider: str = "yahoo"
     history_period: str = "max"
+    screening_period: str = "2y"
+    bulk_batch_size: int = Field(default=100, ge=2, le=500)
+    deep_bulk_batch_size: int = Field(default=250, ge=2, le=500)
     cache_ttl_hours: int = Field(default=18, ge=0)
     max_workers: int = Field(default=4, ge=1, le=32)
     confidence: float = Field(default=0.8, ge=0.0, le=1.0)

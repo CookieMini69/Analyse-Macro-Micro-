@@ -22,6 +22,13 @@ LIST_COLUMNS = {
     "candidate_reasons", "fundamental_invalidation", "shock_missing_criteria",
     "missing_metrics", "sources",
 }
+# These full audit payloads are retained in the immutable report and per-title
+# JSON artifacts, but are not used by the dashboard. Loading them for 17k rows
+# wastes hundreds of MB before the user has even selected a company.
+AUDIT_ONLY_COLUMNS = {
+    "fx_metrics", "fundamental_metrics", "valuation_metrics", "shock_metrics",
+    "historical_metrics", "scoring_metrics",
+}
 
 SORT_LABELS = {
     "Score d'opportunité": "opportunity",
@@ -76,7 +83,9 @@ def _decode_json(value: Any, fallback: Any) -> Any:
 
 def load_scan_report(path: str | Path) -> pd.DataFrame:
     try:
-        frame = pd.read_csv(path, low_memory=False)
+        frame = pd.read_csv(
+            path, low_memory=False, usecols=lambda column: column not in AUDIT_ONLY_COLUMNS
+        )
     except (OSError, UnicodeError, pd.errors.ParserError) as exc:
         raise DashboardDataError(f"rapport illisible: {exc}") from exc
     missing = REQUIRED_SCAN_COLUMNS - set(frame.columns)
@@ -114,6 +123,7 @@ def filter_scan(
     query: str | None = None,
     candidates_only: bool = False,
     pea_statuses: list[str] | None = None,
+    scope: str = "world",
 ) -> pd.DataFrame:
     selected = pd.Series(True, index=frame.index)
     country_column = "listing_country" if "listing_country" in frame else "country"
@@ -127,7 +137,7 @@ def filter_scan(
         )
     if minimum_score > 0 and "opportunity_score" in frame:
         selected &= pd.to_numeric(frame["opportunity_score"], errors="coerce").fillna(-1) >= minimum_score
-    if "drawdown_52w" in frame:
+    if maximum_drawdown < 0 and "drawdown_52w" in frame:
         selected &= pd.to_numeric(frame["drawdown_52w"], errors="coerce").fillna(1) <= maximum_drawdown
     if minimum_market_cap_eur > 0 and "market_cap_eur" in frame:
         selected &= pd.to_numeric(frame["market_cap_eur"], errors="coerce").fillna(-1) >= minimum_market_cap_eur
@@ -139,6 +149,10 @@ def filter_scan(
         selected &= frame["is_candidate"].fillna(False).astype(bool)
     if pea_statuses and "pea_eligibility_status" in frame:
         selected &= frame["pea_eligibility_status"].isin(pea_statuses)
+    if scope == "pea" and "pea_eligibility_status" in frame:
+        selected &= frame["pea_eligibility_status"].isin(
+            ["confirmed_eligible", "review_required"]
+        )
     normalized_query = (query or "").strip().casefold()
     if normalized_query:
         searchable = [

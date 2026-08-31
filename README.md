@@ -1,6 +1,6 @@
 # AI Stock Opportunity Scanner
 
-Version `1.5.0` implements the price/drawdown scanner, a **point-in-time
+Version `2.0.0` implements the price/drawdown scanner, a **point-in-time
 fundamental engine for domestic and foreign SEC-reporting issuers**, valuation,
 point-in-time FRED/ALFRED and ECB macro vintages, official Cboe put/call and CFTC
 positioning context, public GDELT news metadata, and conservative shock
@@ -17,7 +17,9 @@ archives with SHA-256 integrity checks. Phase 10 provides the final styled Excel
 report, Phase 11 provides a working Streamlit dashboard, and Phase 12 adds
 deduplicated local alerts plus a guarded Windows daily-runner architecture.
 It also adds an auditable Bigdata.com/Aiera export bridge, a free official ESMA
-FIRDS acquisition path, and coverage-aware Top-5/PEA rankings in the dashboard.
+FIRDS acquisition path, 17,041 configured current listings across verified US,
+European and Asia-Pacific directories, bulk price screening, and coverage-aware
+Top-5 World/PEA rankings in the dashboard.
 
 It still does **not** conclude that a decline is an investment opportunity or
 that a shock is temporary. A high Opportunity Score is not a probability,
@@ -78,14 +80,29 @@ documented in `docs/FREE_WORLDWIDE_ACCESS_PLAN.md`.
 
 ## Configure the universe
 
-`config/universe.yaml` now loads 319 native listings from 11 flagship EEA
-indices: CAC 40, DAX 40, AEX 25, BEL 20, IBEX 35, FTSE MIB 40, OMX Stockholm
-30, OMX Copenhagen 25, OMX Helsinki 25, OBX 25 and PSI. The former US snapshot
-is no longer versioned or loaded by default; `scripts/update_us_universe.py`
-can regenerate one explicitly. This deliberately focuses the scanner on
-potential PEA holdings instead of maximizing the number of assets.
+`config/universe.yaml` loads 17,041 unique current listings. The reproducible
+layers are Nasdaq Trader + SEC for US-listed SEC reporters; 13 flagship European
+indices; and official JPX, NSE India, ASX and HKEX native directories. Refresh
+them with `scripts/update_us_universe.py`, `scripts/update_europe_universe.py`
+and `scripts/update_world_universe.py`. The native-world manifest records each
+source URL, observation/retrieval dates, raw-byte count and SHA-256 hash.
 
-Every retained security is marked `review_required`, not
+Audit the configured coverage at any time with:
+
+```powershell
+python scripts/audit_world_universe.py
+```
+
+The JSON report under `reports/` includes the exact country counts, source/date
+coverage and the known free-data gaps.
+
+This is the widest free, identifier-compatible coverage implemented here, not a
+claim to contain literally every exchange on earth. Canada-native, mainland
+China, Korea, Taiwan, Latin America, Africa and many smaller venues remain gaps
+unless another licensed or official symbol directory is integrated. The
+dashboard and manifest disclose that boundary instead of calling it complete.
+
+The 319 native EEA candidates are marked `review_required`, not
 `confirmed_eligible`. An EEA listing is only a geographic screen: before an
 order, confirm the issuer's registered office, equivalent corporate-tax status,
 security type (notably SIIC exclusions), and the title's eligibility with the
@@ -255,8 +272,10 @@ market-cap, shock, risk and horizon filters, and provides price, fundamental,
 valuation, evidence and scenario tabs. Run the scanner again and refresh the
 page to display the new report. The table is paginated rather than silently
 limited to 50 rows; global search and an explicit filter reset prevent a retained
-country/index filter from masquerading as a small universe. A dedicated Top 5
-and the `Meilleurs candidats PEA` sort are available. Confirmed PEA evidence is
+country/index filter from masquerading as a small universe. The explicit
+`Portée du classement` control switches between all verified world listings and
+the conservative PEA subset. A dedicated Top 5 and the `Meilleurs candidats PEA`
+sort are available. Confirmed PEA evidence is
 ranked before `review_required`; missing coverage remains visible. The dashboard
 never generates a BUY verdict: before a valid Phase 9 calibration it displays a
 qualified analytical signal, a below-threshold status, or `Données insuffisantes`.
@@ -295,9 +314,10 @@ The current strategy is a sequence of evidence filters, not a BUY/SELL model:
 1. Load an explicit, dated universe and establish one shared `as_of` cutoff.
 2. Retrieve FRED/ALFRED vintages and dated ECB reference FX rates that were
    available at that time.
-3. Download every price history, remove every daily bar ineligible at the cutoff,
-   and calculate drawdowns, returns, momentum, volatility, beta, and relative
-   performance.
+3. Download two years of prices for every title in batches of 100, remove every
+   daily bar ineligible at the cutoff, and calculate drawdowns, returns,
+   momentum, volatility, beta, and relative performance. Candidate titles then
+   load their maximum available history in batches of 250 for analogues.
 4. Mark a security as a decline candidate only when a configured drawdown or
    sector-relative threshold is crossed with enough observations.
 5. Retrieve SEC facts and calculate point-in-time quality and valuation only
@@ -354,8 +374,8 @@ Outputs are timestamped under `reports/`:
   `data/processed/scoring/`.
 - `fx_analysis_*.csv`, plus dated pair JSON under `data/processed/fx/`; scan rows
   retain original values and add USD/EUR equivalents when rates are available.
-- write-once live archives under the configured PEA lineage
-  `data/raw/backtest_pea_v1_4_0/{source_archives,signals,universes}`.
+- write-once live archives under the configured worldwide v2 lineage
+  `data/raw/backtest_global_v2_0_0/{source_archives,signals,universes}`.
 - Phase 9 backtests produce one full JSON, one metrics CSV, and one trades CSV.
 - Phase 12 emits new-alert JSON, CSV and Markdown under
   `data/processed/alerts/`; deduplication state lives in
@@ -516,7 +536,7 @@ consensus/guidance, historical-news, and AI sources are documented in
 
 Both Codex apps can complement headlines, filings, transcripts, earnings events,
 consensus and guidance. A standalone scanner process cannot invoke a Codex app,
-so version 1.5.0 accepts a strict JSONL hand-off instead of hiding an implicit
+so version 2.0.0 accepts a strict JSONL hand-off instead of hiding an implicit
 network dependency. Every record requires `provider`, `ticker`, `title`, `url`,
 `published_at`, `available_at`, `retrieved_at`, and `document_type`. Future
 leakage and malformed URLs are rejected; normalized exports receive a SHA-256

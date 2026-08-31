@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-30T18:58:47.917341+00:00",
+  "definition": "current common-equity native listings from free official directories",
+  "rows": 10752,
+  "sources": [
+    {
+      "source": "jpx",
+      "url": "https://www.jpx.co.jp/markets/statistics-equities/misc/tvdivq0000001vg2-att/data_j.xls",
+      "listing_country": "Japan",
+      "observation_date": "2026-07-31",
+      "retrieved_at": "2026-08-30T18:58:47.917341+00:00",
+      "sha256": "6e401867d9ddf2524e4752f08fd3e3e434cd308c6d423839ca6e24fc7b1e1653",
+      "raw_bytes": 830464,
+      "equity_rows": 3903
+    },
+    {
+      "source": "nse",
+      "url": "https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv",
+      "listing_country": "India",
+      "observation_date": "2026-08-30",
+      "retrieved_at": "2026-08-30T18:58:47.917341+00:00",
+      "sha256": "ef0490ff9c99674e137c31b1853fd0be59305b10c68691050e270778ec5bc2de",
+      "raw_bytes": 180729,
+      "equity_rows": 2287
+    },
+    {
+      "source": "asx",
+      "url": "https://www.asx.com.au/content/dam/asx/issuers/ISIN.xls",
+      "listing_country": "Australia",
+      "observation_date": "2026-08-07",
+      "retrieved_at": "2026-08-30T18:58:47.917341+00:00",
+      "sha256": "eb2a547ef207ecdb7a0e55f917af93a85426d265496504a3022e4eb8fbd9ccf4",
+      "raw_bytes": 1985024,
+      "equity_rows": 1759
+    },
+    {
+      "source": "hkex",
+      "url": "https://www.hkex.com.hk/eng/services/trading/securities/securitieslists/ListOfSecurities.xlsx",
+      "listing_country": "Hong Kong",
+      "observation_date": "2026-08-31",
+      "retrieved_at": "2026-08-30T18:58:47.917341+00:00",
+      "sha256": "0ccda15ac73982573edb9d451adc3c0a6cec93362a008450eb4a771f8f3e45ff",
+      "raw_bytes": 1404395,
+      "equity_rows": 2803
+    }
+  ],
+  "world_complete": false,
+  "world_complete_reason": "No free source proves exhaustive current and delisted equity coverage for every exchange worldwide; this manifest reports only verified directories."
+}

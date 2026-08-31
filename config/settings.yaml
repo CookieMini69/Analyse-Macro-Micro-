@@ -14,17 +14,21 @@ paths:
   news_cache: "data/cache/news"
   # Validated point-in-time exports from the installed Bigdata.com/Aiera apps.
   external_research: "data/raw/external_research"
-  # Immutable lineage for the PEA-focused v1.4.0 methodology. The prior global
-  # archive remains untouched because membership is immutable per observation
-  # date and must never be overwritten by a different universe.
-  backtest_archive: "data/raw/backtest_pea_v1_4_0"
+  # Immutable lineage for the worldwide v2.0 methodology. Older PEA/global
+  # archives remain untouched because membership is immutable by observation date.
+  backtest_archive: "data/raw/backtest_global_v2_0_0"
   alerts: "data/processed/alerts"
   alert_state: "data/cache/alerts/state.json"
   reports: "reports"
 
 price:
   provider: "yahoo"
+  # Tous les titres passent d'abord par 2 ans de cours en téléchargement groupé.
+  # Seuls les candidats techniques chargent ensuite l'historique maximal.
+  screening_period: "2y"
   history_period: "max"
+  bulk_batch_size: 100
+  deep_bulk_batch_size: 250
   cache_ttl_hours: 18
   # Yahoo is an unofficial best-effort source. Conservative concurrency plus
   # the pipeline circuit breaker makes 6k+ title scans safely resumable.

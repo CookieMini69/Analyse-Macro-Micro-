@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import os
 import re
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -167,6 +168,103 @@ class YahooFinancePriceSource:
         normalized.to_csv(cache_path, index=False)
         return self._result(security, normalized, from_cache=False)
 
+    def fetch_many(
+        self, securities: list[Security], *, period: str = "2y"
+    ) -> dict[str, PriceHistoryResult]:
+        """Fetch one batch while preserving normalized per-title caches."""
+
+        results: dict[str, PriceHistoryResult] = {}
+        pending: list[tuple[Security, Path]] = []
+        entries: list[tuple[Security, Path]] = []
+        for security in securities:
+            cache_key = f"{security.ticker}__{period}__scale_{security.price_scale:g}"
+            cache_path = self.cache_dir / f"{_safe_cache_name(cache_key)}.csv"
+            entries.append((security, cache_path))
+        with ThreadPoolExecutor(max_workers=min(16, max(1, len(entries)))) as executor:
+            cached_frames = list(
+                executor.map(lambda entry: self._read_fresh_cache(entry[1]), entries)
+            )
+        for (security, cache_path), cached in zip(entries, cached_frames, strict=True):
+            if cached is not None:
+                results[security.ticker.upper()] = self._result(
+                    security, cached, from_cache=True
+                )
+            else:
+                pending.append((security, cache_path))
+        if not pending:
+            return results
+
+        tickers = [security.ticker for security, _ in pending]
+        try:
+            bulk = yf.download(
+                tickers,
+                period=period,
+                interval="1d",
+                group_by="ticker",
+                auto_adjust=False,
+                actions=False,
+                repair=False,
+                progress=False,
+                threads=True,
+                timeout=30,
+            )
+        except Exception as exc:
+            LOGGER.error("Bulk price download failed for %d symbols: %s", len(tickers), exc)
+            bulk = pd.DataFrame()
+
+        for security, cache_path in pending:
+            source_url = f"https://finance.yahoo.com/quote/{quote(security.ticker, safe='')}"
+            history = self._history_from_bulk(bulk, security.ticker, len(tickers))
+            if history.empty:
+                results[security.ticker.upper()] = PriceHistoryResult(
+                    security=security,
+                    frame=empty_price_frame(),
+                    status=DataStatus.DATA_UNAVAILABLE,
+                    data_quality=DataQuality.UNAVAILABLE,
+                    source=self.name,
+                    source_url=source_url,
+                    error="data_unavailable: bulk provider returned no observations",
+                )
+                continue
+            normalized = self._normalize(history, {}, security, source_url)
+            problems = validate_price_frame(normalized)
+            if problems:
+                results[security.ticker.upper()] = PriceHistoryResult(
+                    security=security,
+                    frame=normalized,
+                    status=DataStatus.INVALID,
+                    data_quality=DataQuality.LOW,
+                    source=self.name,
+                    source_url=source_url,
+                    error="; ".join(problems),
+                    warnings=problems,
+                )
+                continue
+            normalized.to_csv(cache_path, index=False)
+            results[security.ticker.upper()] = self._result(
+                security, normalized, from_cache=False
+            )
+        return results
+
+    @staticmethod
+    def _history_from_bulk(
+        bulk: pd.DataFrame, ticker: str, requested_count: int
+    ) -> pd.DataFrame:
+        if bulk.empty:
+            return pd.DataFrame()
+        if isinstance(bulk.columns, pd.MultiIndex):
+            first_level = bulk.columns.get_level_values(0)
+            names = {str(value).upper(): value for value in first_level}
+            original = names.get(ticker.upper())
+            if original is None:
+                return pd.DataFrame()
+            history = bulk[original].copy()
+        elif requested_count == 1:
+            history = bulk.copy()
+        else:
+            return pd.DataFrame()
+        return history.dropna(how="all")
+
     def _download_history(self, ticker: str, *, period: str) -> tuple[pd.DataFrame, dict[str, Any]]:
         instrument = yf.Ticker(ticker)
         try:
@@ -290,4 +388,3 @@ class YahooFinancePriceSource:
             source_url=source_url,
             from_cache=from_cache,
         )
-

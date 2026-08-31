@@ -58,6 +58,24 @@ def test_filters_country_index_scores_drawdown_and_risk() -> None:
     assert filter_scan(searchable, query="alpha", candidates_only=True)["ticker"].tolist() == ["AAA"]
 
 
+def test_world_and_pea_scopes_are_explicit() -> None:
+    frame = pd.DataFrame([
+        {"ticker": "WORLD", "pea_eligibility_status": "unknown", "drawdown_52w": -0.1},
+        {"ticker": "PEA", "pea_eligibility_status": "review_required", "drawdown_52w": -0.1},
+    ])
+    assert filter_scan(frame, scope="world")["ticker"].tolist() == ["WORLD", "PEA"]
+    assert filter_scan(frame, scope="pea")["ticker"].tolist() == ["PEA"]
+
+
+def test_default_filters_keep_titles_without_prices_visible() -> None:
+    frame = pd.DataFrame([
+        {"ticker": "AVAILABLE", "drawdown_52w": -0.25},
+        {"ticker": "NO_PRICE", "drawdown_52w": None},
+    ])
+    assert filter_scan(frame)["ticker"].tolist() == ["AVAILABLE", "NO_PRICE"]
+    assert filter_scan(frame, maximum_drawdown=-0.20)["ticker"].tolist() == ["AVAILABLE"]
+
+
 def test_price_fundamental_and_scenario_artifacts(tmp_path: Path) -> None:
     pd.DataFrame({
         "observation_date": pd.date_range("2025-01-01", periods=80),
@@ -93,5 +111,6 @@ def test_streamlit_dashboard_renders_without_exception() -> None:
     assert [title.value for title in app.title] == ["AI Stock Opportunity Scanner"]
     assert len(app.multiselect) == 5
     assert any(selectbox.label == "Tri principal" for selectbox in app.selectbox)
+    assert any(selectbox.label == "Portée du classement" for selectbox in app.selectbox)
     assert any(button.label == "Réinitialiser tous les filtres" for button in app.button)
     assert len(app.tabs) == 7

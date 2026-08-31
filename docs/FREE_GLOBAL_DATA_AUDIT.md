@@ -26,48 +26,53 @@ Le mode par défaut ne dépend d'aucun abonnement payant. Les idées proposées 
   un délai prudent de sept jours est appliqué, y compris dans les backtests.
 - Une donnée absente reste `data_unavailable` ; aucune interpolation n'est faite.
 
-## Univers élargi livré
+## Univers mondial v2 livré
 
-Le fichier `config/universe.yaml` charge désormais 6 289 lignes uniques : 5 850
-actions cotées aux États-Unis et déclarantes SEC, dont 44 lignes globales/ADR
-enrichies manuellement, plus 439 cotations européennes appartenant à 13 indices.
-Le snapshot US daté du 2026-08-28 est reconstruit par
-`scripts/update_us_universe.py` depuis les répertoires officiels Nasdaq Trader
-et le mapping CIK/ticker/exchange de la SEC. Les ETF, tests, warrants, droits,
-unités, préférentielles et instruments de dette identifiables sont exclus.
-Cette construction permet :
+Le fichier `config/universe.yaml` charge désormais **17 041 cotations uniques** :
+
+- 5 806 actions US supplémentaires issues de Nasdaq Trader et jointes au
+  mapping CIK/ticker/exchange SEC, auxquelles s'ajoutent les lignes US/ADR
+  enrichies dans le YAML ;
+- 439 cotations de 13 grands indices européens ;
+- 3 903 actions JPX, 2 287 actions NSE India, 1 759 actions ASX et 2 803 actions
+  HKEX, soit 10 752 cotations natives issues de fichiers officiels.
+
+`scripts/update_us_universe.py` et `scripts/update_world_universe.py`
+reconstruisent ces snapshots. Le fichier
+`config/universe_world_native.manifest.json` conserve URL, date d'observation,
+date de récupération, taille brute, nombre de lignes et SHA-256 de chaque
+annuaire. Les ETF, produits structurés, options, droits et dettes identifiables
+sont exclus ; les actions ordinaires et certificats d'actions explicitement
+admis restent retenus. Cette construction permet :
 
 1. un téléchargement de prix homogène ;
 2. les dépôts 20-F/40-F gratuits ;
 3. la taxonomie standard IFRS quand elle est publiée dans Company Facts ;
 4. l'absence de conversion implicite dans les valorisations.
 
-Il ne s'agit toujours ni de « toutes les actions du monde », ni d'un historique
-anti-survivance. Les cotations locales hors Europe/États-Unis, les sociétés sans
-dépôt SEC et les radiations historiques nécessitent des catalogues d'exchanges
-séparés. Aucun fournisseur gratuit unique ne garantit l'identité, les prix
+Il ne s'agit toujours pas littéralement de toutes les actions du monde, ni d'un
+historique anti-survivance. Canada natif, Chine continentale, Corée, Taïwan,
+Amérique latine, Afrique et plusieurs petites places ne sont pas encore couverts
+par un mapping officiel gratuit vers les tickers Yahoo. Aucun fournisseur
+gratuit unique ne garantit l'identité, les prix
 ajustés, les fondamentaux point-in-time et les retraits de cote mondiaux.
 
 Le changement de méthodologie ouvre une nouvelle lignée d'archives immuables
-dans `data/raw/backtest_global_v1_3_0`. Les anciennes lignées restent conservées
+dans `data/raw/backtest_global_v2_0_0`. Les anciennes lignées restent conservées
 intactes et ne sont jamais réécrites.
 
-## Vérification réelle
+## Stratégie d'exécution mondiale
 
-- 134 tests automatisés réussis, sans avertissement après correction de la
-  lecture du grand CSV ;
-- 6 319/6 320 historiques de prix disponibles lors du scan mondial réel, soit
-  6 288/6 289 titres primaires et 31/31 références ;
-- 3 189 candidats techniques, 3 000 historiques fondamentaux disponibles,
-  1 183 valorisations exploitables, 2 464 analyses avec analogues historiques,
-  1 254 scénarios et 1 427 Opportunity Scores qualifiés par leur couverture ;
-- VIX, taux BCE, put/call Cboe et COT CFTC récupérés avec succès ;
-- contrôles SEC réels réussis sur ASML, Novo Nordisk, TSMC et Shopify, incluant
-  les formulaires étrangers et les unités IFRS locales.
+Tous les titres passent le même filtre prix sur deux ans, par lots de 100 avec
+cache individuel et provenance. Après détection des baisses, seuls les candidats
+rechargent l'historique maximal nécessaire aux analogues. Tous les candidats
+ayant un CIK passent SEC EDGAR ; un titre non-SEC reste explicitement sans
+fondamentaux au lieu de recevoir une valeur inventée. Les actualités publiques
+restent plafonnées à 250 candidats selon la sélection reproductible décrite
+ci-dessous.
 
 Le classement profond appelle les actualités publiques pour 250 titres au plus.
 Tous les titres passent le filtre prix et tous les candidats prix passent les
 fondamentaux/valorisations ; le plafond ne concerne que l'étape externe GDELT.
 La sélection est reproductible : 80 % par composite préliminaire ajusté de sa
 couverture et 20 % réservés aux baisses les plus sévères.
-

@@ -47,6 +47,8 @@ class UniverseConfig(BaseModel):
     csv_path: Path | None = None
     csv_paths: list[Path] = Field(default_factory=list)
     filters: UniverseFilters = Field(default_factory=UniverseFilters)
+    inline_universe_source_urls: str | None = None
+    inline_universe_observation_date: date | None = None
     securities: list[Security] = Field(default_factory=list)
 
 
@@ -138,7 +140,20 @@ def load_universe(path: str | Path) -> list[Security]:
         raw = yaml.safe_load(handle) or {}
     config = UniverseConfig.model_validate(raw)
 
-    securities = list(config.securities)
+    securities = [
+        security.model_copy(
+            update={
+                "universe_source_urls": (
+                    security.universe_source_urls or config.inline_universe_source_urls
+                ),
+                "universe_observation_date": (
+                    security.universe_observation_date
+                    or config.inline_universe_observation_date
+                ),
+            }
+        )
+        for security in config.securities
+    ]
     csv_inputs = ([config.csv_path] if config.csv_path is not None else []) + config.csv_paths
     for configured_csv in csv_inputs:
         csv_path = (
@@ -170,4 +185,3 @@ def auxiliary_benchmarks(securities: list[Security]) -> list[Security]:
                     Security(ticker=ticker, company=f"Benchmark {ticker}"),
                 )
     return list(requested.values())
-

@@ -108,6 +108,41 @@ def test_provider_empty_response_is_data_unavailable(tmp_path: Path) -> None:
     assert "data_unavailable" in (result.error or "")
 
 
+def test_bulk_provider_returns_one_normalized_result_per_security(
+    tmp_path: Path, monkeypatch
+) -> None:
+    monkeypatch.delenv("STOCK_SCANNER_CACHE_DIR", raising=False)
+    dates = pd.bdate_range("2025-01-01", periods=260)
+    columns = pd.MultiIndex.from_product(
+        [["AAA", "BBB"], ["Open", "High", "Low", "Close", "Adj Close", "Volume"]],
+        names=["Ticker", "Price"],
+    )
+    bulk = pd.DataFrame(index=dates, columns=columns, dtype=float)
+    for ticker in ("AAA", "BBB"):
+        bulk[(ticker, "Open")] = 10
+        bulk[(ticker, "High")] = 11
+        bulk[(ticker, "Low")] = 9
+        bulk[(ticker, "Close")] = 10
+        bulk[(ticker, "Adj Close")] = 10
+        bulk[(ticker, "Volume")] = 100
+    calls: list[list[str]] = []
+    monkeypatch.setattr(
+        "src.data.prices.yf.download",
+        lambda tickers, **kwargs: calls.append(tickers) or bulk,
+    )
+    source = YahooFinancePriceSource(tmp_path)
+    securities = [
+        Security(ticker="AAA", currency="USD"),
+        Security(ticker="BBB", currency="USD"),
+    ]
+    results = source.fetch_many(securities)
+    assert calls == [["AAA", "BBB"]]
+    assert set(results) == {"AAA", "BBB"}
+    assert all(result.status == DataStatus.AVAILABLE for result in results.values())
+    source.fetch_many(securities)
+    assert len(calls) == 1
+
+
 def test_validation_rejects_non_positive_prices() -> None:
     frame = pd.DataFrame([{column: None for column in PRICE_COLUMNS}])
     frame.loc[0, "observation_date"] = "2026-01-01"
@@ -120,4 +155,3 @@ def test_validation_rejects_non_positive_prices() -> None:
 def test_short_history_is_low_quality() -> None:
     frame = pd.DataFrame({"adjusted_close": [10.0, 11.0], "close": [10.0, 11.0]})
     assert assess_price_quality(frame) == DataQuality.LOW
-

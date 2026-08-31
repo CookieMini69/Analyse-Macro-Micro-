@@ -1,10 +1,14 @@
 version: 1
 
-# Univers par défaut recentré sur les actions européennes candidates au PEA.
-# La cotation native dans l'EEE constitue seulement un filtre de présélection :
+# Univers mondial courant : répertoires officiels US, Europe indicielle, Japon,
+# Inde, Australie et Hong Kong. Le manifeste universe_world_native.manifest.json
+# donne le hash, la date et le nombre de lignes de chaque source. « Mondial »
+# signifie ici toutes les places gratuites effectivement vérifiées, jamais une
+# promesse mensongère d'exhaustivité de toutes les bourses de la planète.
+# La cotation native dans l'EEE constitue seulement un filtre PEA de présélection :
 # le statut juridique du titre doit être confirmé auprès de l'émetteur et du
-# courtier avant tout achat. Un snapshot US optionnel peut être régénéré avec
-# scripts/update_us_universe.py, mais n'est plus versionné ni chargé par défaut.
+# courtier avant tout achat. Régénération : scripts/update_us_universe.py,
+# scripts/update_europe_universe.py et scripts/update_world_universe.py.
 # Tickers, noms, CIK et places de cotation verifies le 2026-08-29 dans le fichier officiel SEC
 # https://www.sec.gov/files/company_tickers_exchange.json.
 # Les secteurs sont des classifications operationnelles configurees au
@@ -14,24 +18,19 @@ version: 1
 # sourcees, et ne sont jamais inventees par le scanner.
 csv_paths:
   - universe_europe.csv
+  - universe_us_listed.csv
+  - universe_world_native.csv
 
 filters:
   minimum_market_cap: null
-  pea_focus_only: true
+  pea_focus_only: false
   include_pea_review_required: true
-  allowed_countries:
-    - France
-    - Germany
-    - Netherlands
-    - Belgium
-    - Denmark
-    - Finland
-    - Iceland
-    - Norway
-    - Sweden
-    - Spain
-    - Italy
-    - Portugal
+  allowed_countries: []
+
+# Provenance commune des 44 lignes inline enrichies (ADR et doubles cotations).
+# Leur mapping ticker/CIK/exchange a été contrôlé dans le fichier officiel SEC.
+inline_universe_source_urls: "https://www.sec.gov/files/company_tickers_exchange.json"
+inline_universe_observation_date: 2026-08-29
 
 # Supported fields:
 # ticker (required), cik, company, country, sector, exchange, currency,
@@ -392,4 +391,3 @@ securities:
     exchange: NYSE
     currency: USD
     benchmark: EIS
-

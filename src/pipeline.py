@@ -147,6 +147,7 @@ def _download_prices(
     *,
     period: str,
     max_workers: int,
+    bulk_batch_size: int = 100,
     cutoff: datetime | None = None,
     normalized_output_dir: Path | None = None,
 ) -> dict[str, PriceHistoryResult]:
@@ -172,6 +173,50 @@ def _download_prices(
             source_url=None,
             error=error,
         )
+
+    bulk_fetch = getattr(source, "fetch_many", None)
+    if callable(bulk_fetch):
+        cutoff_for_age = (
+            cutoff
+            if cutoff is not None and cutoff.tzinfo is not None
+            else cutoff.replace(tzinfo=UTC) if cutoff is not None else None
+        )
+        skip_existing_cache = bool(
+            cutoff_for_age is not None
+            and abs((datetime.now(UTC) - cutoff_for_age).total_seconds()) < 6 * 60 * 60
+        )
+        for start in range(0, len(securities), bulk_batch_size):
+            batch = securities[start : start + bulk_batch_size]
+            try:
+                batch_results = bulk_fetch(batch, period=period)
+            except Exception as exc:
+                LOGGER.exception("Unhandled bulk provider error")
+                batch_results = {
+                    security.ticker.upper(): unavailable(
+                        security, f"{type(exc).__name__}: {exc}"
+                    )
+                    for security in batch
+                }
+            for security in batch:
+                ticker = security.ticker.upper()
+                result = batch_results.get(ticker) or unavailable(
+                    security, "data_unavailable: bulk provider omitted ticker"
+                )
+                if cutoff is not None:
+                    result = _filter_prices_as_of({ticker: result}, cutoff)[ticker]
+                if normalized_output_dir is not None:
+                    _persist_normalized_prices(
+                        {ticker: result}, normalized_output_dir,
+                        skip_existing_cache=skip_existing_cache,
+                    )
+                    _compact_price_frames({ticker: result})
+                downloaded[ticker] = result
+            LOGGER.info(
+                "Price-screen progress: %d/%d",
+                min(start + len(batch), len(securities)),
+                len(securities),
+            )
+        return downloaded
 
     batch_size = max(1, max_workers * 2)
     for start in range(0, len(securities), batch_size):
@@ -638,9 +683,11 @@ def _run_news(
 
     with ThreadPoolExecutor(max_workers=settings.news.max_workers) as executor:
         futures = [executor.submit(fetch_one, security) for security in securities]
-        for future in as_completed(futures):
+        for completed, future in enumerate(as_completed(futures), 1):
             ticker, result = future.result()
             results[ticker] = result
+            if completed % 25 == 0 or completed == len(securities):
+                LOGGER.info("News progress: %d/%d", completed, len(securities))
     return results
 
 
@@ -1111,8 +1158,9 @@ def run_pipeline(
     downloaded_price_results = _download_prices(
         all_downloads,
         provider,
-        period=app_settings.price.history_period,
+        period=app_settings.price.screening_period,
         max_workers=app_settings.price.max_workers,
+        bulk_batch_size=app_settings.price.bulk_batch_size,
         cutoff=cutoff,
         normalized_output_dir=app_settings.paths.processed_data / "prices",
     )
@@ -1126,7 +1174,7 @@ def run_pipeline(
 
     LOGGER.info("Calculating drawdowns and technical metrics...")
     scan_results: list[OpportunityCandidate] = []
-    for security in securities:
+    for security_index, security in enumerate(securities, 1):
         price_result = price_results.get(security.ticker.upper())
         if price_result is None:
             LOGGER.error("No provider result exists for %s", security.ticker)
@@ -1147,6 +1195,10 @@ def run_pipeline(
                 sector_result=sector_result,
             )
         )
+        if security_index % 1_000 == 0:
+            LOGGER.info(
+                "Technical-screen progress: %d/%d", security_index, len(securities)
+            )
     ranked = rank_results(scan_results)
     ranked = [_enrich_with_fx(result, fx_results) for result in ranked]
     candidate_tickers = {
@@ -1156,6 +1208,26 @@ def run_pipeline(
         security for security in securities
         if security.ticker.upper() in candidate_tickers
     ]
+    if (
+        candidate_securities
+        and app_settings.price.history_period != app_settings.price.screening_period
+    ):
+        LOGGER.info(
+            "Loading maximum history for %d price-screen candidates...",
+            len(candidate_securities),
+        )
+        deep_price_results = _download_prices(
+            candidate_securities,
+            provider,
+            period=app_settings.price.history_period,
+            max_workers=app_settings.price.max_workers,
+            bulk_batch_size=app_settings.price.deep_bulk_batch_size,
+            cutoff=cutoff,
+            normalized_output_dir=app_settings.paths.processed_data / "prices",
+        )
+        for ticker, result in deep_price_results.items():
+            if result.status == DataStatus.AVAILABLE and not result.frame.empty:
+                price_results[ticker] = result
     LOGGER.info(
         "Updating point-in-time fundamentals for %d/%d price-screen candidates...",
         len(candidate_securities),
@@ -1475,6 +1547,7 @@ def run_pipeline(
             "universe_path": str(configured_universe),
             "price_provider": app_settings.price.provider,
             "history_period": app_settings.price.history_period,
+            "screening_period": app_settings.price.screening_period,
             "download_error_count": sum(bool(result.error) for result in price_results.values()),
             "fundamental_result_count": len(fundamental_results),
             "fundamental_available_count": fundamental_available,
